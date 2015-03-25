@@ -1,0 +1,21 @@
+{
+	"ImportPath": "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy",
+	"GoVersion": "go1.4.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/plugin",
+			"Comment": "v6.10.0-4-g83ff121",
+			"Rev": "83ff121f0d54168621698e263342aee6f06f0c89"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.1.0-33-g17ea479",
+			"Rev": "17ea479729ee427265ac1e913443018350946ddf"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-25-g85936b2",
+			"Rev": "85936b29809b7df066a8d839dd105e158e510264"
+		}
+	]
+}
