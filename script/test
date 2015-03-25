@@ -1,0 +1,5 @@
+#!/bin/bash -e
+
+godep restore
+go get github.com/onsi/ginkgo/ginkgo
+ginkgo
