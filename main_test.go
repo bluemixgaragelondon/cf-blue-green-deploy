@@ -96,15 +96,15 @@ var _ = Describe("Main", func() {
 								"Getting apps in org garage@uk.ibm.com / space dev as garage@uk.ibm.com...",
 								"OK",
 								"",
-								"name                  					requested state   instances   memory   disk   urls",
-								"app-name-20150326120000    		started           1/1         32M      1G",
-								"app-name-20150326110000-old    started           1/1         32M      1G",
+								"name                  		requested state   instances   memory   disk   urls",
+								"app-20150326120000    		started           1/1         32M      1G",
+								"app-20150326110000-old   started           1/1         32M      1G",
 							},
 							nil
 					}
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					p.DeleteOldAppVersions("app-name")
-					Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app-name-20150326110000-old -f -r"))
+					p.DeleteOldAppVersions("app")
+					Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app-20150326110000-old -f -r"))
 				})
 			})
 		})

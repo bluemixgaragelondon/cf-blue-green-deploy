@@ -39,7 +39,7 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) ([]string, error) {
-	r := regexp.MustCompile("app-name-[0-9]{14}-old")
+	r := regexp.MustCompile(fmt.Sprintf("%s-[0-9]{14}-old", appName))
 	apps, err := p.Connection.CliCommandWithoutTerminalOutput("apps")
 	oldApps := r.FindAllString(strings.Join(apps, " "), -1)
 
