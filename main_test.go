@@ -11,9 +11,9 @@ var _ = Describe("Main", func() {
 	Describe("Plugin", func() {
 		Describe("blue-green-deploy", func() {
 			It("exists", func() {
-				fake := &fakes.FakeCliConnection{}
-				bgdPlugin := plugin.BlueGreenDeploymentPlugin{}
-				bgdPlugin.Run(fake, []string{})
+				connection := &fakes.FakeCliConnection{}
+				p := plugin.BlueGreenDeploymentPlugin{}
+				p.Run(connection, []string{})
 			})
 		})
 	})
