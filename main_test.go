@@ -12,7 +12,7 @@ var _ = Describe("Main", func() {
 		Describe("blue-green-deploy", func() {
 			It("exists", func() {
 				fake := &fakes.FakeCliConnection{}
-				bgdPlugin := plugin.BgdPlugin{}
+				bgdPlugin := plugin.BlueGreenDeploymentPlugin{}
 				bgdPlugin.Run(fake, []string{})
 			})
 		})
