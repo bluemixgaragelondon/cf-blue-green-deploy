@@ -8,11 +8,11 @@ import (
 	"github.com/cloudfoundry/cli/plugin"
 )
 
-type BlueGreenDeploymentPlugin struct {
+type BlueGreenDeployPlugin struct {
 	Connection plugin.CliConnection
 }
 
-func (p *BlueGreenDeploymentPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
 
 	p.DeleteOldAppVersions("cf-blue-green-deploy-test-app")
@@ -20,7 +20,7 @@ func (p *BlueGreenDeploymentPlugin) Run(cliConnection plugin.CliConnection, args
 	fmt.Println("Hello world! The sky is all blue/green.")
 }
 
-func (p *BlueGreenDeploymentPlugin) GetMetadata() plugin.PluginMetadata {
+func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name: "blue-green-deploy",
 		Commands: []plugin.Command{
@@ -33,7 +33,7 @@ func (p *BlueGreenDeploymentPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeploymentPlugin) OldAppVersionList(appName string) ([]string, error) {
+func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) ([]string, error) {
 	r := regexp.MustCompile("app-name-[0-9]{14}-old")
 	apps, err := p.Connection.CliCommandWithoutTerminalOutput("apps")
 	oldApps := r.FindAllString(strings.Join(apps, " "), -1)
@@ -41,7 +41,7 @@ func (p *BlueGreenDeploymentPlugin) OldAppVersionList(appName string) ([]string,
 	return oldApps, err
 }
 
-func (p *BlueGreenDeploymentPlugin) DeleteApps(appNames []string) error {
+func (p *BlueGreenDeployPlugin) DeleteApps(appNames []string) error {
 	for _, appName := range appNames {
 		if _, err := p.Connection.CliCommand("delete", appName, "-f", "-r"); err != nil {
 			return err
@@ -51,12 +51,12 @@ func (p *BlueGreenDeploymentPlugin) DeleteApps(appNames []string) error {
 	return nil
 }
 
-func (p *BlueGreenDeploymentPlugin) DeleteOldAppVersions(appName string) error {
+func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
 	appNames, err := p.OldAppVersionList(appName)
 	p.DeleteApps(appNames)
 	return err
 }
 
 func main() {
-	plugin.Start(&BlueGreenDeploymentPlugin{})
+	plugin.Start(&BlueGreenDeployPlugin{})
 }
