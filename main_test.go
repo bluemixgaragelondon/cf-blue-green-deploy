@@ -1,6 +1,8 @@
 package main_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	plugin "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
@@ -18,6 +20,16 @@ var _ = Describe("Main", func() {
 			})
 
 			Describe("OldAppVersionList", func() {
+				It("returns error", func() {
+					connection := &fakes.FakeCliConnection{}
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("Failed retrieving app names")
+					}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					_, err := p.OldAppVersionList("app-name")
+					Expect(err).To(HaveOccurred())
+				})
+
 				It("returns list of application names", func() {
 					connection := &fakes.FakeCliConnection{}
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
@@ -32,7 +44,7 @@ var _ = Describe("Main", func() {
 							nil
 					}
 					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
-					appList := p.OldAppVersionList("app-name")
+					appList, _ := p.OldAppVersionList("app-name")
 
 					Expect(appList).To(Equal([]string{"app-name-20150326110000-old"}))
 				})

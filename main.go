@@ -31,12 +31,12 @@ func (p *BlueGreenDeploymentPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeploymentPlugin) OldAppVersionList(appName string) []string {
+func (p *BlueGreenDeploymentPlugin) OldAppVersionList(appName string) ([]string, error) {
 	r := regexp.MustCompile("app-name-[0-9]{14}-old")
-	apps, _ := p.Connection.CliCommandWithoutTerminalOutput("apps")
+	apps, err := p.Connection.CliCommandWithoutTerminalOutput("apps")
 	oldApps := r.FindAllString(strings.Join(apps, " "), -1)
 
-	return oldApps
+	return oldApps, err
 }
 
 func main() {
