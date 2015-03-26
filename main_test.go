@@ -2,6 +2,7 @@ package main_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	plugin "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 
 	"github.com/cloudfoundry/cli/plugin/fakes"
@@ -14,6 +15,27 @@ var _ = Describe("Main", func() {
 				connection := &fakes.FakeCliConnection{}
 				p := plugin.BlueGreenDeploymentPlugin{}
 				p.Run(connection, []string{})
+			})
+
+			Describe("OldAppVersionList", func() {
+				It("returns list of application names", func() {
+					connection := &fakes.FakeCliConnection{}
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{
+								"Getting apps in org garage@uk.ibm.com / space dev as garage@uk.ibm.com...",
+								"OK",
+								"",
+								"name                  					requested state   instances   memory   disk   urls",
+								"app-name-20150326120000    		started           1/1         32M      1G",
+								"app-name-20150326110000-old    started           1/1         32M      1G",
+							},
+							nil
+					}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					appList := p.OldAppVersionList("app-name")
+
+					Expect(appList).To(Equal([]string{"app-name-20150326110000-old"}))
+				})
 			})
 		})
 	})
