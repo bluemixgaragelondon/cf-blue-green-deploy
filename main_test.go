@@ -62,5 +62,38 @@ var _ = Describe("Main", func() {
 				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).To(Equal("delete app2 -f -r"))
 			})
 		})
+
+		Describe("DeleteOldAppVersions", func() {
+			Context("when getting old app versions fails", func() {
+				It("returns error", func() {
+					connection := &fakes.FakeCliConnection{}
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("Failed retrieving app names")
+					}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					Expect(p.DeleteOldAppVersions("app-name")).To(MatchError("Failed retrieving app names"))
+				})
+			})
+
+			Context("when getting old app versions succeeds", func() {
+				It("deletes all old app versions", func() {
+					connection := &fakes.FakeCliConnection{}
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{
+								"Getting apps in org garage@uk.ibm.com / space dev as garage@uk.ibm.com...",
+								"OK",
+								"",
+								"name                  					requested state   instances   memory   disk   urls",
+								"app-name-20150326120000    		started           1/1         32M      1G",
+								"app-name-20150326110000-old    started           1/1         32M      1G",
+							},
+							nil
+					}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					p.DeleteOldAppVersions("app-name")
+					Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app-name-20150326110000-old -f -r"))
+				})
+			})
+		})
 	})
 })
