@@ -1,5 +1,12 @@
-#!/bin/bash -e
+#!/bin/bash
 
-godep restore
-go get github.com/onsi/ginkgo/ginkgo
-ginkgo "$@"
+ARGS=($@)
+
+main() {
+  . script/setup
+
+  go get github.com/onsi/ginkgo/ginkgo
+  ginkgo "${ARGS[@]}"
+}
+
+main
