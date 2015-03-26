@@ -53,13 +53,26 @@ var _ = Describe("Main", func() {
 		})
 
 		Describe("DeleteApps", func() {
-			It("deletes all apps and mapped routes in list", func() {
-				connection := &fakes.FakeCliConnection{}
-				p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
-				p.DeleteApps([]string{"app1", "app2"})
+			Context("when app fails to delete", func() {
+				It("returns error", func() {
+					connection := &fakes.FakeCliConnection{}
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("Failed deleting app")
+					}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					Expect(p.DeleteApps([]string{"app-name"})).To(MatchError("Failed deleting app"))
+				})
+			})
 
-				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app1 -f -r"))
-				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).To(Equal("delete app2 -f -r"))
+			Context("when no app delete fails", func() {
+				It("deletes all apps and mapped routes in list", func() {
+					connection := &fakes.FakeCliConnection{}
+					p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+					p.DeleteApps([]string{"app1", "app2"})
+
+					Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app1 -f -r"))
+					Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).To(Equal("delete app2 -f -r"))
+				})
 			})
 		})
 
