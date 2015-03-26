@@ -23,6 +23,11 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name: "blue-green-deploy",
+		Version: plugin.VersionType{
+			Major: 0,
+			Minor: 1,
+			Build: 0,
+		},
 		Commands: []plugin.Command{
 			{
 				Name:     "blue-green-deploy",
