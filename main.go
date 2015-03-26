@@ -15,6 +15,8 @@ type BlueGreenDeploymentPlugin struct {
 func (p *BlueGreenDeploymentPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
 
+	p.DeleteOldAppVersions("cf-blue-green-deploy-test-app")
+
 	fmt.Println("Hello world! The sky is all blue/green.")
 }
 
