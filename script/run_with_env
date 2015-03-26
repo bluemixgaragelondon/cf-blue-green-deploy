@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e
+
+main() {
+  debug
+  set_base_path
+  set_env_files
+  source_env_files
+  set_cf_home
+  "$@"
+}
+
+debug() {
+  [ -z "$DEBUG" ] || set -x
+}
+
+set_base_path() {
+  SOURCE="${BASH_SOURCE[0]}"
+  DIR="$(dirname "$SOURCE")"
+
+  while [ -h "$SOURCE" ]
+  do
+    SOURCE="$(readlink "$SOURCE")"
+    [ "$SOURCE" != "/*" ] && SOURCE="$DIR/$SOURCE"
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  done
+
+  BASE_PATH="$(cd "$DIR/.." && pwd)"
+}
+
+set_env_files() {
+  BASE_PATH="${BASE_PATH:?must be defined}"
+
+  ENV_FILE="$BASE_PATH/.env"
+  SECRETS_FILE="$BASE_PATH/.secrets"
+}
+
+source_env_files() {
+  ENV_FILE="${ENV_FILE:?must be defined}"
+  SECRETS_FILE="${SECRETS_FILE:?must be defined}"
+
+  local env_file
+  for env_file in "$SECRETS_FILE" "$ENV_FILE"
+  do
+    if [ -f "$env_file" ]
+    then
+      . "$env_file"
+    fi
+  done
+
+}
+
+set_cf_home() {
+  BASE_PATH="${BASE_PATH:?must be defined}"
+
+  export CF_HOME="${CF_HOME:-$BASE_PATH}"
+}
+
+main "$@"

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+login_to_bluemix() {
+  CF_URL="${CF_URL:?must be defined}"
+  CF_USERNAME="${CF_USERNAME:?must be defined}"
+  CF_PASSWORD="${CF_PASSWORD:?must be defined}"
+  CF_ORG="${CF_ORG:?must be defined}"
+  CF_SPACE="${CF_SPACE:?must be defined}"
+
+  set -o pipefail
+  if ! cf apps | grep -e "org ${CF_ORG}.*space ${CF_SPACE}.*as ${CF_USERNAME}" >/dev/null
+  then
+    cf login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || cf create-space "$CF_SPACE"
+    cf target -s "$CF_SPACE"
+  fi
+  set +o pipefail
+}
+
+uninstall_plugin() {
+  local plugin_name="$1"
+
+  plugin_not_installed? "$plugin_name" || cf uninstall-plugin "$plugin_name"
+}
+
+plugin_not_installed?() {
+  local plugin_name="$1"
+
+  ! grep "$plugin_name" <<< "$(cf plugins)" >&-
+}
+
+install_plugin() {
+  local plugin_name="$1"
+
+  cf install-plugin "$plugin_name"
+}
+
+push_example_apps() {
+  pushd acceptance/app
+    login_to_bluemix
+    cf push cf-blue-green-deploy-test-app-20150326162620-old
+    cf push cf-blue-green-deploy-test-app-20150326162644
+  popd
+}

@@ -1,0 +1,5 @@
+name: cf-blue-green-deploy-test-app
+command: ./start
+no-route: true
+memory: 8M
+buildpack: https://github.com/ph3nx/heroku-binary-buildpack.git

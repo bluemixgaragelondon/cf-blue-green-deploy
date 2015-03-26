@@ -1,0 +1,16 @@
+#!/bin/bash
+
+main() {
+  . script/run_with_env
+  . script/common
+
+  script/setup
+  script/build
+
+  uninstall_plugin blue-green-deploy
+  install_plugin cf-blue-green-deploy
+
+  push_example_apps
+}
+
+main

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+env
+
+echo "I'm up!"
+
+kill -STOP $$
