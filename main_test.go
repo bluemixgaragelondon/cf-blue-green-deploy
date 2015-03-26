@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -48,6 +49,17 @@ var _ = Describe("Main", func() {
 
 					Expect(appList).To(Equal([]string{"app-name-20150326110000-old"}))
 				})
+			})
+		})
+
+		Describe("DeleteApps", func() {
+			It("deletes all apps and mapped routes in list", func() {
+				connection := &fakes.FakeCliConnection{}
+				p := plugin.BlueGreenDeploymentPlugin{Connection: connection}
+				p.DeleteApps([]string{"app1", "app2"})
+
+				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app1 -f -r"))
+				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).To(Equal("delete app2 -f -r"))
 			})
 		})
 	})

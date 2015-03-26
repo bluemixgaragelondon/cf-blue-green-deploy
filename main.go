@@ -39,6 +39,12 @@ func (p *BlueGreenDeploymentPlugin) OldAppVersionList(appName string) ([]string,
 	return oldApps, err
 }
 
+func (p *BlueGreenDeploymentPlugin) DeleteApps(appNames []string) {
+	for _, appName := range appNames {
+		p.Connection.CliCommand("delete", appName, "-f", "-r")
+	}
+}
+
 func main() {
 	plugin.Start(&BlueGreenDeploymentPlugin{})
 }
