@@ -1,3 +1,22 @@
-#!/bin/bash
+#!/bin/bash -ex
 
-go build
+REPO=~/workspace/garage-cf-plugins
+PLUGIN_NAME=blue-green-deploy
+
+script/test
+
+# plugin targets (GOOS, GOARCH)
+osx=(darwin amd64)
+linux32=(linux 386)
+linux64=(linux amd64)
+
+for target in osx linux32 linux64; do
+  build_options=($(eval echo \${$target[@]}))
+  goos=${build_options[0]}
+  goarch=${build_options[1]}
+
+  build_output="$PLUGIN_NAME.$target"
+  GOOS=$goos GOARCH=$goarch go build -o "$build_output"
+
+  cp "$build_output" artefacts
+done
