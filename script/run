@@ -8,7 +8,7 @@ main() {
   script/build
 
   uninstall_plugin blue-green-deploy
-  install_plugin cf-blue-green-deploy
+  install_plugin blue-green-deploy
 
   push_example_apps
 }
