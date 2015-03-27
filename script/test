@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-APP_PKG_NAME="hub.jazz.net/git/bluemixgarage/cf-mad"
+APP_PKG_NAME="hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 ARGS="$@"
 
 main() {
