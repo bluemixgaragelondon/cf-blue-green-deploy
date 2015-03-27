@@ -3,6 +3,8 @@
 REPO=~/workspace/garage-cf-plugins
 PLUGIN_NAME=blue-green-deploy
 
+. script/run_with_env
+
 script/test
 
 # plugin targets (GOOS, GOARCH)
