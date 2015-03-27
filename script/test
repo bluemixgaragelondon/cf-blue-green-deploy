@@ -1,12 +1,45 @@
-#!/bin/bash
+#!/bin/bash -e
 
-ARGS=($@)
+APP_PKG_NAME="hub.jazz.net/git/bluemixgarage/cf-mad"
+ARGS="$@"
 
 main() {
-  . script/setup
+  . script/run_with_env
+  install_test_dependencies
+	set +e
+  within_app use_vendored_packages
+  within_app run_tests
+  within_app prepare_code_coverage_results
+}
 
-  go get github.com/onsi/ginkgo/ginkgo
-  ginkgo "${ARGS[@]}"
+install_test_dependencies() {
+  which godep > /dev/null 2>&1 || go get github.com/tools/godep
+  which ginkgo > /dev/null 2>&1|| go get github.com/onsi/ginkgo/ginkgo
+  go tool | grep cover > /dev/null 2>&1 || go get golang.org/x/tools/cmd/cover
+}
+
+within_app() {
+  pushd "${GOPATH}/src/${APP_PKG_NAME}" >/dev/null
+  "$@"
+  popd >/dev/null
+}
+
+use_vendored_packages() {
+    godep restore
+}
+
+run_tests() {
+  ginkgo $ARGS -r -randomizeAllSpecs -cover
+}
+
+prepare_code_coverage_results() {
+  find . -type f -iname "*.coverprofile" | while read; do
+    go tool cover -html="$REPLY" -o="$REPLY.html"
+    mv "$REPLY.html" coverage
+    rm "$REPLY"
+  done
+
+  echo "Test coverage details are in the coverage folder."
 }
 
 main
