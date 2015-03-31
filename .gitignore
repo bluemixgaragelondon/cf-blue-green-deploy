@@ -1,3 +1,4 @@
 .cf/
 cf-blue-green-deploy
+coverage/
 blue-green-deploy.*
