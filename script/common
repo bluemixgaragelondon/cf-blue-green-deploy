@@ -31,7 +31,7 @@ plugin_not_installed?() {
 install_plugin() {
   local plugin_name="$1"
 
-  cf install-plugin "artefacts/${plugin_name}.osx"
+  cf install-plugin "artefacts/${plugin_name}.$(platform_name)"
 }
 
 push_example_apps() {
@@ -40,4 +40,19 @@ push_example_apps() {
     cf push cf-blue-green-deploy-test-app-20150326162620-old
     cf push cf-blue-green-deploy-test-app-20150326162644
   popd
+}
+
+platform_name() {
+  platform=$(go version | awk '{print $4}' | sed 's|/| |')
+  case $platform in
+    "darwin amd64")
+      echo "osx"
+      ;;
+    "linux 386")
+      echo "linux32"
+      ;;
+    "linux amd64")
+      echo "linux64"
+      ;;
+  esac
 }

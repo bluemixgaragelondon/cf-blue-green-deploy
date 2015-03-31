@@ -1,6 +1,5 @@
 #!/bin/bash -ex
 
-REPO=~/workspace/garage-cf-plugins
 PLUGIN_NAME=blue-green-deploy
 
 . script/run_with_env
@@ -20,5 +19,5 @@ for target in osx linux32 linux64; do
   build_output="$PLUGIN_NAME.$target"
   GOOS=$goos GOARCH=$goarch go build -o "$build_output"
 
-  cp "$build_output" artefacts
+  mv "$build_output" artefacts
 done
