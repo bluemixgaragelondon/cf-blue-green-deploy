@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -15,7 +16,13 @@ type BlueGreenDeployPlugin struct {
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
 
-	p.DeleteOldAppVersions("cf-blue-green-deploy-test-app")
+	if len(args) < 2 {
+		fmt.Printf("appname must be specified")
+		os.Exit(1)
+	}
+
+	appName := args[1]
+	p.DeleteOldAppVersions(appName)
 
 	fmt.Println("Hello world! The sky is all blue/green.")
 }

@@ -17,7 +17,7 @@ var _ = Describe("Main", func() {
 			It("exists", func() {
 				connection := &fakes.FakeCliConnection{}
 				p := plugin.BlueGreenDeployPlugin{}
-				p.Run(connection, []string{})
+				p.Run(connection, []string{"blue-green-deploy", "appname"})
 			})
 
 			Describe("OldAppVersionList", func() {
