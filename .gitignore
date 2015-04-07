@@ -1,4 +1,4 @@
 .cf/
 cf-blue-green-deploy
-coverage/
+coverage/*.html
 blue-green-deploy.*
