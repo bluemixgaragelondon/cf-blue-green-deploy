@@ -21,16 +21,6 @@ var _ = Describe("Main", func() {
 			})
 
 			Describe("OldAppVersionList", func() {
-				It("returns error", func() {
-					connection := &fakes.FakeCliConnection{}
-					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-						return nil, errors.New("Failed retrieving app names")
-					}
-					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					_, err := p.OldAppVersionList("app-name")
-					Expect(err).To(HaveOccurred())
-				})
-
 				It("returns list of application names", func() {
 					connection := &fakes.FakeCliConnection{}
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
@@ -48,6 +38,18 @@ var _ = Describe("Main", func() {
 					appList, _ := p.OldAppVersionList("app-name")
 
 					Expect(appList).To(Equal([]string{"app-name-20150326110000-old"}))
+				})
+
+				Context("when cli command fails", func() {
+					It("returns error", func() {
+						connection := &fakes.FakeCliConnection{}
+						connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+							return nil, errors.New("Failed retrieving app names")
+						}
+						p := plugin.BlueGreenDeployPlugin{Connection: connection}
+						_, err := p.OldAppVersionList("app-name")
+						Expect(err).To(HaveOccurred())
+					})
 				})
 			})
 		})
