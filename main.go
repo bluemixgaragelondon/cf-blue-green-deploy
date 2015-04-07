@@ -56,7 +56,7 @@ func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) (oldApps []App
 	if err != nil {
 		return
 	}
-	oldApps = findOldApps(appName, apps)
+	oldApps = filterOldApps(appName, apps)
 	return
 }
 
@@ -101,7 +101,7 @@ func getSpaceGuid() string {
 	return configRepo.SpaceFields().Guid
 }
 
-func findOldApps(appName string, apps []Application) (oldApps []Application) {
+func filterOldApps(appName string, apps []Application) (oldApps []Application) {
 	r := regexp.MustCompile(fmt.Sprintf("%s-[0-9]{14}-old", appName))
 	oldApps = []Application{}
 	for _, app := range apps {
