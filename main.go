@@ -72,8 +72,10 @@ func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
 
 func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
 	appNames, err := p.OldAppVersionList(appName)
-	p.DeleteApps(appNames)
-	return err
+	if err != nil {
+		return err
+	}
+	return p.DeleteApps(appNames)
 }
 
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
