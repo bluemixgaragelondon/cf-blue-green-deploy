@@ -1,13 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 
+	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
+	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/plugin"
 )
+
+type Application struct {
+	Name string
+}
 
 type BlueGreenDeployPlugin struct {
 	Connection plugin.CliConnection
@@ -45,17 +51,18 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) ([]string, error) {
-	r := regexp.MustCompile(fmt.Sprintf("%s-[0-9]{14}-old", appName))
-	apps, err := p.Connection.CliCommandWithoutTerminalOutput("apps")
-	oldApps := r.FindAllString(strings.Join(apps, " "), -1)
-
-	return oldApps, err
+func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) (oldApps []Application, err error) {
+	apps, err := p.appsInCurrentSpace()
+	if err != nil {
+		return
+	}
+	oldApps = findOldApps(appName, apps)
+	return
 }
 
-func (p *BlueGreenDeployPlugin) DeleteApps(appNames []string) error {
-	for _, appName := range appNames {
-		if _, err := p.Connection.CliCommand("delete", appName, "-f", "-r"); err != nil {
+func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
+	for _, app := range apps {
+		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
 			return err
 		}
 	}
@@ -67,6 +74,40 @@ func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
 	appNames, err := p.OldAppVersionList(appName)
 	p.DeleteApps(appNames)
 	return err
+}
+
+func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
+	var apps []Application
+	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
+
+	output, err := p.Connection.CliCommandWithoutTerminalOutput("curl", path)
+	if err != nil {
+		return nil, err
+	}
+
+	json.Unmarshal([]byte(output[0]), &apps)
+	return apps, nil
+}
+
+func getSpaceGuid() string {
+	configRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), func(err error) {
+		if err != nil {
+			fmt.Printf("Config error: %s", err)
+		}
+	})
+
+	return configRepo.SpaceFields().Guid
+}
+
+func findOldApps(appName string, apps []Application) (oldApps []Application) {
+	r := regexp.MustCompile(fmt.Sprintf("%s-[0-9]{14}-old", appName))
+	oldApps = []Application{}
+	for _, app := range apps {
+		if r.MatchString(app.Name) {
+			oldApps = append(oldApps, app)
+		}
+	}
+	return
 }
 
 func main() {

@@ -16,6 +16,12 @@ var _ = Describe("Main", func() {
 		Describe("blue-green-deploy", func() {
 			It("exists", func() {
 				connection := &fakes.FakeCliConnection{}
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return []string{
+							"[{\"Name\":\"wqe\"}]",
+						},
+						nil
+				}
 				p := plugin.BlueGreenDeployPlugin{}
 				p.Run(connection, []string{"blue-green-deploy", "appname"})
 			})
@@ -25,19 +31,14 @@ var _ = Describe("Main", func() {
 					connection := &fakes.FakeCliConnection{}
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{
-								"Getting apps in org garage@uk.ibm.com / space dev as garage@uk.ibm.com...",
-								"OK",
-								"",
-								"name                  					requested state   instances   memory   disk   urls",
-								"app-name-20150326120000    		started           1/1         32M      1G",
-								"app-name-20150326110000-old    started           1/1         32M      1G",
+								"[{\"Name\":\"app-name-20150326110000-old\"}]",
 							},
 							nil
 					}
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
 					appList, _ := p.OldAppVersionList("app-name")
 
-					Expect(appList).To(Equal([]string{"app-name-20150326110000-old"}))
+					Expect(appList).To(Equal([]plugin.Application{{Name: "app-name-20150326110000-old"}}))
 				})
 
 				Context("when cli command fails", func() {
@@ -62,7 +63,7 @@ var _ = Describe("Main", func() {
 						return nil, errors.New("Failed deleting app")
 					}
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					Expect(p.DeleteApps([]string{"app-name"})).To(MatchError("Failed deleting app"))
+					Expect(p.DeleteApps([]plugin.Application{{Name: "app-name"}})).To(MatchError("Failed deleting app"))
 				})
 			})
 
@@ -70,7 +71,7 @@ var _ = Describe("Main", func() {
 				It("deletes all apps and mapped routes in list", func() {
 					connection := &fakes.FakeCliConnection{}
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					p.DeleteApps([]string{"app1", "app2"})
+					p.DeleteApps([]plugin.Application{{Name: "app1"}, {Name: "app2"}})
 
 					Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).To(Equal("delete app1 -f -r"))
 					Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).To(Equal("delete app2 -f -r"))
@@ -95,12 +96,7 @@ var _ = Describe("Main", func() {
 					connection := &fakes.FakeCliConnection{}
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{
-								"Getting apps in org garage@uk.ibm.com / space dev as garage@uk.ibm.com...",
-								"OK",
-								"",
-								"name                  		requested state   instances   memory   disk   urls",
-								"app-20150326120000    		started           1/1         32M      1G",
-								"app-20150326110000-old   started           1/1         32M      1G",
+								"[{\"Name\":\"app-20150326120000\"},{\"Name\":\"app-20150326110000-old\"}]",
 							},
 							nil
 					}
