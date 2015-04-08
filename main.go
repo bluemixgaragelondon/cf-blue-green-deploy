@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -72,7 +73,13 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 			{
 				Name:     "blue-green-deploy",
 				Alias:    "bgd",
-				HelpText: "Do zero-time deploys in a non-sucky way",
+				HelpText: "Zero-downtime deploys with smoke tests",
+				UsageDetails: plugin.Usage{
+					Usage: "blue-green-deploy",
+					Options: map[string]string{
+						"integration-test": "The test script to run.",
+					},
+				},
 			},
 		},
 	}
@@ -136,6 +143,13 @@ func FilterOldApps(appName string, apps []Application) (oldApps []Application) {
 
 func GenerateAppName(base string) string {
 	return fmt.Sprintf("%s-%s", base, time.Now().Format("20060102150405"))
+}
+
+func ExtractIntegrationTestScript(args []string) string {
+	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
+	script := f.String("integration-test", "", "")
+	f.Parse(args[2:])
+	return *script
 }
 
 func main() {

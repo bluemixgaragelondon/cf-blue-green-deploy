@@ -100,6 +100,22 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
+	Describe("integration test script", func() {
+		Context("when integration test flag is not provided", func() {
+			It("returns empty string", func() {
+				args := []string{"blue-green-deploy", "appName"}
+				Expect(plugin.ExtractIntegrationTestScript(args)).To(Equal(""))
+			})
+		})
+
+		Context("when integration test flag provided", func() {
+			It("returns flag value", func() {
+				args := []string{"blue-green-deploy", "appName", "--integration-test=script/test"}
+				Expect(plugin.ExtractIntegrationTestScript(args)).To(Equal("script/test"))
+			})
+		})
+	})
+
 	Describe("old app filter", func() {
 		Context("when there are 2 old versions and 1 non-old version", func() {
 			appList := []plugin.Application{
