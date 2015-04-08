@@ -47,7 +47,7 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 		Name: "blue-green-deploy",
 		Version: plugin.VersionType{
 			Major: 0,
-			Minor: 1,
+			Minor: 3,
 			Build: 0,
 		},
 		Commands: []plugin.Command{
