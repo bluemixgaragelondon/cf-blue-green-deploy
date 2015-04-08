@@ -15,7 +15,14 @@ import (
 var PluginVersion string
 
 type Application struct {
-	Name string
+	Name   string
+	Routes []struct {
+		Host   string
+		Domain struct {
+			Name string
+		}
+	}
+	Urls []string
 }
 
 type BlueGreenDeployPlugin struct {
