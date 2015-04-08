@@ -18,13 +18,16 @@ var PluginVersion string
 
 type Application struct {
 	Name   string
-	Routes []struct {
-		Host   string
-		Domain struct {
-			Name string
-		}
-	}
-	Urls []string
+	Routes []Route
+}
+
+type Route struct {
+	Host   string
+	Domain Domain
+}
+
+type Domain struct {
+	Name string
 }
 
 type BlueGreenDeployPlugin struct {
