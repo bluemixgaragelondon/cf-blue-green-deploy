@@ -37,8 +37,14 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
+	appsInSpace, err := p.appsInCurrentSpace()
+	if err != nil {
+		fmt.Printf("Could not load apps in space, are you logged in? - %s", err.Error())
+		os.Exit(1)
+	}
+
 	appName := args[1]
-	err := p.DeleteOldAppVersions(appName)
+	err = p.DeleteOldAppVersions(appName, appsInSpace)
 	if err != nil {
 		fmt.Printf("Could not delete old app version - %s", err.Error())
 		os.Exit(1)
@@ -82,11 +88,7 @@ func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 	return nil
 }
 
-func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
-	apps, err := p.appsInCurrentSpace()
-	if err != nil {
-		return err
-	}
+func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string, apps []Application) error {
 	return p.deleteApps(FilterOldApps(appName, apps))
 }
 

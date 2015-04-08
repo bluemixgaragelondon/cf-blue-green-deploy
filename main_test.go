@@ -18,17 +18,15 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("the DeleteOldAppVersions function", func() {
 		Context("when there is an old version deployed", func() {
 			var connection *fakes.FakeCliConnection
+			apps := []plugin.Application{{Name: "app-name-20150326110000-old"}}
 
 			BeforeEach(func() {
 				connection = &fakes.FakeCliConnection{}
-				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					return []string{"{\"Apps\":[{\"Name\":\"app-name-20150326110000-old\"}]}"}, nil
-				}
 			})
 
 			It("deletes the old version", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteOldAppVersions("app-name")
+				p.DeleteOldAppVersions("app-name", apps)
 
 				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 					To(Equal("delete app-name-20150326110000-old -f -r"))
@@ -43,7 +41,7 @@ var _ = Describe("BGD Plugin", func() {
 
 				It("returns an error", func() {
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					err := p.DeleteOldAppVersions("app-name")
+					err := p.DeleteOldAppVersions("app-name", apps)
 
 					Expect(err).To(HaveOccurred())
 				})
@@ -52,38 +50,22 @@ var _ = Describe("BGD Plugin", func() {
 
 		Context("when there is no old version deployed", func() {
 			var connection *fakes.FakeCliConnection
+			apps := []plugin.Application{}
 
 			BeforeEach(func() {
 				connection = &fakes.FakeCliConnection{}
-				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					return []string{"{\"Apps\":[]}"}, nil
-				}
 			})
 
 			It("succeeds", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				err := p.DeleteOldAppVersions("app-name")
+				err := p.DeleteOldAppVersions("app-name", apps)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("deletes nothing", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteOldAppVersions("app-name")
+				p.DeleteOldAppVersions("app-name", apps)
 				Expect(connection.CliCommandCallCount()).To(Equal(0))
-			})
-		})
-
-		Context("when the list of apps in the current space can not be fetched", func() {
-			It("returns an error", func() {
-				connection := &fakes.FakeCliConnection{}
-				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					return nil, errors.New("Failed retrieving app names")
-				}
-
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				err := p.DeleteOldAppVersions("app-name")
-
-				Expect(err).To(MatchError("Failed retrieving app names"))
 			})
 		})
 	})
