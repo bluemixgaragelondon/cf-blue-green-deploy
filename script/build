@@ -1,23 +1,23 @@
 #!/bin/bash -e
 
-PLUGIN_NAME=blue-green-deploy
-
 . script/run_with_env
+
+PLUGIN_NAME="${PLUGIN_NAME:?Must be set in .env}"
+PLUGIN_VERSION="${PLUGIN_VERSION:?Must be set in .env}"
 
 script/test
 
-# plugin targets (GOOS, GOARCH)
-osx=(darwin amd64)
-linux32=(linux 386)
-linux64=(linux amd64)
+targets=(
+  "osx darwin amd64"
+  "linux32 linux 386"
+  "linux64 linux amd64"
+)
 
-for target in osx linux32 linux64; do
-  build_options=($(eval echo \${$target[@]}))
-  goos=${build_options[0]}
-  goarch=${build_options[1]}
+for target in "${targets[@]}"
+do
+  read platform goos goarch <<< $target
 
-  build_output="$PLUGIN_NAME.$target"
-  GOOS=$goos GOARCH=$goarch go build -o "$build_output"
-
-  mv "$build_output" artefacts
+  binary_name="${PLUGIN_NAME}.$platform"
+  GOOS="$goos" GOARCH="$goarch" go build -ldflags "-X main.PluginVersion ${PLUGIN_VERSION}" -o "$binary_name"
+  mv "$binary_name" artefacts
 done

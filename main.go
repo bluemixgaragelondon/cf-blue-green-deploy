@@ -12,6 +12,8 @@ import (
 	"github.com/cloudfoundry/cli/plugin"
 )
 
+var PluginVersion string
+
 type Application struct {
 	Name string
 }
@@ -43,12 +45,15 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
+	var major, minor, build int
+	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
+
 	return plugin.PluginMetadata{
 		Name: "blue-green-deploy",
 		Version: plugin.VersionType{
-			Major: 0,
-			Minor: 3,
-			Build: 0,
+			Major: major,
+			Minor: minor,
+			Build: build,
 		},
 		Commands: []plugin.Command{
 			{
