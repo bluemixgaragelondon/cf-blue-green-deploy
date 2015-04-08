@@ -6,7 +6,7 @@ ARGS="$@"
 main() {
   . script/run_with_env
   install_test_dependencies
-	set +e
+
   within_app use_vendored_packages
   within_app run_tests
   within_app prepare_code_coverage_results
