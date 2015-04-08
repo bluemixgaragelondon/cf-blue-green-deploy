@@ -55,15 +55,6 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeployPlugin) oldAppVersionList(appName string) (oldApps []Application, err error) {
-	apps, err := p.appsInCurrentSpace()
-	if err != nil {
-		return
-	}
-	oldApps = filterOldApps(appName, apps)
-	return
-}
-
 func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 	for _, app := range apps {
 		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
@@ -75,11 +66,11 @@ func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 }
 
 func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
-	appNames, err := p.oldAppVersionList(appName)
+	apps, err := p.appsInCurrentSpace()
 	if err != nil {
 		return err
 	}
-	return p.deleteApps(appNames)
+	return p.deleteApps(FilterOldApps(appName, apps))
 }
 
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
