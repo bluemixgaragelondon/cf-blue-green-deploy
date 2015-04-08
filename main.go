@@ -75,7 +75,7 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
-					Usage: "blue-green-deploy",
+					Usage: "blue-green-deploy APP_NAME [--integration-test TEST_SCRIPT]",
 					Options: map[string]string{
 						"integration-test": "The test script to run.",
 					},
