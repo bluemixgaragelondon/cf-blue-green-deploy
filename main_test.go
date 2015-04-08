@@ -2,7 +2,10 @@ package main_test
 
 import (
 	"errors"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -76,6 +79,18 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
+	Describe("the PushNewAppVersion function", func() {
+		It("pushes an app with the timestamp appended to its name", func() {
+			connection := &fakes.FakeCliConnection{}
+
+			p := plugin.BlueGreenDeployPlugin{Connection: connection}
+			p.PushNewAppVersion("app-name")
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`^push app-name-\d{14}$`))
+		})
+	})
+
 	Describe("old app filter", func() {
 		Context("when there are 2 old versions and 1 non-old version", func() {
 			appList := []plugin.Application{
@@ -102,6 +117,21 @@ var _ = Describe("BGD Plugin", func() {
 			It("doesn't return elements that have an additional suffix after -old", func() {
 				Expect(plugin.FilterOldApps("foo", appList)).ToNot(ContainElement(appList[4]))
 			})
+		})
+	})
+
+	Describe("app name generator", func() {
+		generated := plugin.GenerateAppName("foo")
+
+		It("uses the passed name as a prefix", func() {
+			Expect(generated).To(HavePrefix("foo"))
+		})
+
+		It("uses a timestamp as a suffix", func() {
+			now, _ := strconv.Atoi(time.Now().Format("20060102150405"))
+			genTimestamp, _ := strconv.Atoi(regexp.MustCompile(`\d{14}`).FindString(generated))
+
+			Expect(now - genTimestamp).To(BeNumerically("<", 5))
 		})
 	})
 })

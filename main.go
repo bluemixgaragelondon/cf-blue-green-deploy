@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
@@ -73,6 +74,11 @@ func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
 	return p.deleteApps(FilterOldApps(appName, apps))
 }
 
+func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) error {
+	_, err := p.Connection.CliCommand("push", fmt.Sprintf("%v-%v", appName, "12345678901234"))
+	return err
+}
+
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
@@ -108,6 +114,10 @@ func FilterOldApps(appName string, apps []Application) (oldApps []Application) {
 		}
 	}
 	return
+}
+
+func GenerateAppName(base string) string {
+	return fmt.Sprintf("%s-%s", base, time.Now().Format("20060102150405"))
 }
 
 func main() {
