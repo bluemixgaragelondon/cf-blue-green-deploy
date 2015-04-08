@@ -28,7 +28,11 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	}
 
 	appName := args[1]
-	p.DeleteOldAppVersions(appName)
+	err := p.DeleteOldAppVersions(appName)
+	if err != nil {
+		fmt.Printf("Could not delete old app version - %s", err.Error())
+		os.Exit(1)
+	}
 
 	fmt.Println("Hello world! The sky is all blue/green.")
 }
@@ -51,7 +55,7 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) (oldApps []Application, err error) {
+func (p *BlueGreenDeployPlugin) oldAppVersionList(appName string) (oldApps []Application, err error) {
 	apps, err := p.appsInCurrentSpace()
 	if err != nil {
 		return
@@ -60,7 +64,7 @@ func (p *BlueGreenDeployPlugin) OldAppVersionList(appName string) (oldApps []App
 	return
 }
 
-func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
+func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 	for _, app := range apps {
 		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
 			return err
@@ -71,15 +75,14 @@ func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
 }
 
 func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
-	appNames, err := p.OldAppVersionList(appName)
+	appNames, err := p.oldAppVersionList(appName)
 	if err != nil {
 		return err
 	}
-	return p.DeleteApps(appNames)
+	return p.deleteApps(appNames)
 }
 
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
-	var apps []Application
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
 	output, err := p.Connection.CliCommandWithoutTerminalOutput("curl", path)
@@ -87,8 +90,12 @@ func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
 		return nil, err
 	}
 
+	apps := struct {
+		Apps []Application
+	}{}
+
 	json.Unmarshal([]byte(output[0]), &apps)
-	return apps, nil
+	return apps.Apps, nil
 }
 
 func getSpaceGuid() string {
