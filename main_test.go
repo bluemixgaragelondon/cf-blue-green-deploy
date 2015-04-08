@@ -108,6 +108,26 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
+	Describe("the MapRoutesFromPreviousApp function", func() {
+		Context("when there was an app previously pushed", func() {
+			previousApp := plugin.Application{
+				Name: "foo",
+				Routes: []plugin.Route{
+					{Host: "foo", Domain: plugin.Domain{Name: "example.com"}},
+				},
+			}
+
+			It("maps the routes of the previous app to the new app", func() {
+				connection := &fakes.FakeCliConnection{}
+				p := plugin.BlueGreenDeployPlugin{Connection: connection}
+				p.MapRoutesFromPreviousApp("foo-12345", previousApp)
+
+				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+					To(Equal("map-route foo-12345 example.com -n foo"))
+			})
+		})
+	})
+
 	Describe("integration test script", func() {
 		Context("when integration test flag is not provided", func() {
 			It("returns empty string", func() {

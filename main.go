@@ -111,6 +111,13 @@ func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) (newAppName st
 	return
 }
 
+func (p *BlueGreenDeployPlugin) MapRoutesFromPreviousApp(appName string, previousApp Application) (err error) {
+	for _, route := range previousApp.Routes {
+		_, err = p.Connection.CliCommand("map-route", appName, route.Domain.Name, "-n", route.Host)
+	}
+	return
+}
+
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
