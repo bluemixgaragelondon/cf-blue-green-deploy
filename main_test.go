@@ -89,6 +89,24 @@ var _ = Describe("BGD Plugin", func() {
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`^push app-name-\d{14}$`))
 		})
+
+		Context("when the push fails", func() {
+			var connection *fakes.FakeCliConnection
+
+			BeforeEach(func() {
+				connection = &fakes.FakeCliConnection{}
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to push app")
+				}
+			})
+
+			It("returns an error", func() {
+				p := plugin.BlueGreenDeployPlugin{Connection: connection}
+				err := p.PushNewAppVersion("app-name")
+
+				Expect(err).To(MatchError("failed to push app"))
+			})
+		})
 	})
 
 	Describe("old app filter", func() {
