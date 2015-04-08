@@ -81,6 +81,14 @@ var _ = Describe("BGD Plugin", func() {
 				To(MatchRegexp(`^push app-name-\d{14}$`))
 		})
 
+		It("returns the new app name", func() {
+			connection := &fakes.FakeCliConnection{}
+			p := plugin.BlueGreenDeployPlugin{Connection: connection}
+			newAppName, _ := p.PushNewAppVersion("app-name")
+
+			Expect(newAppName).To(MatchRegexp(`^app-name-\d{14}$`))
+		})
+
 		Context("when the push fails", func() {
 			var connection *fakes.FakeCliConnection
 
@@ -93,7 +101,7 @@ var _ = Describe("BGD Plugin", func() {
 
 			It("returns an error", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				err := p.PushNewAppVersion("app-name")
+				_, err := p.PushNewAppVersion("app-name")
 
 				Expect(err).To(MatchError("failed to push app"))
 			})

@@ -51,11 +51,12 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
-	err = p.PushNewAppVersion(appName)
+	newAppName, err := p.PushNewAppVersion(appName)
 	if err != nil {
 		fmt.Printf("Could not push new version - %s", err.Error())
 		os.Exit(1)
 	}
+	fmt.Println("Deployed %s", newAppName)
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
@@ -99,9 +100,10 @@ func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string, apps []Appl
 	return p.deleteApps(FilterOldApps(appName, apps))
 }
 
-func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) error {
-	_, err := p.Connection.CliCommand("push", GenerateAppName(appName))
-	return err
+func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) (newAppName string, err error) {
+	newAppName = GenerateAppName(appName)
+	_, err = p.Connection.CliCommand("push", newAppName)
+	return
 }
 
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
