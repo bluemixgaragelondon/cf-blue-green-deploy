@@ -26,7 +26,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	p.Connection = cliConnection
 
 	if len(args) < 2 {
-		fmt.Printf("appname must be specified")
+		fmt.Printf("App name must be provided")
 		os.Exit(1)
 	}
 
