@@ -35,7 +35,11 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
-	fmt.Println("Hello world! The sky is all blue/green.")
+	err = p.PushNewAppVersion(appName)
+	if err != nil {
+		fmt.Printf("Could not push new version - %s", err.Error())
+		os.Exit(1)
+	}
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
@@ -75,7 +79,7 @@ func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string) error {
 }
 
 func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) error {
-	_, err := p.Connection.CliCommand("push", fmt.Sprintf("%v-%v", appName, "12345678901234"))
+	_, err := p.Connection.CliCommand("push", GenerateAppName(appName))
 	return err
 }
 
