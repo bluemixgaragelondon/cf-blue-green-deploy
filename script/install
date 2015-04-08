@@ -1,0 +1,14 @@
+#!/bin/bash
+# vim: set ft=sh
+
+. script/run_with_env
+. script/common
+
+PLUGIN_NAME="${PLUGIN_NAME:?Must be defined in .env}"
+
+main() {
+  uninstall_plugin "$PLUGIN_NAME"
+  install_plugin "$PLUGIN_NAME"
+}
+
+main
