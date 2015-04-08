@@ -21,3 +21,5 @@ do
   GOOS="$goos" GOARCH="$goarch" go build -ldflags "-X main.PluginVersion ${PLUGIN_VERSION}" -o "$binary_name"
   mv "$binary_name" artefacts
 done
+
+cp .env artefacts
