@@ -124,6 +124,23 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
+	Describe("integration test runner", func() {
+		It("returns stdout", func() {
+			out, _ := plugin.RunIntegrationTestScript("test/support/integration-test-script", "app.mybluemix.net")
+			Expect(out).To(ContainSubstring("STDOUT"))
+		})
+
+		It("returns stderr", func() {
+			out, _ := plugin.RunIntegrationTestScript("test/support/integration-test-script", "app.mybluemix.net")
+			Expect(out).To(ContainSubstring("STDERR"))
+		})
+
+		It("passes app FQDN as first argument", func() {
+			out, _ := plugin.RunIntegrationTestScript("test/support/integration-test-script", "app.mybluemix.net")
+			Expect(out).To(ContainSubstring("App FQDN is: app.mybluemix.net"))
+		})
+	})
+
 	Describe("old app filter", func() {
 		Context("when there are 2 old versions and 1 non-old version", func() {
 			appList := []plugin.Application{

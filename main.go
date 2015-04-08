@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"time"
 
@@ -56,6 +57,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		fmt.Printf("Could not push new version - %s", err.Error())
 		os.Exit(1)
 	}
+
 	fmt.Println("Deployed %s", newAppName)
 }
 
@@ -152,6 +154,12 @@ func ExtractIntegrationTestScript(args []string) string {
 	script := f.String("integration-test", "", "")
 	f.Parse(args[2:])
 	return *script
+}
+
+func RunIntegrationTestScript(script, appFQDN string) (string, error) {
+	out, err := exec.Command(script, appFQDN).CombinedOutput()
+
+	return string(out), err
 }
 
 func main() {

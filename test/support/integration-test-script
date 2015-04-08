@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "STDOUT" 
+echo "STDERR" >&2
+
+printf "App FQDN is: %s" "$1"
+
+[ "$1" != "fail" ] || exit 1
