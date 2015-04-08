@@ -51,15 +51,24 @@ var _ = Describe("BGD Plugin", func() {
 		})
 
 		Context("when there is no old version deployed", func() {
-			It("deletes nothing", func() {
-				connection := &fakes.FakeCliConnection{}
+			var connection *fakes.FakeCliConnection
+
+			BeforeEach(func() {
+				connection = &fakes.FakeCliConnection{}
 				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 					return []string{"{\"Apps\":[]}"}, nil
 				}
+			})
 
+			It("succeeds", func() {
+				p := plugin.BlueGreenDeployPlugin{Connection: connection}
+				err := p.DeleteOldAppVersions("app-name")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("deletes nothing", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
 				p.DeleteOldAppVersions("app-name")
-
 				Expect(connection.CliCommandCallCount()).To(Equal(0))
 			})
 		})
