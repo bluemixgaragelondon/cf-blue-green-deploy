@@ -82,4 +82,33 @@ var _ = Describe("BGD Plugin", func() {
 			})
 		})
 	})
+
+	Describe("old app filter", func() {
+		Context("when there are 2 old versions and 1 non-old version", func() {
+			appList := []plugin.Application{
+				{Name: "foo-20150408114041-old"},
+				{Name: "foo-20141234567348-old"},
+				{Name: "foo-20163453473845"},
+				{Name: "bar-foo-20141234567348-old"},
+				{Name: "foo-20141234567348-older"},
+			}
+
+			It("returns all apps that have the same name, with a valid timestamp and -old suffix", func() {
+				Expect(plugin.FilterOldApps("foo", appList)).To(ContainElement(appList[0]))
+				Expect(plugin.FilterOldApps("foo", appList)).To(ContainElement(appList[1]))
+			})
+
+			It("doesn't return any apps that don't have a -old suffix", func() {
+				Expect(plugin.FilterOldApps("foo", appList)).ToNot(ContainElement(appList[2]))
+			})
+
+			It("doesn't return elements that have an additional prefix before the app name", func() {
+				Expect(plugin.FilterOldApps("foo", appList)).ToNot(ContainElement(appList[3]))
+			})
+
+			It("doesn't return elements that have an additional suffix after -old", func() {
+				Expect(plugin.FilterOldApps("foo", appList)).ToNot(ContainElement(appList[4]))
+			})
+		})
+	})
 })

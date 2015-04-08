@@ -99,8 +99,8 @@ func getSpaceGuid() string {
 	return configRepo.SpaceFields().Guid
 }
 
-func filterOldApps(appName string, apps []Application) (oldApps []Application) {
-	r := regexp.MustCompile(fmt.Sprintf("%s-[0-9]{14}-old", appName))
+func FilterOldApps(appName string, apps []Application) (oldApps []Application) {
+	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}-old$", appName))
 	oldApps = []Application{}
 	for _, app := range apps {
 		if r.MatchString(app.Name) {
