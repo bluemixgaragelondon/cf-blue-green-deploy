@@ -2,3 +2,4 @@
 cf-blue-green-deploy
 coverage/*.html
 blue-green-deploy.*
+artefacts/
