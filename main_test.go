@@ -218,6 +218,21 @@ var _ = Describe("BGD Plugin", func() {
 				currentApp, oldApps = plugin.FilterApps("foo", appList)
 			})
 
+			Describe("current app", func() {
+				Context("when there is no current live app", func() {
+					It("returns an empty struct", func() {
+						app, _ := plugin.FilterApps("bar", appList)
+						Expect(app).To(BeNil())
+					})
+				})
+
+				Context("when there is a current live app", func() {
+					It("returns the current live app", func() {
+						Expect(*currentApp).To(Equal(appList[2]))
+					})
+				})
+			})
+
 			Describe("old app list", func() {
 				It("returns all apps that have the same name, with a valid timestamp and -old suffix", func() {
 					Expect(oldApps).To(ContainElement(appList[0]))

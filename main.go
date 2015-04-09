@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
@@ -153,11 +154,16 @@ func getSpaceGuid() string {
 }
 
 func FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
-	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}-old$", appName))
-	oldApps = []Application{}
-	for _, app := range apps {
-		if r.MatchString(app.Name) {
+	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}(-old)?$", appName))
+	for index, app := range apps {
+		if !r.MatchString(app.Name) {
+			continue
+		}
+
+		if strings.HasSuffix(app.Name, "-old") {
 			oldApps = append(oldApps, app)
+		} else {
+			currentApp = &apps[index]
 		}
 	}
 	return
