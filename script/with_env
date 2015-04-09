@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+ARGS=($@)
 
 main() {
   debug
@@ -8,7 +9,7 @@ main() {
   set_env_files
   source_env_files
   set_cf_home
-  "$@"
+  ${ARGS[*]}
 }
 
 debug() {
@@ -57,4 +58,4 @@ set_cf_home() {
   export CF_HOME="${CF_HOME:-$BASE_PATH}"
 }
 
-main "$@"
+main
