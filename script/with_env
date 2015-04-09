@@ -1,4 +1,7 @@
-#!/bin/bash -e
+#!/bin/bash
+
+# This will get sourced, important to be left in this format
+set -e
 
 ARGS=($@)
 
