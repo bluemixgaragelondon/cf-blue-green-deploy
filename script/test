@@ -4,7 +4,7 @@ APP_PKG_NAME="hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 ARGS="$@"
 
 main() {
-  . script/run_with_env
+  . script/with_env
   install_test_dependencies
 
   within_app use_vendored_packages

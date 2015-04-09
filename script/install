@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: set ft=sh
 
-. script/run_with_env
+. script/with_env
 . script/common
 
 PLUGIN_NAME="${PLUGIN_NAME:?Must be defined in .env}"

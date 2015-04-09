@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-. script/run_with_env
+. script/with_env
 
 PLUGIN_NAME="${PLUGIN_NAME:?Must be set in .env}"
 PLUGIN_VERSION="${PLUGIN_VERSION:?Must be set in .env}"
