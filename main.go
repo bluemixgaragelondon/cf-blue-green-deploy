@@ -82,9 +82,9 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
-					Usage: "blue-green-deploy APP_NAME [--integration-test TEST_SCRIPT]",
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT]",
 					Options: map[string]string{
-						"integration-test": "The test script to run.",
+						"smoke-test": "The test script to run.",
 					},
 				},
 			},
@@ -175,7 +175,7 @@ func GenerateAppName(base string) string {
 
 func ExtractIntegrationTestScript(args []string) string {
 	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
-	script := f.String("integration-test", "", "")
+	script := f.String("smoke-test", "", "")
 	f.Parse(args[2:])
 	return *script
 }
