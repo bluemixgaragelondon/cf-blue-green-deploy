@@ -114,6 +114,7 @@ var _ = Describe("BGD Plugin", func() {
 				Name: "foo",
 				Routes: []plugin.Route{
 					{Host: "foo", Domain: plugin.Domain{Name: "example.com"}},
+					{Host: "bar", Domain: plugin.Domain{Name: "mybluemix.net"}},
 				},
 			}
 
@@ -124,6 +125,8 @@ var _ = Describe("BGD Plugin", func() {
 
 				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 					To(Equal("map-route foo-12345 example.com -n foo"))
+				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
+					To(Equal("map-route foo-12345 mybluemix.net -n bar"))
 			})
 		})
 	})
