@@ -166,6 +166,13 @@ var _ = Describe("BGD Plugin", func() {
 				Expect(err.Error()).To(ContainSubstring("executable file not found"))
 			})
 		})
+
+		Context("when script isn't executable", func() {
+			It("fails with useful error", func() {
+				_, err := plugin.RunIntegrationTestScript("test/support/nonexec-integration-test-script", "app.mybluemix.net")
+				Expect(err.Error()).To(ContainSubstring("permission denied"))
+			})
+		})
 	})
 
 	Describe("old app filter", func() {
