@@ -102,7 +102,8 @@ func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 }
 
 func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string, apps []Application) error {
-	return p.deleteApps(FilterOldApps(appName, apps))
+	_, oldApps := FilterApps(appName, apps)
+	return p.deleteApps(oldApps)
 }
 
 func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) (newAppName string, err error) {
@@ -151,7 +152,7 @@ func getSpaceGuid() string {
 	return configRepo.SpaceFields().Guid
 }
 
-func FilterOldApps(appName string, apps []Application) (oldApps []Application) {
+func FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
 	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}-old$", appName))
 	oldApps = []Application{}
 	for _, app := range apps {
