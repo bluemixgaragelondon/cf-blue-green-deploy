@@ -32,7 +32,7 @@ run_tests() {
 }
 
 prepare_code_coverage_results() {
-	run_tests -cover > /dev/null 2>&1
+  run_tests -cover > /dev/null 2>&1
   find . -type f -iname "*.coverprofile" | while read; do
     go tool cover -html="$REPLY" -o="$REPLY.html"
     mv "$REPLY.html" coverage
