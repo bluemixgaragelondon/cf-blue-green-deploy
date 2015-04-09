@@ -159,6 +159,13 @@ var _ = Describe("BGD Plugin", func() {
 			out, _ := plugin.RunIntegrationTestScript("test/support/integration-test-script", "app.mybluemix.net")
 			Expect(out).To(ContainSubstring("App FQDN is: app.mybluemix.net"))
 		})
+
+		Context("when script doesn't exist", func() {
+			It("fails with useful error", func() {
+				_, err := plugin.RunIntegrationTestScript("inexistent-integration-test-script", "app.mybluemix.net")
+				Expect(err.Error()).To(ContainSubstring("executable file not found in $PATH"))
+			})
+		})
 	})
 
 	Describe("old app filter", func() {
