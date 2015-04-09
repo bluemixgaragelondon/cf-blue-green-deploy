@@ -4,11 +4,14 @@ main() {
   . script/with_env
   . script/common
 
-  script/setup
-  script/build
-  script/install
+  if [ -z "$TURBO" ]
+  then
+    script/setup
+    script/build
+    script/install
 
-  push_example_apps
+    push_example_apps
+  fi
 }
 
 main
