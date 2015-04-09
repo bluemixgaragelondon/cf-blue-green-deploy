@@ -1,5 +1,13 @@
 #!/bin/bash
 
+trap cleanup EXIT
+
+cleanup() {
+  TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
+
+  rm -f "$TEST_ACCEPTANCE_LOG"
+}
+
 main() {
   . script/with_env
   . script/common
@@ -11,6 +19,24 @@ main() {
     script/install
 
     push_example_apps
+  fi
+
+  pushd acceptance/app >/dev/null
+    assert_plugin_output_includes_successful_smoke_test_output
+  popd >/dev/null
+}
+
+assert_plugin_output_includes_successful_smoke_test_output() {
+  TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
+
+  local smoke_test_script="script/smoke_test"
+  local smoke_test_output="Hello world from my Go program!"
+
+  cf bgd cf-blue-green-deploy-test-app --smoke-test "$smoke_test_script" | tee "$TEST_ACCEPTANCE_LOG"
+  if ! grep "$smoke_test_output" "$TEST_ACCEPTANCE_LOG"
+  then
+    printf "\n\nExpected cf bgd to include '%s' from %s output\n" "$smoke_test_output" "$smoke_test_script"
+    exit 1
   fi
 }
 
