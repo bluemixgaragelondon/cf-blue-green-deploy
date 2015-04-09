@@ -50,7 +50,9 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	}
 
 	appName := args[1]
-	err = p.DeleteOldAppVersions(appName, appsInSpace)
+	_, oldAppVersions := FilterApps(appName, appsInSpace)
+
+	err = p.DeleteApps(oldAppVersions)
 	if err != nil {
 		fmt.Printf("Could not delete old app version - %s", err.Error())
 		os.Exit(1)
@@ -92,7 +94,7 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
+func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
 	for _, app := range apps {
 		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
 			return err
@@ -100,11 +102,6 @@ func (p *BlueGreenDeployPlugin) deleteApps(apps []Application) error {
 	}
 
 	return nil
-}
-
-func (p *BlueGreenDeployPlugin) DeleteOldAppVersions(appName string, apps []Application) error {
-	_, oldApps := FilterApps(appName, apps)
-	return p.deleteApps(oldApps)
 }
 
 func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) (newAppName string, err error) {

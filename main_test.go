@@ -15,24 +15,29 @@ import (
 )
 
 var _ = Describe("BGD Plugin", func() {
-	Describe("the DeleteOldAppVersions function", func() {
+	Describe("the DeleteApps function", func() {
 		Context("when there is an old version deployed", func() {
 			var connection *fakes.FakeCliConnection
-			apps := []plugin.Application{{Name: "app-name-20150326110000-old"}}
+			apps := []plugin.Application{
+				{Name: "app-name-20150326110000-old"},
+				{Name: "app-name-20150325110000-old"},
+			}
 
 			BeforeEach(func() {
 				connection = &fakes.FakeCliConnection{}
 			})
 
-			It("deletes the old version", func() {
+			It("deletes the apps", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteOldAppVersions("app-name", apps)
+				p.DeleteApps(apps)
 
 				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 					To(Equal("delete app-name-20150326110000-old -f -r"))
+				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
+					To(Equal("delete app-name-20150325110000-old -f -r"))
 			})
 
-			Context("when the deletion of an old app fails", func() {
+			Context("when the deletion of an app fails", func() {
 				BeforeEach(func() {
 					connection.CliCommandStub = func(args ...string) ([]string, error) {
 						return nil, errors.New("failed to delete app")
@@ -41,7 +46,7 @@ var _ = Describe("BGD Plugin", func() {
 
 				It("returns an error", func() {
 					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					err := p.DeleteOldAppVersions("app-name", apps)
+					err := p.DeleteApps(apps)
 
 					Expect(err).To(HaveOccurred())
 				})
@@ -58,13 +63,13 @@ var _ = Describe("BGD Plugin", func() {
 
 			It("succeeds", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				err := p.DeleteOldAppVersions("app-name", apps)
+				err := p.DeleteApps(apps)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("deletes nothing", func() {
 				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteOldAppVersions("app-name", apps)
+				p.DeleteApps(apps)
 				Expect(connection.CliCommandCallCount()).To(Equal(0))
 			})
 		})
