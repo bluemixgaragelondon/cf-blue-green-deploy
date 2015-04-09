@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-ARGS=($@)
+GINKGO_ARGS=($@)
 
 main() {
   . script/with_env
@@ -28,7 +28,7 @@ use_vendored_packages() {
 }
 
 run_tests() {
-  ginkgo ${ARGS[*]} -r -randomizeAllSpecs
+  ginkgo ${GINKGO_ARGS[*]} -r -randomizeAllSpecs
 }
 
 prepare_code_coverage_results() {
