@@ -6,9 +6,7 @@ main() {
 
   script/setup
   script/build
-
-  uninstall_plugin blue-green-deploy
-  install_plugin blue-green-deploy
+  script/install
 
   push_example_apps
 }
