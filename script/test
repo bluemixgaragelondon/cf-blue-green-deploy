@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 APP_PKG_NAME="hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
-ARGS="$@"
+ARGS=($@)
 
 main() {
   . script/with_env
@@ -29,7 +29,7 @@ use_vendored_packages() {
 }
 
 run_tests() {
-  ginkgo $ARGS -r -randomizeAllSpecs
+  ginkgo ${ARGS[*]} -r -randomizeAllSpecs
 }
 
 prepare_code_coverage_results() {
