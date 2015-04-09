@@ -50,7 +50,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	}
 
 	appName := args[1]
-	_, oldAppVersions := FilterApps(appName, appsInSpace)
+	previousLiveApp, oldAppVersions := FilterApps(appName, appsInSpace)
 
 	err = p.DeleteApps(oldAppVersions)
 	if err != nil {
@@ -64,6 +64,25 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
+	integrationTestPassed := true
+	if !integrationTestPassed {
+		fmt.Println("Integration test failed")
+		os.Exit(1)
+	}
+
+	if previousLiveApp != nil {
+		err = p.MapRoutesFromPreviousApp(newAppName, *previousLiveApp)
+		if err != nil {
+			fmt.Printf("Could not map all routes to new app - %s", err.Error())
+			os.Exit(1)
+		}
+
+		err = p.UnmapAllRoutes(*previousLiveApp)
+		if err != nil {
+			fmt.Printf("Could not unmap all routes from previous app version - %s", err.Error())
+			os.Exit(1)
+		}
+	}
 	fmt.Println("Deployed %s", newAppName)
 }
 
