@@ -131,6 +131,27 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
+	Describe("the UnmapAllRoutes function", func() {
+		It("unmaps all routes from the app", func() {
+			app := plugin.Application{
+				Name: "foo",
+				Routes: []plugin.Route{
+					{Host: "foo", Domain: plugin.Domain{Name: "example.com"}},
+					{Host: "bar", Domain: plugin.Domain{Name: "mybluemix.net"}},
+				},
+			}
+
+			connection := &fakes.FakeCliConnection{}
+			p := plugin.BlueGreenDeployPlugin{Connection: connection}
+			p.UnmapAllRoutes(app)
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(Equal("unmap-route foo example.com -n foo"))
+			Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
+				To(Equal("unmap-route foo mybluemix.net -n bar"))
+		})
+	})
+
 	Describe("integration test script", func() {
 		Context("when integration test flag is not provided", func() {
 			It("returns empty string", func() {

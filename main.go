@@ -118,6 +118,13 @@ func (p *BlueGreenDeployPlugin) MapRoutesFromPreviousApp(appName string, previou
 	return
 }
 
+func (p *BlueGreenDeployPlugin) UnmapAllRoutes(app Application) (err error) {
+	for _, route := range app.Routes {
+		_, err = p.Connection.CliCommand("unmap-route", app.Name, route.Domain.Name, "-n", route.Host)
+	}
+	return
+}
+
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
