@@ -1,0 +1,3 @@
+#!/bin/bash
+
+curl -svL "$1"
