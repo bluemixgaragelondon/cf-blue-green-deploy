@@ -83,7 +83,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 			os.Exit(1)
 		}
 	}
-	fmt.Println("Deployed %s", newAppName)
+	fmt.Printf("Deployed %s", newAppName)
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
