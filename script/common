@@ -37,8 +37,10 @@ install_plugin() {
 push_example_apps() {
   pushd acceptance/app
     login_to_bluemix
-    cf push cf-blue-green-deploy-test-app-20150326162620-old
-    cf push cf-blue-green-deploy-test-app-20150326162644
+    push_date=$(date +%Y%m%d%H%M%S)
+    cf push cf-blue-green-deploy-test-app-$((push_date - 10000))-old
+    cf push cf-blue-green-deploy-test-app-"$push_date"
+    cf map-route cf-blue-green-deploy-test-app-"$push_date" eu-gb.mybluemix.net -n "$CF_SPACE"
   popd
 }
 
