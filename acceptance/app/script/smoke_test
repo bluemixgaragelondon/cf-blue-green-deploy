@@ -1,3 +1,5 @@
 #!/bin/bash
 
-curl -svL "$1"
+app_fqdn="$1"
+
+curl -svL "$app_fqdn"
