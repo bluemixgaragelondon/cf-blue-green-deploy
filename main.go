@@ -32,7 +32,8 @@ type Domain struct {
 }
 
 type BlueGreenDeployPlugin struct {
-	Connection plugin.CliConnection
+	Connection      plugin.CliConnection
+	BlueGreenDeploy BlueGreenDeploy
 }
 
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
@@ -203,5 +204,5 @@ func RunIntegrationTestScript(script, appFQDN string) (string, error) {
 }
 
 func main() {
-	plugin.Start(&BlueGreenDeployPlugin{})
+	plugin.Start(&BlueGreenDeployPlugin{BlueGreenDeploy: BlueGreenDeploy{}})
 }
