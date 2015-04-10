@@ -17,20 +17,6 @@ import (
 
 var PluginVersion string
 
-type Application struct {
-	Name   string
-	Routes []Route
-}
-
-type Route struct {
-	Host   string
-	Domain Domain
-}
-
-type Domain struct {
-	Name string
-}
-
 type BlueGreenDeployPlugin struct {
 	Connection      plugin.CliConnection
 	BlueGreenDeploy BlueGreenDeploy
@@ -38,6 +24,7 @@ type BlueGreenDeployPlugin struct {
 
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
+	p.BlueGreenDeploy.Connection = cliConnection
 
 	if len(args) < 2 {
 		fmt.Printf("App name must be provided")
@@ -53,37 +40,20 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	appName := args[1]
 	previousLiveApp, oldAppVersions := FilterApps(appName, appsInSpace)
 
-	err = p.DeleteApps(oldAppVersions)
-	if err != nil {
-		fmt.Printf("Could not delete old app version - %s", err.Error())
-		os.Exit(1)
-	}
+	p.BlueGreenDeploy.DeleteAppVersions(oldAppVersions)
 
-	newAppName, err := p.PushNewAppVersion(appName)
-	if err != nil {
-		fmt.Printf("Could not push new version - %s", err.Error())
-		os.Exit(1)
-	}
+	newAppName := p.BlueGreenDeploy.PushNewAppVersion(appName)
+	newLiveApp := Application{Name: newAppName}
 
-	integrationTestPassed := true
-	if !integrationTestPassed {
-		fmt.Println("Integration test failed")
-		os.Exit(1)
+	smokeTestScript := ExtractIntegrationTestScript(args)
+	if smokeTestScript != "" {
+		p.BlueGreenDeploy.RunSmokeTests(smokeTestScript, "google.co.uk")
 	}
 
 	if previousLiveApp != nil {
-		err = p.MapRoutesFromPreviousApp(newAppName, *previousLiveApp)
-		if err != nil {
-			fmt.Printf("Could not map all routes to new app - %s", err.Error())
-			os.Exit(1)
-		}
-
-		err = p.UnmapAllRoutes(*previousLiveApp)
-		if err != nil {
-			fmt.Printf("Could not unmap all routes from previous app version - %s", err.Error())
-			os.Exit(1)
-		}
+		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*previousLiveApp, newLiveApp)
 	}
+
 	fmt.Printf("Deployed %s", newAppName)
 }
 
@@ -204,5 +174,14 @@ func RunIntegrationTestScript(script, appFQDN string) (string, error) {
 }
 
 func main() {
-	plugin.Start(&BlueGreenDeployPlugin{BlueGreenDeploy: BlueGreenDeploy{}})
+	p := BlueGreenDeployPlugin{
+		BlueGreenDeploy: BlueGreenDeploy{
+			ErrorFunc: func(message string, err error) {
+				fmt.Printf("%v - %v\n", message, err)
+				os.Exit(1)
+			},
+		},
+	}
+
+	plugin.Start(&p)
 }
