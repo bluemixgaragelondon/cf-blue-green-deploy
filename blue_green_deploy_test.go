@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/cloudfoundry/cli/plugin/fakes"
@@ -10,12 +11,26 @@ import (
 )
 
 var _ = Describe("BlueGreenDeploy", func() {
+	var (
+		bgdErrors     []error
+		connection    *fakes.FakeCliConnection
+		p             BlueGreenDeploy
+		testErrorFunc func(message string, err error)
+	)
+
+	BeforeEach(func() {
+		bgdErrors = []error{}
+		testErrorFunc = func(message string, err error) {
+			bgdErrors = append(bgdErrors, err)
+		}
+
+		connection = &fakes.FakeCliConnection{}
+		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc}
+	})
+
 	Describe("RemapRoutesFromLiveappToNewApp", func() {
 		var (
-			connection      *fakes.FakeCliConnection
 			liveApp, newApp Application
-			errors          []error
-			p               BlueGreenDeploy
 		)
 
 		BeforeEach(func() {
@@ -29,13 +44,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 			newApp = Application{
 				Name: "new",
 			}
-
-			connection = &fakes.FakeCliConnection{}
-			errors = []error{}
-			testErrorFunc := func(message string, err error) {
-				errors = append(errors)
-			}
-			p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc}
 		})
 
 		It("map and unmaps routes from live app to the new app", func() {
@@ -48,6 +56,81 @@ var _ = Describe("BlueGreenDeploy", func() {
 				"map-route new example.com -n live",
 				"unmap-route live-20150410155216 example.com -n live",
 			}))
+		})
+	})
+
+	Describe("the DeleteAppVersions function", func() {
+		Context("when there is an old version deployed", func() {
+			apps := []Application{
+				{Name: "app-name-20150326110000-old"},
+				{Name: "app-name-20150325110000-old"},
+			}
+
+			It("deletes the apps", func() {
+				p.DeleteAppVersions(apps)
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-20150326110000-old -f -r",
+					"delete app-name-20150325110000-old -f -r",
+				}))
+			})
+
+			Context("when the deletion of an app fails", func() {
+				BeforeEach(func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("failed to delete app")
+					}
+				})
+
+				It("returns an error", func() {
+					p.DeleteAppVersions(apps)
+					Expect(bgdErrors[0]).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when there is no old version deployed", func() {
+			apps := []Application{}
+
+			It("succeeds", func() {
+				p.DeleteAppVersions(apps)
+				Expect(bgdErrors).To(HaveLen(0))
+			})
+
+			It("deletes nothing", func() {
+				p.DeleteAppVersions(apps)
+				Expect(connection.CliCommandCallCount()).To(Equal(0))
+			})
+		})
+	})
+
+	Describe("the PushNewAppVersion function", func() {
+		It("pushes an app with the timestamp appended to its name", func() {
+			p.PushNewAppVersion("app-name")
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`^push app-name-\d{14}$`))
+		})
+
+		It("returns the new app name", func() {
+			newAppName := p.PushNewAppVersion("app-name")
+
+			Expect(newAppName).To(MatchRegexp(`^app-name-\d{14}$`))
+		})
+
+		Context("when the push fails", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to push app")
+				}
+			})
+
+			It("returns an error", func() {
+				p.PushNewAppVersion("app-name")
+
+				Expect(bgdErrors[0]).To(MatchError("failed to push app"))
+			})
 		})
 	})
 })

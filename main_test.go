@@ -1,162 +1,16 @@
 package main_test
 
 import (
-	"errors"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	plugin "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
-
-	"github.com/cloudfoundry/cli/plugin/fakes"
 )
 
 var _ = Describe("BGD Plugin", func() {
-	Describe("the DeleteApps function", func() {
-		Context("when there is an old version deployed", func() {
-			var connection *fakes.FakeCliConnection
-			apps := []plugin.Application{
-				{Name: "app-name-20150326110000-old"},
-				{Name: "app-name-20150325110000-old"},
-			}
-
-			BeforeEach(func() {
-				connection = &fakes.FakeCliConnection{}
-			})
-
-			It("deletes the apps", func() {
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteApps(apps)
-
-				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-					To(Equal("delete app-name-20150326110000-old -f -r"))
-				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
-					To(Equal("delete app-name-20150325110000-old -f -r"))
-			})
-
-			Context("when the deletion of an app fails", func() {
-				BeforeEach(func() {
-					connection.CliCommandStub = func(args ...string) ([]string, error) {
-						return nil, errors.New("failed to delete app")
-					}
-				})
-
-				It("returns an error", func() {
-					p := plugin.BlueGreenDeployPlugin{Connection: connection}
-					err := p.DeleteApps(apps)
-
-					Expect(err).To(HaveOccurred())
-				})
-			})
-		})
-
-		Context("when there is no old version deployed", func() {
-			var connection *fakes.FakeCliConnection
-			apps := []plugin.Application{}
-
-			BeforeEach(func() {
-				connection = &fakes.FakeCliConnection{}
-			})
-
-			It("succeeds", func() {
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				err := p.DeleteApps(apps)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("deletes nothing", func() {
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.DeleteApps(apps)
-				Expect(connection.CliCommandCallCount()).To(Equal(0))
-			})
-		})
-	})
-
-	Describe("the PushNewAppVersion function", func() {
-		It("pushes an app with the timestamp appended to its name", func() {
-			connection := &fakes.FakeCliConnection{}
-
-			p := plugin.BlueGreenDeployPlugin{Connection: connection}
-			p.PushNewAppVersion("app-name")
-
-			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(MatchRegexp(`^push app-name-\d{14}$`))
-		})
-
-		It("returns the new app name", func() {
-			connection := &fakes.FakeCliConnection{}
-			p := plugin.BlueGreenDeployPlugin{Connection: connection}
-			newAppName, _ := p.PushNewAppVersion("app-name")
-
-			Expect(newAppName).To(MatchRegexp(`^app-name-\d{14}$`))
-		})
-
-		Context("when the push fails", func() {
-			var connection *fakes.FakeCliConnection
-
-			BeforeEach(func() {
-				connection = &fakes.FakeCliConnection{}
-				connection.CliCommandStub = func(args ...string) ([]string, error) {
-					return nil, errors.New("failed to push app")
-				}
-			})
-
-			It("returns an error", func() {
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				_, err := p.PushNewAppVersion("app-name")
-
-				Expect(err).To(MatchError("failed to push app"))
-			})
-		})
-	})
-
-	Describe("the MapRoutesFromPreviousApp function", func() {
-		Context("when there was an app previously pushed", func() {
-			previousApp := plugin.Application{
-				Name: "foo",
-				Routes: []plugin.Route{
-					{Host: "foo", Domain: plugin.Domain{Name: "example.com"}},
-					{Host: "bar", Domain: plugin.Domain{Name: "mybluemix.net"}},
-				},
-			}
-
-			It("maps the routes of the previous app to the new app", func() {
-				connection := &fakes.FakeCliConnection{}
-				p := plugin.BlueGreenDeployPlugin{Connection: connection}
-				p.MapRoutesFromPreviousApp("foo-12345", previousApp)
-
-				Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-					To(Equal("map-route foo-12345 example.com -n foo"))
-				Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
-					To(Equal("map-route foo-12345 mybluemix.net -n bar"))
-			})
-		})
-	})
-
-	Describe("the UnmapAllRoutes function", func() {
-		It("unmaps all routes from the app", func() {
-			app := plugin.Application{
-				Name: "foo",
-				Routes: []plugin.Route{
-					{Host: "foo", Domain: plugin.Domain{Name: "example.com"}},
-					{Host: "bar", Domain: plugin.Domain{Name: "mybluemix.net"}},
-				},
-			}
-
-			connection := &fakes.FakeCliConnection{}
-			p := plugin.BlueGreenDeployPlugin{Connection: connection}
-			p.UnmapAllRoutes(app)
-
-			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(Equal("unmap-route foo example.com -n foo"))
-			Expect(strings.Join(connection.CliCommandArgsForCall(1), " ")).
-				To(Equal("unmap-route foo mybluemix.net -n bar"))
-		})
-	})
-
 	Describe("smoke test script", func() {
 		Context("when smoke test flag is not provided", func() {
 			It("returns empty string", func() {

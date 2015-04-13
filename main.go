@@ -84,36 +84,6 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *BlueGreenDeployPlugin) DeleteApps(apps []Application) error {
-	for _, app := range apps {
-		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (p *BlueGreenDeployPlugin) PushNewAppVersion(appName string) (newAppName string, err error) {
-	newAppName = GenerateAppName(appName)
-	_, err = p.Connection.CliCommand("push", newAppName)
-	return
-}
-
-func (p *BlueGreenDeployPlugin) MapRoutesFromPreviousApp(appName string, previousApp Application) (err error) {
-	for _, route := range previousApp.Routes {
-		_, err = p.Connection.CliCommand("map-route", appName, route.Domain.Name, "-n", route.Host)
-	}
-	return
-}
-
-func (p *BlueGreenDeployPlugin) UnmapAllRoutes(app Application) (err error) {
-	for _, route := range app.Routes {
-		_, err = p.Connection.CliCommand("unmap-route", app.Name, route.Domain.Name, "-n", route.Host)
-	}
-	return
-}
-
 func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
