@@ -9,14 +9,6 @@ import (
 
 type ErrorHandler func(string, error)
 
-type BlueGreen interface {
-	Run() error
-	PushNewAppVersion(string) string
-	DeleteAppVersions([]Application)
-	RunSmokeTests(string, string)
-	RemapRoutesFromLiveAppToNewApp(Application, Application)
-}
-
 type BlueGreenDeploy struct {
 	Connection plugin.CliConnection
 	ErrorFunc  ErrorHandler
