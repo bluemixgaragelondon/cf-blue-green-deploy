@@ -113,10 +113,10 @@ var _ = Describe("BlueGreenDeploy", func() {
 				To(MatchRegexp(`^push app-name-\d{14}$`))
 		})
 
-		It("returns the new app name", func() {
-			newAppName := p.PushNewAppVersion("app-name")
+		It("returns the new app as an Application", func() {
+			var newApp Application = p.PushNewAppVersion("app-name")
 
-			Expect(newAppName).To(MatchRegexp(`^app-name-\d{14}$`))
+			Expect(newApp.Name).To(MatchRegexp(`^app-name-\d{14}$`))
 		})
 
 		Context("when the push fails", func() {

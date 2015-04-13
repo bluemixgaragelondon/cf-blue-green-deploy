@@ -42,8 +42,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 
 	p.BlueGreenDeploy.DeleteAppVersions(oldAppVersions)
 
-	newAppName := p.BlueGreenDeploy.PushNewAppVersion(appName)
-	newLiveApp := Application{Name: newAppName}
+	newLiveApp := p.BlueGreenDeploy.PushNewAppVersion(appName)
 
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
@@ -54,7 +53,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*previousLiveApp, newLiveApp)
 	}
 
-	fmt.Printf("Deployed %s", newAppName)
+	fmt.Printf("Deployed %s", newLiveApp.Name)
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {

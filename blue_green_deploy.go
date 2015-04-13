@@ -22,9 +22,9 @@ func (p *BlueGreenDeploy) DeleteAppVersions(apps []Application) {
 	}
 }
 
-func (p *BlueGreenDeploy) PushNewAppVersion(appName string) (newAppName string) {
-	newAppName = GenerateAppName(appName)
-	if _, err := p.Connection.CliCommand("push", newAppName); err != nil {
+func (p *BlueGreenDeploy) PushNewAppVersion(appName string) (newApp Application) {
+	newApp.Name = GenerateAppName(appName)
+	if _, err := p.Connection.CliCommand("push", newApp.Name); err != nil {
 		p.ErrorFunc("Could not push new version", err)
 	}
 
