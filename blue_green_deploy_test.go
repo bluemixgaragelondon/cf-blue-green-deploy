@@ -106,6 +106,15 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("the PushNewAppVersion function", func() {
+		var (
+			appLister *fakeAppLister
+		)
+
+		BeforeEach(func() {
+			appLister = &fakeAppLister{Apps: []Application{}}
+			p.AppLister = appLister
+		})
+
 		It("pushes an app with the timestamp appended to its name", func() {
 			p.PushNewAppVersion("app-name")
 
@@ -114,9 +123,22 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("returns the new app as an Application", func() {
+			// stubbing cf push so it appends the newly pushed app to the list of
+			// fixtures for testing subsequent operations
+			connection.CliCommandStub = func(args ...string) ([]string, error) {
+				appLister.Apps = append(appLister.Apps, Application{
+					Name: args[1],
+					Routes: []Route{
+						{
+							Host: "testroute",
+						},
+					}})
+				return nil, nil
+			}
 			var newApp Application = p.PushNewAppVersion("app-name")
 
 			Expect(newApp.Name).To(MatchRegexp(`^app-name-\d{14}$`))
+			Expect(newApp.Routes[0].Host).To(Equal("testroute"))
 		})
 
 		Context("when the push fails", func() {
@@ -142,4 +164,12 @@ func getAllCfCommands(connection *fakes.FakeCliConnection) (commands []string) {
 		commands = append(commands, strings.Join(args, " "))
 	}
 	return
+}
+
+type fakeAppLister struct {
+	Apps []Application
+}
+
+func (l *fakeAppLister) AppsInCurrentSpace() ([]Application, error) {
+	return l.Apps, nil
 }

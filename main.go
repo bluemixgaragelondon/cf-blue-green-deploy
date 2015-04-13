@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
-	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/plugin"
 )
 
@@ -31,7 +28,7 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
-	appsInSpace, err := p.appsInCurrentSpace()
+	appsInSpace, err := p.BlueGreenDeploy.AppLister.AppsInCurrentSpace()
 	if err != nil {
 		fmt.Printf("Could not load apps in space, are you logged in? - %s", err.Error())
 		os.Exit(1)
@@ -81,32 +78,6 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 			},
 		},
 	}
-}
-
-func (p *BlueGreenDeployPlugin) appsInCurrentSpace() ([]Application, error) {
-	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
-
-	output, err := p.Connection.CliCommandWithoutTerminalOutput("curl", path)
-	if err != nil {
-		return nil, err
-	}
-
-	apps := struct {
-		Apps []Application
-	}{}
-
-	json.Unmarshal([]byte(output[0]), &apps)
-	return apps.Apps, nil
-}
-
-func getSpaceGuid() string {
-	configRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), func(err error) {
-		if err != nil {
-			fmt.Printf("Config error: %s", err)
-		}
-	})
-
-	return configRepo.SpaceFields().Guid
 }
 
 func FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
