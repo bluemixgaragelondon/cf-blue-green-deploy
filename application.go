@@ -40,3 +40,7 @@ func (a *Application) DefaultRouteWhenWeWillCorrectlySetTheAppNameFromTheCommand
 
 	return Route{}
 }
+
+func (r Route) FQDN() string {
+	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
+}

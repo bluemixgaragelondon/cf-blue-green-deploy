@@ -22,6 +22,7 @@ type BlueGreenDeployPlugin struct {
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
 	p.BlueGreenDeploy.Connection = cliConnection
+	p.BlueGreenDeploy.AppLister = &CfCurlAppLister{Connection: cliConnection}
 
 	if len(args) < 2 {
 		fmt.Printf("App name must be provided")
@@ -39,18 +40,18 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 
 	p.BlueGreenDeploy.DeleteAppVersions(oldAppVersions)
 
-	newLiveApp := p.BlueGreenDeploy.PushNewAppVersion(appName)
+	newApp := p.BlueGreenDeploy.PushNewAppVersion(appName)
 
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
-		p.BlueGreenDeploy.RunSmokeTests(smokeTestScript, "google.co.uk")
+		p.BlueGreenDeploy.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
 	}
 
 	if previousLiveApp != nil {
-		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*previousLiveApp, newLiveApp)
+		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*previousLiveApp, newApp)
 	}
 
-	fmt.Printf("Deployed %s", newLiveApp.Name)
+	fmt.Printf("Deployed %s", newApp.Name)
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {

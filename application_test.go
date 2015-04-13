@@ -26,3 +26,12 @@ var _ = Describe("Application", func() {
 		})
 	})
 })
+
+var _ = Describe("Route", func() {
+	Describe("FQDN()", func() {
+		It("returns the fqdn of the route", func() {
+			route := Route{Host: "testroute", Domain: Domain{Name: "example.com"}}
+			Expect(route.FQDN()).To(Equal("testroute.example.com"))
+		})
+	})
+})
