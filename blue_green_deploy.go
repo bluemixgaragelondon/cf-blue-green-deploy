@@ -14,7 +14,7 @@ import (
 
 type ErrorHandler func(string, error)
 
-type BlueGreen interface {
+type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
 	PushNewApp(string) Application
 	DeleteAllAppsExceptLiveApp(string)

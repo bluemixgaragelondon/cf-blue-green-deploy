@@ -12,14 +12,14 @@ import (
 
 var PluginVersion string
 
-type BlueGreenDeployPlugin struct {
-	Connection      plugin.CliConnection
-	BlueGreenDeploy BlueGreen
+type CfPlugin struct {
+	Connection plugin.CliConnection
+	Deployer   BlueGreenDeployer
 }
 
-func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
-	p.BlueGreenDeploy.Setup(cliConnection)
+	p.Deployer.Setup(cliConnection)
 
 	if len(args) < 2 {
 		fmt.Printf("App name must be provided")
@@ -28,21 +28,21 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 
 	appName := args[1]
 
-	p.BlueGreenDeploy.DeleteAllAppsExceptLiveApp(appName)
-	liveApp := p.BlueGreenDeploy.LiveApp(appName)
-	newApp := p.BlueGreenDeploy.PushNewApp(appName)
+	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
+	liveApp := p.Deployer.LiveApp(appName)
+	newApp := p.Deployer.PushNewApp(appName)
 
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
-		p.BlueGreenDeploy.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
+		p.Deployer.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
 	}
 
 	if liveApp != nil {
-		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
+		p.Deployer.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
 	}
 }
 
-func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
+func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 	var major, minor, build int
 	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
 
@@ -87,8 +87,8 @@ func RunIntegrationTestScript(script, appFQDN string) (string, error) {
 }
 
 func main() {
-	p := BlueGreenDeployPlugin{
-		BlueGreenDeploy: &BlueGreenDeploy{
+	p := CfPlugin{
+		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
 				fmt.Printf("%v - %v\n", message, err)
 				os.Exit(1)

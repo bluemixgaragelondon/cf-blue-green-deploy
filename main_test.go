@@ -79,14 +79,14 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("blue green flow", func() {
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
-				bgd := &BlueGreenDeployFake{liveApp: &Application{Name: "app-name-live"}}
-				p := BlueGreenDeployPlugin{
-					BlueGreenDeploy: bgd,
+				b := &BlueGreenDeployFake{liveApp: &Application{Name: "app-name-live"}}
+				p := CfPlugin{
+					Deployer: b,
 				}
 
 				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name"})
 
-				Expect(bgd.flow).To(Equal([]string{
+				Expect(b.flow).To(Equal([]string{
 					"setup",
 					"delete old apps",
 					"get current live app",
@@ -98,14 +98,14 @@ var _ = Describe("BGD Plugin", func() {
 
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
-				bgd := &BlueGreenDeployFake{liveApp: nil}
-				p := BlueGreenDeployPlugin{
-					BlueGreenDeploy: bgd,
+				b := &BlueGreenDeployFake{liveApp: nil}
+				p := CfPlugin{
+					Deployer: b,
 				}
 
 				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name"})
 
-				Expect(bgd.flow).To(Equal([]string{
+				Expect(b.flow).To(Equal([]string{
 					"setup",
 					"delete old apps",
 					"get current live app",
@@ -116,14 +116,14 @@ var _ = Describe("BGD Plugin", func() {
 
 		Context("when there is a smoke test defined", func() {
 			It("calls methods in correct order", func() {
-				bgd := &BlueGreenDeployFake{liveApp: nil}
-				p := BlueGreenDeployPlugin{
-					BlueGreenDeploy: bgd,
+				b := &BlueGreenDeployFake{liveApp: nil}
+				p := CfPlugin{
+					Deployer: b,
 				}
 
 				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
-				Expect(bgd.flow).To(Equal([]string{
+				Expect(b.flow).To(Equal([]string{
 					"setup",
 					"delete old apps",
 					"get current live app",
