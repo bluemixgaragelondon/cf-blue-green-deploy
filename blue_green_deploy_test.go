@@ -105,7 +105,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("the PushNewAppVersion function", func() {
+	Describe("pushing a new app", func() {
 		var (
 			appLister *fakeAppLister
 		)
@@ -116,7 +116,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("pushes an app with the timestamp appended to its name", func() {
-			p.PushNewAppVersion("app-name")
+			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`^push app-name-\d{14}$`))
@@ -135,7 +135,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 					}})
 				return nil, nil
 			}
-			var newApp Application = p.PushNewAppVersion("app-name")
+			var newApp Application = p.PushNewApp("app-name")
 
 			Expect(newApp.Name).To(MatchRegexp(`^app-name-\d{14}$`))
 			Expect(newApp.Routes[0].Host).To(Equal("testroute"))
@@ -149,12 +149,68 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 
 			It("returns an error", func() {
-				p.PushNewAppVersion("app-name")
+				p.PushNewApp("app-name")
 
 				Expect(bgdErrors[0]).To(MatchError("failed to push app"))
 			})
 		})
 	})
+
+	Describe("app filter", func() {
+		Context("when there are 2 old versions and 1 non-old version", func() {
+			var (
+				appList    []Application
+				currentApp *Application
+				oldApps    []Application
+			)
+
+			BeforeEach(func() {
+				appList = []Application{
+					{Name: "foo-20150408114041-old"},
+					{Name: "foo-20141234567348-old"},
+					{Name: "foo-20163453473845"},
+					{Name: "bar-foo-20141234567348-old"},
+					{Name: "foo-20141234567348-older"},
+				}
+				currentApp, oldApps = p.FilterApps("foo", appList)
+			})
+
+			Describe("current app", func() {
+				Context("when there is no current live app", func() {
+					It("returns an empty struct", func() {
+						app, _ := p.FilterApps("bar", appList)
+						Expect(app).To(BeNil())
+					})
+				})
+
+				Context("when there is a current live app", func() {
+					It("returns the current live app", func() {
+						Expect(*currentApp).To(Equal(appList[2]))
+					})
+				})
+			})
+
+			Describe("old app list", func() {
+				It("returns all apps that have the same name, with a valid timestamp and -old suffix", func() {
+					Expect(oldApps).To(ContainElement(appList[0]))
+					Expect(oldApps).To(ContainElement(appList[1]))
+				})
+
+				It("doesn't return any apps that don't have a -old suffix", func() {
+					Expect(oldApps).ToNot(ContainElement(appList[2]))
+				})
+
+				It("doesn't return elements that have an additional prefix before the app name", func() {
+					Expect(oldApps).ToNot(ContainElement(appList[3]))
+				})
+
+				It("doesn't return elements that have an additional suffix after -old", func() {
+					Expect(oldApps).ToNot(ContainElement(appList[4]))
+				})
+			})
+		})
+	})
+
 })
 
 func getAllCfCommands(connection *fakes.FakeCliConnection) (commands []string) {

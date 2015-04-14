@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"regexp"
+	"strings"
 
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
@@ -14,7 +16,7 @@ type ErrorHandler func(string, error)
 
 type BlueGreen interface {
 	Setup(plugin.CliConnection)
-	PushNewAppVersion(string) string
+	PushNewApp(string) string
 	DeleteAppVersions([]Application)
 	RunSmokeTests(string, string)
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
@@ -42,7 +44,16 @@ func (p *BlueGreenDeploy) DeleteAppVersions(apps []Application) {
 	}
 }
 
-func (p *BlueGreenDeploy) PushNewAppVersion(appName string) (newApp Application) {
+func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
+	appsInSpace, err := p.AppLister.AppsInCurrentSpace()
+	if err != nil {
+		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
+	}
+	_, oldAppVersions := p.FilterApps(appName, appsInSpace)
+	p.DeleteAppVersions(oldAppVersions)
+}
+
+func (p *BlueGreenDeploy) PushNewApp(appName string) (newApp Application) {
 	newApp.Name = GenerateAppName(appName)
 	if _, err := p.Connection.CliCommand("push", newApp.Name); err != nil {
 		p.ErrorFunc("Could not push new version", err)
@@ -55,6 +66,33 @@ func (p *BlueGreenDeploy) PushNewAppVersion(appName string) (newApp Application)
 			break
 		}
 	}
+
+	return
+}
+
+func (p *BlueGreenDeploy) FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
+	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}(-old)?$", appName))
+	for index, app := range apps {
+		if !r.MatchString(app.Name) {
+			continue
+		}
+
+		if strings.HasSuffix(app.Name, "-old") {
+			oldApps = append(oldApps, app)
+		} else {
+			currentApp = &apps[index]
+		}
+	}
+	return
+}
+
+func (p *BlueGreenDeploy) LiveApp(appName string) (liveApp *Application) {
+	appsInSpace, err := p.AppLister.AppsInCurrentSpace()
+	if err != nil {
+		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
+	}
+
+	liveApp, _ = p.FilterApps(appName, appsInSpace)
 
 	return
 }

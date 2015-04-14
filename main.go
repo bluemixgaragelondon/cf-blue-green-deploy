@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/cloudfoundry/cli/plugin"
@@ -28,26 +26,19 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 		os.Exit(1)
 	}
 
-	appsInSpace, err := p.BlueGreenDeploy.AppLister.AppsInCurrentSpace()
-	if err != nil {
-		fmt.Printf("Could not load apps in space, are you logged in? - %s", err.Error())
-		os.Exit(1)
-	}
-
 	appName := args[1]
-	previousLiveApp, oldAppVersions := FilterApps(appName, appsInSpace)
 
-	p.BlueGreenDeploy.DeleteAppVersions(oldAppVersions)
-
-	newApp := p.BlueGreenDeploy.PushNewAppVersion(appName)
+	p.BlueGreenDeploy.DeleteAllAppsExceptLiveApp(appName)
+	liveApp := p.BlueGreenDeploy.LiveApp(appName)
+	newApp := p.BlueGreenDeploy.PushNewApp(appName)
 
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
 		p.BlueGreenDeploy.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
 	}
 
-	if previousLiveApp != nil {
-		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*previousLiveApp, newApp)
+	if liveApp != nil {
+		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
 	}
 
 	fmt.Printf("Deployed %s", newApp.Name)
@@ -78,22 +69,6 @@ func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
 			},
 		},
 	}
-}
-
-func FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
-	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}(-old)?$", appName))
-	for index, app := range apps {
-		if !r.MatchString(app.Name) {
-			continue
-		}
-
-		if strings.HasSuffix(app.Name, "-old") {
-			oldApps = append(oldApps, app)
-		} else {
-			currentApp = &apps[index]
-		}
-	}
-	return
 }
 
 func GenerateAppName(base string) string {
