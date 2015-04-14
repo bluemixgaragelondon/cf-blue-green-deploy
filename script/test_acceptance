@@ -28,7 +28,7 @@ main() {
     assert_plugin_fails_if_smoke_test_script_fails
   popd >/dev/null
 
-  echo "PASS!"
+  printf "\nACCEPTANCE TESTS PASSED!"
 }
 
 ignore_any_failures() {
