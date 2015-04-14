@@ -16,8 +16,9 @@ type ErrorHandler func(string, error)
 
 type BlueGreen interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string) string
-	DeleteAppVersions([]Application)
+	PushNewApp(string) Application
+	DeleteAllAppsExceptLiveApp(string)
+	LiveApp(string) *Application
 	RunSmokeTests(string, string)
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
 }

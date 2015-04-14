@@ -14,7 +14,7 @@ var PluginVersion string
 
 type BlueGreenDeployPlugin struct {
 	Connection      plugin.CliConnection
-	BlueGreenDeploy BlueGreenDeploy
+	BlueGreenDeploy BlueGreen
 }
 
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
@@ -90,7 +90,7 @@ func RunIntegrationTestScript(script, appFQDN string) (string, error) {
 
 func main() {
 	p := BlueGreenDeployPlugin{
-		BlueGreenDeploy: BlueGreenDeploy{
+		BlueGreenDeploy: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
 				fmt.Printf("%v - %v\n", message, err)
 				os.Exit(1)
