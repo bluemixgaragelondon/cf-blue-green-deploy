@@ -40,8 +40,6 @@ func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []s
 	if liveApp != nil {
 		p.BlueGreenDeploy.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
 	}
-
-	fmt.Printf("Deployed %s", newApp.Name)
 }
 
 func (p *BlueGreenDeployPlugin) GetMetadata() plugin.PluginMetadata {
