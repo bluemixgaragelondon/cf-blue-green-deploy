@@ -116,9 +116,11 @@ func (p *BlueGreenDeploy) RemapRoutesFromLiveAppToNewApp(liveApp, newApp Applica
 	defaultRoute := liveApp.DefaultRoute()
 
 	for _, route := range liveApp.Routes {
-		if route != defaultRoute {
-			p.mapRoute(newApp, route)
+		if route == defaultRoute {
+			continue
 		}
+
+		p.mapRoute(newApp, route)
 		p.unmapRoute(liveApp, route)
 	}
 }
