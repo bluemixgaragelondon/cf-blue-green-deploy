@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"regexp"
-)
+import "fmt"
 
 type Application struct {
 	Name   string
@@ -22,18 +19,6 @@ type Domain struct {
 func (a *Application) DefaultRoute() Route {
 	for _, route := range a.Routes {
 		if route.Host == a.Name {
-			return route
-		}
-	}
-
-	return Route{}
-}
-
-func (a *Application) DefaultRouteWhenWeWillCorrectlySetTheAppNameFromTheCommandLineNotFromCloudController() Route {
-	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}$", a.Name))
-
-	for _, route := range a.Routes {
-		if r.MatchString(route.Host) {
 			return route
 		}
 	}
