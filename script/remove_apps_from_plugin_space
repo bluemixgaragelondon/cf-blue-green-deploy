@@ -1,0 +1,13 @@
+#!/bin/bash
+
+main() {
+  . script/with_env
+  . script/common
+
+  pushd acceptance/app >/dev/null
+    login_to_bluemix
+    cf apps | awk '/cf-blue-green-deploy-test-app/ { system("cf d -f -r " $1) }'
+  popd >/dev/null
+}
+
+main
