@@ -215,6 +215,54 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
+	Describe("live app", func() {
+		var (
+			apps                                []Application
+			liveApp, oldApp, liveApp1, liveApp2 Application
+		)
+
+		Context("with live and old apps", func() {
+			BeforeEach(func() {
+				oldApp = Application{Name: "app-name-20150325110000-old"}
+				liveApp = Application{Name: "app-name-20150325123000"}
+
+				apps = []Application{oldApp, liveApp}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("returns the live app", func() {
+				Expect(p.LiveApp("app-name")).To(Equal(&liveApp))
+			})
+		})
+
+		Context("with multiple live apps", func() {
+			BeforeEach(func() {
+				liveApp1 = Application{Name: "app-name-20150325110000"}
+				liveApp2 = Application{Name: "app-name-20150325123000"}
+
+				apps = []Application{liveApp1, liveApp2}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("returns the last pushed app", func() {
+				Expect(p.LiveApp("app-name")).To(Equal(&liveApp2))
+			})
+		})
+
+		Context("with no apps", func() {
+			BeforeEach(func() {
+				appLister := &fakeAppLister{Apps: []Application{}}
+				p.AppLister = appLister
+			})
+
+			It("returns no app", func() {
+				Expect(p.LiveApp("app-name")).To(BeNil())
+			})
+		})
+	})
+
 	Describe("app filter", func() {
 		Context("when there are 2 old versions and 1 non-old version", func() {
 			var (
