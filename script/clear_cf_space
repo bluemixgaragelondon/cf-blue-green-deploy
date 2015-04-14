@@ -7,6 +7,7 @@ main() {
   pushd acceptance/app >/dev/null
     login_to_bluemix
     cf apps | awk '/cf-blue-green-deploy-test-app/ { system("cf d -f -r " $1) }'
+    cf delete-orphaned-routes -f
   popd >/dev/null
 }
 
