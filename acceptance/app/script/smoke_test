@@ -2,4 +2,4 @@
 
 app_fqdn="$1"
 
-curl -svL "$app_fqdn"
+grep "Hello world from my Go program!" <<< "$(curl -svL "$app_fqdn")"
