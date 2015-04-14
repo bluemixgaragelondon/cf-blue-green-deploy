@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Application struct {
 	Name   string
@@ -18,7 +21,7 @@ type Domain struct {
 
 func (a *Application) DefaultRoute() Route {
 	for _, route := range a.Routes {
-		if route.Host == a.Name {
+		if route.Host == strings.ToLower(a.Name) {
 			return route
 		}
 	}

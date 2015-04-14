@@ -24,6 +24,22 @@ var _ = Describe("Application", func() {
 				}))
 			})
 		})
+
+		Context("when app name has uppercase characters", func() {
+			It("returns its route", func() {
+				app := Application{
+					Name: "APP-20150410155216",
+					Routes: []Route{
+						{Host: "app-20150410155216", Domain: Domain{Name: "mybluemix.net"}},
+					},
+				}
+
+				Expect(app.DefaultRoute()).To(Equal(Route{
+					Host:   "app-20150410155216",
+					Domain: Domain{Name: "mybluemix.net"},
+				}))
+			})
+		})
 	})
 })
 
