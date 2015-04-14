@@ -13,7 +13,7 @@ import (
 type ErrorHandler func(string, error)
 
 type BlueGreen interface {
-	Run() error
+	Setup(plugin.CliConnection)
 	PushNewAppVersion(string) string
 	DeleteAppVersions([]Application)
 	RunSmokeTests(string, string)
@@ -57,6 +57,11 @@ func (p *BlueGreenDeploy) PushNewAppVersion(appName string) (newApp Application)
 	}
 
 	return
+}
+
+func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
+	p.Connection = connection
+	p.AppLister = &CfCurlAppLister{Connection: connection}
 }
 
 func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) {

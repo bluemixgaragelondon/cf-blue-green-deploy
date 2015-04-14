@@ -21,8 +21,7 @@ type BlueGreenDeployPlugin struct {
 
 func (p *BlueGreenDeployPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
-	p.BlueGreenDeploy.Connection = cliConnection
-	p.BlueGreenDeploy.AppLister = &CfCurlAppLister{Connection: cliConnection}
+	p.BlueGreenDeploy.Setup(cliConnection)
 
 	if len(args) < 2 {
 		fmt.Printf("App name must be provided")
