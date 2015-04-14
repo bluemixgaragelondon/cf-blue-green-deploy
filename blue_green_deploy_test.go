@@ -59,7 +59,66 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("the DeleteAppVersions function", func() {
+	Describe("delete old apps", func() {
+		var (
+			apps []Application
+		)
+
+		Context("with live and old apps", func() {
+			BeforeEach(func() {
+				apps = []Application{
+					{Name: "app-name-20150326110000-old"},
+					{Name: "app-name-20150325110000"},
+				}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("only deletes the old apps", func() {
+				p.DeleteAllAppsExceptLiveApp("app-name")
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-20150326110000-old -f -r",
+				}))
+			})
+
+			Context("when the deletion of an app fails", func() {
+				BeforeEach(func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("failed to delete app")
+					}
+				})
+
+				It("returns an error", func() {
+					p.DeleteAllAppsExceptLiveApp("app-name")
+					Expect(bgdErrors[0]).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when there is no old version deployed", func() {
+			BeforeEach(func() {
+				apps = []Application{
+					{Name: "app-name-20150325110000"},
+				}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("succeeds", func() {
+				p.DeleteAllAppsExceptLiveApp("app-name")
+				Expect(bgdErrors).To(HaveLen(0))
+			})
+
+			It("deletes nothing", func() {
+				p.DeleteAllAppsExceptLiveApp("app-name")
+				Expect(connection.CliCommandCallCount()).To(Equal(0))
+			})
+		})
+	})
+
+	Describe("deleting apps", func() {
 		Context("when there is an old version deployed", func() {
 			apps := []Application{
 				{Name: "app-name-20150326110000-old"},
