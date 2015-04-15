@@ -58,6 +58,31 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
+	Describe("marking apps as old", func() {
+		app := Application{Name: "app"}
+
+		It("appends -old to app name", func() {
+			p.MarkAppAsOld(&app)
+
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(Equal([]string{
+				"rename app app-old",
+			}))
+		})
+
+		Context("when renaming the app fails", func() {
+			It("calls the error callback", func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to rename app")
+				}
+
+				p.MarkAppAsOld(&app)
+				Expect(bgdErrors[0]).To(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("delete old apps", func() {
 		var (
 			apps []Application

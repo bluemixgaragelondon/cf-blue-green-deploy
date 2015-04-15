@@ -92,11 +92,12 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name",
 					"remap routes from app-name-live to app-name-new",
+					"mark app-name-live as old",
 				}))
 			})
 		})
 
-		Context("when there is a previous live app", func() {
+		Context("when there is no previous live app", func() {
 			It("calls methods in correct order", func() {
 				b := &BlueGreenDeployFake{liveApp: nil}
 				p := CfPlugin{
@@ -164,4 +165,8 @@ func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) {
 
 func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application, newApp Application) {
 	p.flow = append(p.flow, fmt.Sprintf("remap routes from %s to %s", liveApp.Name, newApp.Name))
+}
+
+func (p *BlueGreenDeployFake) MarkAppAsOld(app *Application) {
+	p.flow = append(p.flow, fmt.Sprintf("mark %s as old", app.Name))
 }
