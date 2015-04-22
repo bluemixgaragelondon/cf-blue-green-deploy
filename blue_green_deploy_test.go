@@ -121,6 +121,46 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 		})
 
+		Context("with live and failed apps", func() {
+			BeforeEach(func() {
+				apps = []Application{
+					{Name: "app-name-20150326110000-failed"},
+					{Name: "app-name-20150325110000"},
+				}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("only deletes the failed apps", func() {
+				p.DeleteAllAppsExceptLiveApp("app-name")
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-20150326110000-failed -f -r",
+				}))
+			})
+		})
+
+		Context("with live and new apps", func() {
+			BeforeEach(func() {
+				apps = []Application{
+					{Name: "app-name-20150326110000-new"},
+					{Name: "app-name-20150325110000"},
+				}
+				appLister := &fakeAppLister{Apps: apps}
+				p.AppLister = appLister
+			})
+
+			It("only deletes the new apps", func() {
+				p.DeleteAllAppsExceptLiveApp("app-name")
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-20150326110000-new -f -r",
+				}))
+			})
+		})
+
 		Context("when there is no old version deployed", func() {
 			BeforeEach(func() {
 				apps = []Application{
