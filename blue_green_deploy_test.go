@@ -95,8 +95,12 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("updating app names", func() {
-		oldApp := Application{Name: "app"}
-		newApp := Application{Name: "app-new"}
+		var oldApp, newApp *Application
+
+		BeforeEach(func() {
+			oldApp = &Application{Name: "app"}
+			newApp = &Application{Name: "app-new"}
+		})
 
 		It("appends -old to old app name", func() {
 			p.UpdateAppNames(oldApp, newApp)
@@ -116,6 +120,13 @@ var _ = Describe("BlueGreenDeploy", func() {
 			Expect(cfCommands).To(ContainElement(
 				"rename app-new app",
 			))
+		})
+
+		It("changes the name attribute of the apps passed to it", func() {
+			p.UpdateAppNames(oldApp, newApp)
+
+			Expect(oldApp.Name).To(Equal("app-old"))
+			Expect(newApp.Name).To(Equal("app"))
 		})
 
 		Context("when renaming the app fails", func() {

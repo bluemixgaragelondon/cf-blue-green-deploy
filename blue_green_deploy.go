@@ -22,7 +22,7 @@ type BlueGreenDeployer interface {
 	RunSmokeTests(string, string)
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
 	UnmapTemporaryRouteFromNewApp(Application)
-	UpdateAppNames(Application, Application)
+	UpdateAppNames(*Application, *Application)
 }
 
 type BlueGreenDeploy struct {
@@ -137,14 +137,19 @@ func (p *BlueGreenDeploy) unmapRoute(a Application, r Route) {
 	}
 }
 
-func (p *BlueGreenDeploy) UpdateAppNames(oldApp, newApp Application) {
-	if _, err := p.Connection.CliCommand("rename", oldApp.Name, fmt.Sprintf("%s-old", oldApp.Name)); err != nil {
+func (p *BlueGreenDeploy) UpdateAppNames(oldApp, newApp *Application) {
+	liveAppName := oldApp.Name
+
+	p.renameApp(oldApp, fmt.Sprintf("%s-old", oldApp.Name))
+	p.renameApp(newApp, liveAppName)
+}
+
+func (p *BlueGreenDeploy) renameApp(app *Application, newName string) {
+	if _, err := p.Connection.CliCommand("rename", app.Name, newName); err != nil {
 		p.ErrorFunc("Could not rename app", err)
 	}
 
-	if _, err := p.Connection.CliCommand("rename", newApp.Name, fmt.Sprintf("%s", oldApp.Name)); err != nil {
-		p.ErrorFunc("Could not rename app", err)
-	}
+	app.Name = newName
 }
 
 func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {

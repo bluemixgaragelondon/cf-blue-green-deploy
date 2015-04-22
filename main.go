@@ -39,7 +39,7 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if liveApp != nil {
 		p.Deployer.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
 		p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
-		p.Deployer.UpdateAppNames(*liveApp, newApp)
+		p.Deployer.UpdateAppNames(liveApp, &newApp)
 	}
 }
 
