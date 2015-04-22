@@ -21,6 +21,7 @@ type BlueGreenDeployer interface {
 	LiveApp(string) *Application
 	RunSmokeTests(string, string)
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
+	UnmapTemporaryRouteFromNewApp(Application)
 	MarkAppAsOld(*Application)
 }
 
@@ -118,6 +119,10 @@ func (p *BlueGreenDeploy) RemapRoutesFromLiveAppToNewApp(liveApp, newApp Applica
 		p.mapRoute(newApp, route)
 		p.unmapRoute(liveApp, route)
 	}
+}
+
+func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(newApp Application) {
+	p.unmapRoute(newApp, newApp.DefaultRoute())
 }
 
 func (p *BlueGreenDeploy) mapRoute(a Application, r Route) {
