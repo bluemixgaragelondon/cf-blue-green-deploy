@@ -94,17 +94,28 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("marking apps as old", func() {
-		app := Application{Name: "app"}
+	Describe("updating app names", func() {
+		oldApp := Application{Name: "app"}
+		newApp := Application{Name: "app-new"}
 
-		It("appends -old to app name", func() {
-			p.MarkAppAsOld(&app)
+		It("appends -old to old app name", func() {
+			p.UpdateAppNames(oldApp, newApp)
 
 			cfCommands := getAllCfCommands(connection)
 
-			Expect(cfCommands).To(Equal([]string{
+			Expect(cfCommands).To(ContainElement(
 				"rename app app-old",
-			}))
+			))
+		})
+
+		It("removes -new from new app name", func() {
+			p.UpdateAppNames(oldApp, newApp)
+
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(ContainElement(
+				"rename app-new app",
+			))
 		})
 
 		Context("when renaming the app fails", func() {
@@ -113,7 +124,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 					return nil, errors.New("failed to rename app")
 				}
 
-				p.MarkAppAsOld(&app)
+				p.UpdateAppNames(oldApp, newApp)
 				Expect(bgdErrors[0]).To(HaveOccurred())
 			})
 		})

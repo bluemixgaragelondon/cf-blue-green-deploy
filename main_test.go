@@ -83,7 +83,7 @@ var _ = Describe("BGD Plugin", func() {
 					"push app-name",
 					"remap routes from app-name-live to app-name-new",
 					"unmap temporary route from app-name-new",
-					"mark app-name-live as old",
+					"update app-name-live to old and app-name-new to live",
 				}))
 			})
 		})
@@ -162,6 +162,6 @@ func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp Application) 
 	p.flow = append(p.flow, fmt.Sprintf("unmap temporary route from %s", newApp.Name))
 }
 
-func (p *BlueGreenDeployFake) MarkAppAsOld(app *Application) {
-	p.flow = append(p.flow, fmt.Sprintf("mark %s as old", app.Name))
+func (p *BlueGreenDeployFake) UpdateAppNames(oldApp Application, newApp Application) {
+	p.flow = append(p.flow, fmt.Sprintf("update %s to old and %s to live", oldApp.Name, newApp.Name))
 }
