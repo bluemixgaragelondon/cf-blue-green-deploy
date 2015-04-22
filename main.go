@@ -70,7 +70,7 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func GenerateAppName(base string) string {
-	return base
+	return base + "-new"
 }
 
 func ExtractIntegrationTestScript(args []string) string {

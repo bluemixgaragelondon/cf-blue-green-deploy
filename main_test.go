@@ -61,8 +61,8 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("app name generator", func() {
 		generated := GenerateAppName("foo")
 
-		It("uses the passed name", func() {
-			Expect(generated).To(Equal("foo"))
+		It("uses the passed name with -new appended", func() {
+			Expect(generated).To(Equal("foo-new"))
 		})
 	})
 
