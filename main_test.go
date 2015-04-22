@@ -2,9 +2,6 @@ package main_test
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/cloudfoundry/cli/plugin/fakes"
@@ -64,15 +61,8 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("app name generator", func() {
 		generated := GenerateAppName("foo")
 
-		It("uses the passed name as a prefix", func() {
-			Expect(generated).To(HavePrefix("foo"))
-		})
-
-		It("uses a timestamp as a suffix", func() {
-			now, _ := strconv.Atoi(time.Now().Format("20060102150405"))
-			genTimestamp, _ := strconv.Atoi(regexp.MustCompile(`\d{14}`).FindString(generated))
-
-			Expect(now - genTimestamp).To(BeNumerically("<", 5))
+		It("uses the passed name", func() {
+			Expect(generated).To(Equal("foo"))
 		})
 	})
 

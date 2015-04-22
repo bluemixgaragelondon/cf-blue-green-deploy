@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -71,7 +70,7 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func GenerateAppName(base string) string {
-	return fmt.Sprintf("%s-%s", base, time.Now().Format("20060102150405"))
+	return base
 }
 
 func ExtractIntegrationTestScript(args []string) string {

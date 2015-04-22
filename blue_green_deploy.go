@@ -73,7 +73,7 @@ func (p *BlueGreenDeploy) PushNewApp(appName string) (newApp Application) {
 }
 
 func (p *BlueGreenDeploy) FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
-	r := regexp.MustCompile(fmt.Sprintf("^%s-[0-9]{14}(-old|-failed|-new)?$", appName))
+	r := regexp.MustCompile(fmt.Sprintf("^%s(-old|-failed|-new)?$", appName))
 	for index, app := range apps {
 		if !r.MatchString(app.Name) {
 			continue

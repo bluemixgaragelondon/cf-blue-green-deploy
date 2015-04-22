@@ -35,9 +35,9 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		BeforeEach(func() {
 			liveApp = Application{
-				Name: "live-20150410155216",
+				Name: "live",
 				Routes: []Route{
-					{Host: "live-20150410155216", Domain: Domain{Name: "mybluemix.net"}},
+					{Host: "live", Domain: Domain{Name: "mybluemix.net"}},
 					{Host: "live", Domain: Domain{Name: "example.com"}},
 				},
 			}
@@ -53,7 +53,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 			Expect(cfCommands).To(Equal([]string{
 				"map-route new example.com -n live",
-				"unmap-route live-20150410155216 example.com -n live",
+				"unmap-route live example.com -n live",
 			}))
 		})
 	})
@@ -91,8 +91,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 		Context("with live and old apps", func() {
 			BeforeEach(func() {
 				apps = []Application{
-					{Name: "app-name-20150326110000-old"},
-					{Name: "app-name-20150325110000"},
+					{Name: "app-name-old"},
+					{Name: "app-name"},
 				}
 				appLister := &fakeAppLister{Apps: apps}
 				p.AppLister = appLister
@@ -103,7 +103,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 				cfCommands := getAllCfCommands(connection)
 
 				Expect(cfCommands).To(Equal([]string{
-					"delete app-name-20150326110000-old -f -r",
+					"delete app-name-old -f -r",
 				}))
 			})
 
@@ -124,8 +124,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 		Context("with live and failed apps", func() {
 			BeforeEach(func() {
 				apps = []Application{
-					{Name: "app-name-20150326110000-failed"},
-					{Name: "app-name-20150325110000"},
+					{Name: "app-name-failed"},
+					{Name: "app-name"},
 				}
 				appLister := &fakeAppLister{Apps: apps}
 				p.AppLister = appLister
@@ -136,7 +136,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 				cfCommands := getAllCfCommands(connection)
 
 				Expect(cfCommands).To(Equal([]string{
-					"delete app-name-20150326110000-failed -f -r",
+					"delete app-name-failed -f -r",
 				}))
 			})
 		})
@@ -144,8 +144,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 		Context("with live and new apps", func() {
 			BeforeEach(func() {
 				apps = []Application{
-					{Name: "app-name-20150326110000-new"},
-					{Name: "app-name-20150325110000"},
+					{Name: "app-name-new"},
+					{Name: "app-name"},
 				}
 				appLister := &fakeAppLister{Apps: apps}
 				p.AppLister = appLister
@@ -156,7 +156,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 				cfCommands := getAllCfCommands(connection)
 
 				Expect(cfCommands).To(Equal([]string{
-					"delete app-name-20150326110000-new -f -r",
+					"delete app-name-new -f -r",
 				}))
 			})
 		})
@@ -164,7 +164,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		Context("when there is no old version deployed", func() {
 			BeforeEach(func() {
 				apps = []Application{
-					{Name: "app-name-20150325110000"},
+					{Name: "app-name"},
 				}
 				appLister := &fakeAppLister{Apps: apps}
 				p.AppLister = appLister
@@ -185,8 +185,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 	Describe("deleting apps", func() {
 		Context("when there is an old version deployed", func() {
 			apps := []Application{
-				{Name: "app-name-20150326110000-old"},
-				{Name: "app-name-20150325110000-old"},
+				{Name: "app-name-old"},
+				{Name: "app-name-old"},
 			}
 
 			It("deletes the apps", func() {
@@ -194,8 +194,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 				cfCommands := getAllCfCommands(connection)
 
 				Expect(cfCommands).To(Equal([]string{
-					"delete app-name-20150326110000-old -f -r",
-					"delete app-name-20150325110000-old -f -r",
+					"delete app-name-old -f -r",
+					"delete app-name-old -f -r",
 				}))
 			})
 
@@ -242,14 +242,14 @@ var _ = Describe("BlueGreenDeploy", func() {
 			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(MatchRegexp(`^push app-name-\d{14}`))
+				To(MatchRegexp(`^push app-name`))
 		})
 
 		It("uses the generated name for the route", func() {
 			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(MatchRegexp(`-n app-name-\d{14}`))
+				To(MatchRegexp(`-n app-name`))
 		})
 
 		It("returns the new app as an Application", func() {
@@ -267,7 +267,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			}
 			var newApp Application = p.PushNewApp("app-name")
 
-			Expect(newApp.Name).To(MatchRegexp(`^app-name-\d{14}$`))
+			Expect(newApp.Name).To(MatchRegexp(`^app-name$`))
 			Expect(newApp.Routes[0].Host).To(Equal("testroute"))
 		})
 
@@ -287,9 +287,9 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("live app", func() {
-		oldApp := Application{Name: "app-name-20150325110000-old"}
-		liveApp := Application{Name: "app-name-20150325123000"}
-		newerLiveApp := Application{Name: "app-name-20150325124500"}
+		oldApp := Application{Name: "app-name-old"}
+		liveApp := Application{Name: "app-name"}
+		newerLiveApp := Application{Name: "app-name"}
 
 		Context("with live and old apps", func() {
 			It("returns the live app", func() {
@@ -326,11 +326,11 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 			BeforeEach(func() {
 				appList = []Application{
-					{Name: "foo-20150408114041-old"},
-					{Name: "foo-20141234567348-old"},
-					{Name: "foo-20163453473845"},
-					{Name: "bar-foo-20141234567348-old"},
-					{Name: "foo-20141234567348-older"},
+					{Name: "foo-old"},
+					{Name: "foo-old"},
+					{Name: "foo"},
+					{Name: "bar-foo-old"},
+					{Name: "foo-older"},
 				}
 				currentApp, oldApps = p.FilterApps("foo", appList)
 			})
