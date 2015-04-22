@@ -57,7 +57,7 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 
 func (p *BlueGreenDeploy) PushNewApp(appName string) (newApp Application) {
 	newApp.Name = GenerateAppName(appName)
-	if _, err := p.Connection.CliCommand("push", newApp.Name); err != nil {
+	if _, err := p.Connection.CliCommand("push", newApp.Name, "-n", newApp.Name); err != nil {
 		p.ErrorFunc("Could not push new version", err)
 	}
 

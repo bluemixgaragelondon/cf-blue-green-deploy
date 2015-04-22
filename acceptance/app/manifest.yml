@@ -1,4 +1,5 @@
 name: cf-blue-green-deploy-test-app
+host: testhost
 command: ./start $PORT
 memory: 8M
 buildpack: https://github.com/ph3nx/heroku-binary-buildpack.git

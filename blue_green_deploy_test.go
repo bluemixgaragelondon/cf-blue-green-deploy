@@ -202,7 +202,14 @@ var _ = Describe("BlueGreenDeploy", func() {
 			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(MatchRegexp(`^push app-name-\d{14}$`))
+				To(MatchRegexp(`^push app-name-\d{14}`))
+		})
+
+		It("uses the generated name for the route", func() {
+			p.PushNewApp("app-name")
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`-n app-name-\d{14}`))
 		})
 
 		It("returns the new app as an Application", func() {
