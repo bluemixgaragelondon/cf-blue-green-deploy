@@ -46,12 +46,14 @@ var _ = Describe("BlueGreenDeploy", func() {
 			}
 		})
 
-		It("map and unmap all routes from live app to the new app except the default route", func() {
+		It("map and unmap all routes from live app to the new app including the default route", func() {
 			p.RemapRoutesFromLiveAppToNewApp(liveApp, newApp)
 
 			cfCommands := getAllCfCommands(connection)
 
 			Expect(cfCommands).To(Equal([]string{
+				"map-route new mybluemix.net -n live",
+				"unmap-route live mybluemix.net -n live",
 				"map-route new example.com -n live",
 				"unmap-route live example.com -n live",
 			}))

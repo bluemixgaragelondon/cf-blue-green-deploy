@@ -114,13 +114,7 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) {
 }
 
 func (p *BlueGreenDeploy) RemapRoutesFromLiveAppToNewApp(liveApp, newApp Application) {
-	defaultRoute := liveApp.DefaultRoute()
-
 	for _, route := range liveApp.Routes {
-		if route == defaultRoute {
-			continue
-		}
-
 		p.mapRoute(newApp, route)
 		p.unmapRoute(liveApp, route)
 	}
