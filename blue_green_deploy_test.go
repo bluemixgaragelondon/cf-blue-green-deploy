@@ -499,7 +499,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			var passSmokeTest bool
 
 			BeforeEach(func() {
-				passSmokeTest = p.RunSmokeTests("test/support/smoke-test-script", "force-smoke-test-failure")
+				passSmokeTest = p.RunSmokeTests("test/support/smoke-test-script", "FORCE-SMOKE-TEST-FAILURE")
 			})
 
 			It("returns false", func() {

@@ -2,7 +2,7 @@
 
 app_fqdn="$1"
 
-[[ "$app_fqdn" =~ force-smoke-test-failure ]] && exit 1
+[[ "$app_fqdn" =~ FORCE-SMOKE-TEST-FAILURE ]] && exit 1
 
 echo "STDOUT" 
 echo "STDERR" >&2
