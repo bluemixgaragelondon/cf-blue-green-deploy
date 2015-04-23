@@ -23,10 +23,15 @@ main() {
 
   pushd acceptance/app >/dev/null
     assert_plugin_output_includes_successful_smoke_test_output
+		ignore_any_failures
     assert_plugin_fails_if_smoke_test_script_fails
   popd >/dev/null
 
   printf "\nACCEPTANCE TESTS PASSED!"
+}
+
+ignore_any_failures() {
+  set +e
 }
 
 assert_plugin_output_includes_successful_smoke_test_output() {
@@ -48,9 +53,17 @@ assert_plugin_fails_if_smoke_test_script_fails() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
 
   local smoke_test_script="script/smoke_test"
-  local expected_output_last_line="Smoke tests failed - exit status 1"
+  local expected_output_last_line="Smoke tests failed"
 
+	set -o pipefail
   cf bgd cf-blue-green-deploy-test-app-FORCE-SMOKE-TEST-FAILURE --smoke-test $smoke_test_script | tee "$TEST_ACCEPTANCE_LOG"
+	local cf_bgd_exit_code=$?
+
+  if [ $cf_bgd_exit_code != 1 ]
+	then
+    printf "\n\nExpected cf bgd to exit with exit code 1, it exited with %s" $cf_bgd_exit_code
+    exit 1
+	fi
 
   if [ "$(tail -n 1 "$TEST_ACCEPTANCE_LOG")" != "$expected_output_last_line" ]
   then

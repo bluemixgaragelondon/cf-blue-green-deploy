@@ -24,6 +24,13 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
+	if !p.Deploy(args) {
+		fmt.Println("Smoke tests failed")
+		os.Exit(1)
+	}
+}
+
+func (p *CfPlugin) Deploy(args []string) bool {
 	appName := args[1]
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
@@ -45,11 +52,12 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
 			// p.Deployer.UpdateAppName(null, newApp)
 		}
+		return true
 	} else {
 		p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
 		p.Deployer.RenameApp(&newApp, appName+"-failed")
+		return false
 	}
-
 }
 
 func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {

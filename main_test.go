@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
@@ -43,10 +42,9 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name"})
+				p.Deploy([]string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
-					"setup",
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
@@ -64,10 +62,9 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name"})
+				p.Deploy([]string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
-					"setup",
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
@@ -80,16 +77,22 @@ var _ = Describe("BGD Plugin", func() {
 
 		Context("when there is a smoke test defined", func() {
 			Context("when it succeeds", func() {
-				It("calls methods in correct order", func() {
-					b := &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
-					p := CfPlugin{
+				var (
+					b *BlueGreenDeployFake
+					p CfPlugin
+				)
+
+				BeforeEach(func() {
+					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					p = CfPlugin{
 						Deployer: b,
 					}
+				})
 
-					p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+				It("calls methods in correct order", func() {
+					p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
-						"setup",
 						"delete old apps",
 						"get current live app",
 						"push app-name-new",
@@ -97,19 +100,31 @@ var _ = Describe("BGD Plugin", func() {
 						"unmap temporary route from app-name-new",
 					}))
 				})
+
+				It("returns true", func() {
+					result := p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+
+					Expect(result).To(Equal(true))
+				})
 			})
 
 			Context("when it fails", func() {
-				It("calls methods in correct order", func() {
-					b := &BlueGreenDeployFake{liveApp: nil, passSmokeTest: false}
-					p := CfPlugin{
+				var (
+					b *BlueGreenDeployFake
+					p CfPlugin
+				)
+
+				BeforeEach(func() {
+					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: false}
+					p = CfPlugin{
 						Deployer: b,
 					}
+				})
 
-					p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+				It("calls methods in correct order", func() {
+					p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
-						"setup",
 						"delete old apps",
 						"get current live app",
 						"push app-name-new",
@@ -117,6 +132,12 @@ var _ = Describe("BGD Plugin", func() {
 						"unmap temporary route from app-name-new",
 						"rename app-name-new to app-name-failed",
 					}))
+				})
+
+				It("returns false", func() {
+					result := p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+
+					Expect(result).To(Equal(false))
 				})
 			})
 		})
