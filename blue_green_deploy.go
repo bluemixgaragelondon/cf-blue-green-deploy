@@ -23,7 +23,6 @@ type BlueGreenDeployer interface {
 	RunSmokeTests(string, string) bool
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
 	UnmapTemporaryRouteFromNewApp(Application)
-	UpdateAppNames(*Application, *Application)
 	RenameApp(*Application, string)
 }
 
@@ -143,13 +142,6 @@ func (p *BlueGreenDeploy) unmapRoute(a Application, r Route) {
 	if _, err := p.Connection.CliCommand("unmap-route", a.Name, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not unmap route", err)
 	}
-}
-
-func (p *BlueGreenDeploy) UpdateAppNames(oldApp, newApp *Application) {
-	liveAppName := oldApp.Name
-
-	p.RenameApp(oldApp, fmt.Sprintf("%s-old", oldApp.Name))
-	p.RenameApp(newApp, liveAppName)
 }
 
 func (p *BlueGreenDeploy) RenameApp(app *Application, newName string) {

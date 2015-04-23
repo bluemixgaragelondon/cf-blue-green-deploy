@@ -47,7 +47,8 @@ func (p *CfPlugin) Deploy(args []string) bool {
 		if liveApp != nil {
 			p.Deployer.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
-			p.Deployer.UpdateAppNames(liveApp, &newApp)
+			p.Deployer.RenameApp(liveApp, appName+"-old")
+			p.Deployer.RenameApp(&newApp, appName)
 		} else {
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
 			// p.Deployer.UpdateAppName(null, newApp)
