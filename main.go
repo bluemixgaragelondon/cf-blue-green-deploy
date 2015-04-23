@@ -51,6 +51,7 @@ func (p *CfPlugin) Deploy(args []string) bool {
 			p.Deployer.RenameApp(&newApp, appName)
 		} else {
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
+			p.Deployer.RenameApp(&newApp, appName)
 			// p.Deployer.UpdateAppName(null, newApp)
 		}
 		return true
