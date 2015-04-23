@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -19,14 +20,16 @@ type BlueGreenDeployer interface {
 	PushNewApp(string) Application
 	DeleteAllAppsExceptLiveApp(string)
 	LiveApp(string) *Application
-	RunSmokeTests(string, string)
+	RunSmokeTests(string, string) bool
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
 	UnmapTemporaryRouteFromNewApp(Application)
 	UpdateAppNames(*Application, *Application)
+	RenameApp(*Application, string)
 }
 
 type BlueGreenDeploy struct {
 	Connection plugin.CliConnection
+	Out        io.Writer
 	ErrorFunc  ErrorHandler
 	AppLister
 }
@@ -105,13 +108,18 @@ func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
 	p.AppLister = &CfCurlAppLister{Connection: connection}
 }
 
-func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) {
+func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
 	out, err := exec.Command(script, appFQDN).CombinedOutput()
-	fmt.Println(string(out))
+	fmt.Fprintln(p.Out, string(out))
 
 	if err != nil {
-		p.ErrorFunc("Smoke tests failed", err)
+		if _, ok := err.(*exec.ExitError); ok {
+			return false
+		} else {
+			p.ErrorFunc("Smoke tests failed", err)
+		}
 	}
+	return true
 }
 
 func (p *BlueGreenDeploy) RemapRoutesFromLiveAppToNewApp(liveApp, newApp Application) {
@@ -140,11 +148,11 @@ func (p *BlueGreenDeploy) unmapRoute(a Application, r Route) {
 func (p *BlueGreenDeploy) UpdateAppNames(oldApp, newApp *Application) {
 	liveAppName := oldApp.Name
 
-	p.renameApp(oldApp, fmt.Sprintf("%s-old", oldApp.Name))
-	p.renameApp(newApp, liveAppName)
+	p.RenameApp(oldApp, fmt.Sprintf("%s-old", oldApp.Name))
+	p.RenameApp(newApp, liveAppName)
 }
 
-func (p *BlueGreenDeploy) renameApp(app *Application, newName string) {
+func (p *BlueGreenDeploy) RenameApp(app *Application, newName string) {
 	if _, err := p.Connection.CliCommand("rename", app.Name, newName); err != nil {
 		p.ErrorFunc("Could not rename app", err)
 	}

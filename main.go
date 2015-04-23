@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -31,16 +30,26 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	liveApp := p.Deployer.LiveApp(appName)
 	newApp := p.Deployer.PushNewApp(appName)
 
+	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
-		p.Deployer.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
+		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
 	}
 
-	if liveApp != nil {
-		p.Deployer.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
+	if promoteNewApp {
+		if liveApp != nil {
+			p.Deployer.RemapRoutesFromLiveAppToNewApp(*liveApp, newApp)
+			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
+			p.Deployer.UpdateAppNames(liveApp, &newApp)
+		} else {
+			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
+			// p.Deployer.UpdateAppName(null, newApp)
+		}
+	} else {
 		p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
-		p.Deployer.UpdateAppNames(liveApp, &newApp)
+		p.Deployer.RenameApp(&newApp, appName+"-failed")
 	}
+
 }
 
 func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
@@ -81,12 +90,6 @@ func ExtractIntegrationTestScript(args []string) string {
 	return *script
 }
 
-func RunIntegrationTestScript(script, appFQDN string) (string, error) {
-	out, err := exec.Command(script, appFQDN).CombinedOutput()
-
-	return string(out), err
-}
-
 func main() {
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
@@ -94,6 +97,7 @@ func main() {
 				fmt.Printf("%v - %v\n", message, err)
 				os.Exit(1)
 			},
+			Out: os.Stdout,
 		},
 	}
 

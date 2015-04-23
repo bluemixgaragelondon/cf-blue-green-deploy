@@ -1,6 +1,10 @@
 #!/bin/bash
 
+app_fqdn="$1"
+
+[[ "$app_fqdn" =~ force-smoke-test-failure ]] && exit 1
+
 echo "STDOUT" 
 echo "STDERR" >&2
 
-printf "App FQDN is: %s" "$1"
+printf "App FQDN is: %s" "$app_fqdn"

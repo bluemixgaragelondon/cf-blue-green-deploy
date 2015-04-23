@@ -27,37 +27,6 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
-	Describe("smoke test runner", func() {
-		It("returns stdout", func() {
-			out, _ := RunIntegrationTestScript("test/support/smoke-test-script", "app.mybluemix.net")
-			Expect(out).To(ContainSubstring("STDOUT"))
-		})
-
-		It("returns stderr", func() {
-			out, _ := RunIntegrationTestScript("test/support/smoke-test-script", "app.mybluemix.net")
-			Expect(out).To(ContainSubstring("STDERR"))
-		})
-
-		It("passes app FQDN as first argument", func() {
-			out, _ := RunIntegrationTestScript("test/support/smoke-test-script", "app.mybluemix.net")
-			Expect(out).To(ContainSubstring("App FQDN is: app.mybluemix.net"))
-		})
-
-		Context("when script doesn't exist", func() {
-			It("fails with useful error", func() {
-				_, err := RunIntegrationTestScript("inexistent-smoke-test-script", "app.mybluemix.net")
-				Expect(err.Error()).To(ContainSubstring("executable file not found"))
-			})
-		})
-
-		Context("when script isn't executable", func() {
-			It("fails with useful error", func() {
-				_, err := RunIntegrationTestScript("test/support/nonexec-smoke-test-script", "app.mybluemix.net")
-				Expect(err.Error()).To(ContainSubstring("permission denied"))
-			})
-		})
-	})
-
 	Describe("app name generator", func() {
 		generated := GenerateAppName("foo")
 
@@ -80,7 +49,7 @@ var _ = Describe("BGD Plugin", func() {
 					"setup",
 					"delete old apps",
 					"get current live app",
-					"push app-name",
+					"push app-name-new",
 					"remap routes from app-name-live to app-name-new",
 					"unmap temporary route from app-name-new",
 					"update app-name-live to old and app-name-new to live",
@@ -101,27 +70,54 @@ var _ = Describe("BGD Plugin", func() {
 					"setup",
 					"delete old apps",
 					"get current live app",
-					"push app-name",
+					"push app-name-new",
+					"unmap temporary route from app-name-new",
+					// "map live route to app-name-new",
+					// "rename app-name-new to app-name",
 				}))
 			})
 		})
 
 		Context("when there is a smoke test defined", func() {
-			It("calls methods in correct order", func() {
-				b := &BlueGreenDeployFake{liveApp: nil}
-				p := CfPlugin{
-					Deployer: b,
-				}
+			Context("when it succeeds", func() {
+				It("calls methods in correct order", func() {
+					b := &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					p := CfPlugin{
+						Deployer: b,
+					}
 
-				p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
-				Expect(b.flow).To(Equal([]string{
-					"setup",
-					"delete old apps",
-					"get current live app",
-					"push app-name",
-					"script/smoke-test app-name-new.example.com",
-				}))
+					Expect(b.flow).To(Equal([]string{
+						"setup",
+						"delete old apps",
+						"get current live app",
+						"push app-name-new",
+						"script/smoke-test app-name-new.example.com",
+						"unmap temporary route from app-name-new",
+					}))
+				})
+			})
+
+			Context("when it fails", func() {
+				It("calls methods in correct order", func() {
+					b := &BlueGreenDeployFake{liveApp: nil, passSmokeTest: false}
+					p := CfPlugin{
+						Deployer: b,
+					}
+
+					p.Run(&fakes.FakeCliConnection{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+
+					Expect(b.flow).To(Equal([]string{
+						"setup",
+						"delete old apps",
+						"get current live app",
+						"push app-name-new",
+						"script/smoke-test app-name-new.example.com",
+						"unmap temporary route from app-name-new",
+						"rename app-name-new to app-name-failed",
+					}))
+				})
 			})
 		})
 	})
@@ -130,7 +126,8 @@ var _ = Describe("BGD Plugin", func() {
 type BlueGreenDeployFake struct {
 	flow []string
 	AppLister
-	liveApp *Application
+	liveApp       *Application
+	passSmokeTest bool
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
@@ -138,8 +135,9 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 }
 
 func (p *BlueGreenDeployFake) PushNewApp(appName string) Application {
+	appName = appName + "-new"
 	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
-	return Application{Name: "app-name-new", Routes: []Route{{Host: "app-name-new", Domain: Domain{Name: "example.com"}}}}
+	return Application{Name: appName, Routes: []Route{{Host: appName, Domain: Domain{Name: "example.com"}}}}
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
@@ -150,8 +148,9 @@ func (p *BlueGreenDeployFake) LiveApp(string) *Application {
 	p.flow = append(p.flow, "get current live app")
 	return p.liveApp
 }
-func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) {
+func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
 	p.flow = append(p.flow, fmt.Sprintf("%s %s", script, fqdn))
+	return p.passSmokeTest
 }
 
 func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application, newApp Application) {
@@ -164,4 +163,8 @@ func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp Application) 
 
 func (p *BlueGreenDeployFake) UpdateAppNames(oldApp, newApp *Application) {
 	p.flow = append(p.flow, fmt.Sprintf("update %s to old and %s to live", oldApp.Name, newApp.Name))
+}
+
+func (p *BlueGreenDeployFake) RenameApp(app *Application, newName string) {
+	p.flow = append(p.flow, fmt.Sprintf("rename %s to %s", app.Name, newName))
 }

@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 
@@ -12,20 +13,22 @@ import (
 
 var _ = Describe("BlueGreenDeploy", func() {
 	var (
-		bgdErrors     []error
-		connection    *fakes.FakeCliConnection
-		p             BlueGreenDeploy
-		testErrorFunc func(message string, err error)
+		bgdExitsWithErrors []error
+		bgdOut             *bytes.Buffer
+		connection         *fakes.FakeCliConnection
+		p                  BlueGreenDeploy
+		testErrorFunc      func(message string, err error)
 	)
 
 	BeforeEach(func() {
-		bgdErrors = []error{}
+		bgdExitsWithErrors = []error{}
 		testErrorFunc = func(message string, err error) {
-			bgdErrors = append(bgdErrors, err)
+			bgdExitsWithErrors = append(bgdExitsWithErrors, err)
 		}
+		bgdOut = &bytes.Buffer{}
 
 		connection = &fakes.FakeCliConnection{}
-		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc}
+		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc, Out: bgdOut}
 	})
 
 	Describe("RemapRoutesFromLiveappToNewApp", func() {
@@ -89,7 +92,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns an error", func() {
 				p.UnmapTemporaryRouteFromNewApp(newApp)
 
-				Expect(bgdErrors[0]).To(HaveOccurred())
+				Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
 			})
 		})
 	})
@@ -114,7 +117,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		It("removes -new from new app name", func() {
 			p.UpdateAppNames(oldApp, newApp)
-
 			cfCommands := getAllCfCommands(connection)
 
 			Expect(cfCommands).To(ContainElement(
@@ -136,7 +138,41 @@ var _ = Describe("BlueGreenDeploy", func() {
 				}
 
 				p.UpdateAppNames(oldApp, newApp)
-				Expect(bgdErrors[0]).To(HaveOccurred())
+				Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("renaming an app", func() {
+		var app *Application
+
+		BeforeEach(func() {
+			app = &Application{Name: "foo"}
+		})
+
+		It("renames the app", func() {
+			p.RenameApp(app, "bar")
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(ContainElement(
+				"rename foo bar",
+			))
+		})
+
+		It("changes the name property of the app", func() {
+			p.RenameApp(app, "bar")
+
+			Expect(app.Name).To(Equal("bar"))
+		})
+
+		Context("when renaming the app fails", func() {
+			It("calls the error callback", func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to rename app")
+				}
+				p.RenameApp(app, "bar")
+
+				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to rename app"))
 			})
 		})
 	})
@@ -174,7 +210,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 				It("returns an error", func() {
 					p.DeleteAllAppsExceptLiveApp("app-name")
-					Expect(bgdErrors[0]).To(HaveOccurred())
+					Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
 				})
 			})
 		})
@@ -230,7 +266,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 			It("succeeds", func() {
 				p.DeleteAllAppsExceptLiveApp("app-name")
-				Expect(bgdErrors).To(HaveLen(0))
+				Expect(bgdExitsWithErrors).To(HaveLen(0))
 			})
 
 			It("deletes nothing", func() {
@@ -266,7 +302,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 				It("returns an error", func() {
 					p.DeleteAppVersions(apps)
-					Expect(bgdErrors[0]).To(HaveOccurred())
+					Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
 				})
 			})
 		})
@@ -276,7 +312,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 			It("succeeds", func() {
 				p.DeleteAppVersions(apps)
-				Expect(bgdErrors).To(HaveLen(0))
+				Expect(bgdExitsWithErrors).To(HaveLen(0))
 			})
 
 			It("deletes nothing", func() {
@@ -339,7 +375,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns an error", func() {
 				p.PushNewApp("app-name")
 
-				Expect(bgdErrors[0]).To(MatchError("failed to push app"))
+				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to push app"))
 			})
 		})
 	})
@@ -425,6 +461,53 @@ var _ = Describe("BlueGreenDeploy", func() {
 				It("doesn't return elements that have an additional suffix after -old", func() {
 					Expect(oldApps).ToNot(ContainElement(appList[4]))
 				})
+			})
+		})
+	})
+
+	Describe("smoke test runner", func() {
+		It("returns stdout", func() {
+			_ = p.RunSmokeTests("test/support/smoke-test-script", "app.mybluemix.net")
+			Expect(bgdOut.String()).To(ContainSubstring("STDOUT"))
+		})
+
+		It("returns stderr", func() {
+			_ = p.RunSmokeTests("test/support/smoke-test-script", "app.mybluemix.net")
+			Expect(bgdOut.String()).To(ContainSubstring("STDERR"))
+		})
+
+		It("passes app FQDN as first argument", func() {
+			_ = p.RunSmokeTests("test/support/smoke-test-script", "app.mybluemix.net")
+			Expect(bgdOut.String()).To(ContainSubstring("App FQDN is: app.mybluemix.net"))
+		})
+
+		Context("when script doesn't exist", func() {
+			It("fails with useful error", func() {
+				_ = p.RunSmokeTests("inexistent-smoke-test-script", "app.mybluemix.net")
+				Expect(bgdExitsWithErrors[0].Error()).To(ContainSubstring("executable file not found"))
+			})
+		})
+
+		Context("when script isn't executable", func() {
+			It("fails with useful error", func() {
+				_ = p.RunSmokeTests("test/support/nonexec-smoke-test-script", "app.mybluemix.net")
+				Expect(bgdExitsWithErrors[0].Error()).To(ContainSubstring("permission denied"))
+			})
+		})
+
+		Context("when script fails", func() {
+			var passSmokeTest bool
+
+			BeforeEach(func() {
+				passSmokeTest = p.RunSmokeTests("test/support/smoke-test-script", "force-smoke-test-failure")
+			})
+
+			It("returns false", func() {
+				Expect(passSmokeTest).To(Equal(false))
+			})
+
+			It("doesn't fail", func() {
+				Expect(bgdExitsWithErrors).To(HaveLen(0))
 			})
 		})
 	})
