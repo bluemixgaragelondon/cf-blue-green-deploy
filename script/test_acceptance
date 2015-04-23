@@ -12,8 +12,6 @@ main() {
   . script/with_env
   . script/common
 
-  ignore_any_failures
-
   if [ -z "$TURBO" ]
   then
     script/setup
@@ -29,10 +27,6 @@ main() {
   popd >/dev/null
 
   printf "\nACCEPTANCE TESTS PASSED!"
-}
-
-ignore_any_failures() {
-  set +e
 }
 
 assert_plugin_output_includes_successful_smoke_test_output() {
