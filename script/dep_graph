@@ -1,0 +1,4 @@
+#!/bin/bash
+
+goviz -i hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy | dot -Tpng -o deps.png
+open deps.png
