@@ -49,6 +49,7 @@ type ApplicationFields struct {
 	Name                 string
 	BuildpackUrl         string
 	Command              string
+	Diego                bool
 	DetectedStartCommand string
 	DiskQuota            int64 // in Megabytes
 	EnvironmentVars      map[string]interface{}
@@ -65,7 +66,7 @@ type AppParams struct {
 	BuildpackUrl       *string
 	Command            *string
 	DiskQuota          *int64
-	Domain             *string
+	Domains            *[]string
 	EnvironmentVars    *map[string]interface{}
 	Guid               *string
 	HealthCheckTimeout *int
@@ -73,6 +74,7 @@ type AppParams struct {
 	InstanceCount      *int
 	Memory             *int64
 	Name               *string
+	NoHostname         bool
 	NoRoute            bool
 	UseRandomHostname  bool
 	Path               *string
@@ -93,8 +95,8 @@ func (app *AppParams) Merge(other *AppParams) {
 	if other.DiskQuota != nil {
 		app.DiskQuota = other.DiskQuota
 	}
-	if other.Domain != nil {
-		app.Domain = other.Domain
+	if other.Domains != nil {
+		app.Domains = other.Domains
 	}
 	if other.EnvironmentVars != nil {
 		app.EnvironmentVars = other.EnvironmentVars
@@ -140,6 +142,7 @@ func (app *AppParams) Merge(other *AppParams) {
 	}
 
 	app.NoRoute = app.NoRoute || other.NoRoute
+	app.NoHostname = app.NoHostname || other.NoHostname
 	app.UseRandomHostname = app.UseRandomHostname || other.UseRandomHostname
 }
 

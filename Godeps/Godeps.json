@@ -4,18 +4,18 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/configuration",
-			"Comment": "v6.10.0-4-g83ff121",
-			"Rev": "83ff121f0d54168621698e263342aee6f06f0c89"
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/models",
-			"Comment": "v6.10.0-4-g83ff121",
-			"Rev": "83ff121f0d54168621698e263342aee6f06f0c89"
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/plugin",
-			"Comment": "v6.10.0-4-g83ff121",
-			"Rev": "83ff121f0d54168621698e263342aee6f06f0c89"
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",

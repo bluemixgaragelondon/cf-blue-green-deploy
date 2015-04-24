@@ -7,6 +7,8 @@ import (
 	"net/rpc"
 	"os"
 	"time"
+
+	"github.com/cloudfoundry/cli/plugin/models"
 )
 
 type cliConnection struct {
@@ -25,6 +27,7 @@ func (cliConnection *cliConnection) sendPluginMetadataToCliServer(metadata Plugi
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	defer cliServerConn.Close()
 
 	var success bool
 
@@ -54,6 +57,7 @@ func (cliConnection *cliConnection) callCliCommand(silently bool, args ...string
 	if err != nil {
 		return []string{}, err
 	}
+	defer client.Close()
 
 	var success bool
 
@@ -92,4 +96,184 @@ func (cliConnection *cliConnection) pingCLI() {
 		fmt.Println(connErr)
 		os.Exit(1)
 	}
+}
+
+func (cliConnection *cliConnection) GetCurrentOrg() (plugin_models.Organization, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return plugin_models.Organization{}, err
+	}
+
+	var result plugin_models.Organization
+
+	err = client.Call("CliRpcCmd.GetCurrentOrg", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) GetCurrentSpace() (plugin_models.Space, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return plugin_models.Space{}, err
+	}
+
+	var result plugin_models.Space
+
+	err = client.Call("CliRpcCmd.GetCurrentSpace", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) Username() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.Username", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) UserGuid() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.UserGuid", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) UserEmail() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.UserEmail", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) IsSSLDisabled() (bool, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return false, err
+	}
+
+	var result bool
+
+	err = client.Call("CliRpcCmd.IsSSLDisabled", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) IsLoggedIn() (bool, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return false, err
+	}
+
+	var result bool
+
+	err = client.Call("CliRpcCmd.IsLoggedIn", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) HasOrganization() (bool, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return false, err
+	}
+
+	var result bool
+
+	err = client.Call("CliRpcCmd.HasOrganization", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) HasSpace() (bool, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return false, err
+	}
+
+	var result bool
+
+	err = client.Call("CliRpcCmd.HasSpace", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) ApiEndpoint() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.ApiEndpoint", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) HasAPIEndpoint() (bool, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return false, err
+	}
+
+	var result bool
+
+	err = client.Call("CliRpcCmd.HasApiEndpoint", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) ApiVersion() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.ApiVersion", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) LoggregatorEndpoint() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.LoggregatorEndpoint", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) DopplerEndpoint() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.DopplerEndpoint", "", &result)
+	return result, err
+}
+
+func (cliConnection *cliConnection) AccessToken() (string, error) {
+	client, err := rpc.Dial("tcp", "127.0.0.1:"+cliConnection.cliServerPort)
+	if err != nil {
+		return "", err
+	}
+
+	var result string
+
+	err = client.Call("CliRpcCmd.AccessToken", "", &result)
+	return result, err
 }

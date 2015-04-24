@@ -5,9 +5,13 @@ import (
 	"net/rpc"
 	"time"
 
+	"github.com/cloudfoundry/cli/cf/configuration/core_config"
+	"github.com/cloudfoundry/cli/cf/models"
 	"github.com/cloudfoundry/cli/cf/terminal/fakes"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/cloudfoundry/cli/plugin/models"
 	. "github.com/cloudfoundry/cli/plugin/rpc"
+	testconfig "github.com/cloudfoundry/cli/testhelpers/configuration"
 	io_helpers "github.com/cloudfoundry/cli/testhelpers/io"
 	"github.com/codegangsta/cli"
 	. "github.com/onsi/ginkgo"
@@ -33,19 +37,19 @@ var _ = Describe("Server", func() {
 
 	Describe(".NewRpcService", func() {
 		BeforeEach(func() {
-			rpcService, err = NewRpcService(nil, nil, nil)
+			rpcService, err = NewRpcService(nil, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("returns an err of another Rpc process is already registered", func() {
-			_, err := NewRpcService(nil, nil, nil)
+			_, err := NewRpcService(nil, nil, nil, nil)
 			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe(".Stop", func() {
 		BeforeEach(func() {
-			rpcService, err = NewRpcService(nil, nil, nil)
+			rpcService, err = NewRpcService(nil, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err := rpcService.Start()
@@ -67,7 +71,7 @@ var _ = Describe("Server", func() {
 
 	Describe(".Start", func() {
 		BeforeEach(func() {
-			rpcService, err = NewRpcService(nil, nil, nil)
+			rpcService, err = NewRpcService(nil, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err := rpcService.Start()
@@ -95,7 +99,7 @@ var _ = Describe("Server", func() {
 		)
 
 		BeforeEach(func() {
-			rpcService, err = NewRpcService(nil, nil, nil)
+			rpcService, err = NewRpcService(nil, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err := rpcService.Start()
@@ -137,7 +141,7 @@ var _ = Describe("Server", func() {
 			BeforeEach(func() {
 				outputCapture := &fakes.FakeOutputCapture{}
 				outputCapture.GetOutputAndResetReturns([]string{"hi from command"})
-				rpcService, err = NewRpcService(nil, outputCapture, nil)
+				rpcService, err = NewRpcService(nil, outputCapture, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				err := rpcService.Start()
@@ -169,7 +173,7 @@ var _ = Describe("Server", func() {
 
 		BeforeEach(func() {
 			terminalOutputSwitch = &fakes.FakeTerminalOutputSwitch{}
-			rpcService, err = NewRpcService(nil, nil, terminalOutputSwitch)
+			rpcService, err = NewRpcService(nil, nil, terminalOutputSwitch, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err := rpcService.Start()
@@ -210,7 +214,7 @@ var _ = Describe("Server", func() {
 
 				outputCapture := &fakes.FakeOutputCapture{}
 
-				rpcService, err = NewRpcService(app, outputCapture, nil)
+				rpcService, err = NewRpcService(app, outputCapture, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				err := rpcService.Start()
@@ -238,6 +242,270 @@ var _ = Describe("Server", func() {
 			})
 		})
 
+		Describe("CLI Config object methods", func() {
+			var (
+				config core_config.Repository
+			)
+
+			BeforeEach(func() {
+				config = testconfig.NewRepositoryWithDefaults()
+			})
+
+			AfterEach(func() {
+				rpcService.Stop()
+
+				//give time for server to stop
+				time.Sleep(50 * time.Millisecond)
+			})
+
+			Context(".GetCurrentOrg", func() {
+				BeforeEach(func() {
+					config.SetOrganizationFields(models.OrganizationFields{
+						Guid: "test-guid",
+						Name: "test-org",
+						QuotaDefinition: models.QuotaFields{
+							Guid:                    "guid123",
+							Name:                    "quota123",
+							MemoryLimit:             128,
+							InstanceMemoryLimit:     16,
+							RoutesLimit:             5,
+							ServicesLimit:           6,
+							NonBasicServicesAllowed: true,
+						},
+					})
+
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("populates the plugin Organization object with the current org settings in config", func() {
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var org plugin_models.Organization
+					err = client.Call("CliRpcCmd.GetCurrentOrg", "", &org)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(org.Name).To(Equal("test-org"))
+					Expect(org.Guid).To(Equal("test-guid"))
+					Expect(org.QuotaDefinition.Guid).To(Equal("guid123"))
+					Expect(org.QuotaDefinition.Name).To(Equal("quota123"))
+					Expect(org.QuotaDefinition.MemoryLimit).To(Equal(int64(128)))
+					Expect(org.QuotaDefinition.InstanceMemoryLimit).To(Equal(int64(16)))
+					Expect(org.QuotaDefinition.RoutesLimit).To(Equal(5))
+					Expect(org.QuotaDefinition.ServicesLimit).To(Equal(6))
+					Expect(org.QuotaDefinition.NonBasicServicesAllowed).To(BeTrue())
+				})
+			})
+
+			Context(".GetCurrentSpace", func() {
+				BeforeEach(func() {
+					config.SetSpaceFields(models.SpaceFields{
+						Guid: "space-guid",
+						Name: "space-name",
+					})
+
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("populates the plugin Space object with the current space settings in config", func() {
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var space plugin_models.Space
+					err = client.Call("CliRpcCmd.GetCurrentSpace", "", &space)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(space.Name).To(Equal("space-name"))
+					Expect(space.Guid).To(Equal("space-guid"))
+				})
+			})
+
+			Context(".Username, .UserGuid, .UserEmail", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns username, user guid and user email", func() {
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result string
+					err = client.Call("CliRpcCmd.Username", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("my-user"))
+
+					err = client.Call("CliRpcCmd.UserGuid", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("my-user-guid"))
+
+					err = client.Call("CliRpcCmd.UserEmail", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("my-user-email"))
+				})
+			})
+
+			Context(".IsSSLDisabled", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the IsSSLDisabled setting in config", func() {
+					config.SetSSLDisabled(true)
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result bool
+					err = client.Call("CliRpcCmd.IsSSLDisabled", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(BeTrue())
+				})
+			})
+
+			Context(".IsLoggedIn", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the IsLoggedIn setting in config", func() {
+					config.SetAccessToken("Logged-In-Token")
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result bool
+					err = client.Call("CliRpcCmd.IsLoggedIn", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(BeTrue())
+				})
+			})
+
+			Context(".HasOrganization and .HasSpace ", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the HasOrganization() and HasSpace() setting in config", func() {
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result bool
+					err = client.Call("CliRpcCmd.HasOrganization", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(BeTrue())
+
+					err = client.Call("CliRpcCmd.HasSpace", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(BeTrue())
+				})
+			})
+
+			Context(".LoggregatorEndpoint and .DopplerEndpoint ", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the LoggregatorEndpoint() and DopplerEndpoint() setting in config", func() {
+					config.SetLoggregatorEndpoint("loggregator-endpoint-sample")
+					config.SetDopplerEndpoint("doppler-endpoint-sample")
+
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result string
+					err = client.Call("CliRpcCmd.LoggregatorEndpoint", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("loggregator-endpoint-sample"))
+
+					err = client.Call("CliRpcCmd.DopplerEndpoint", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("doppler-endpoint-sample"))
+				})
+			})
+
+			Context(".ApiEndpoint, .ApiVersion and .HasAPIEndpoint", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the ApiEndpoint(), ApiVersion() and HasAPIEndpoint() setting in config", func() {
+					config.SetApiVersion("v1.1.1")
+					config.SetApiEndpoint("www.fake-domain.com")
+
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result string
+					err = client.Call("CliRpcCmd.ApiEndpoint", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("www.fake-domain.com"))
+
+					err = client.Call("CliRpcCmd.ApiVersion", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("v1.1.1"))
+
+					var exists bool
+					err = client.Call("CliRpcCmd.HasAPIEndpoint", "", &exists)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(exists).To(BeTrue())
+
+				})
+			})
+
+			Context(".AccessToken", func() {
+				BeforeEach(func() {
+					rpcService, err = NewRpcService(nil, nil, nil, config)
+					err := rpcService.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					pingCli(rpcService.Port())
+				})
+
+				It("returns the LoggregatorEndpoint() and DopplerEndpoint() setting in config", func() {
+					config.SetAccessToken("fake-access-token")
+
+					client, err = rpc.Dial("tcp", "127.0.0.1:"+rpcService.Port())
+					Expect(err).ToNot(HaveOccurred())
+
+					var result string
+					err = client.Call("CliRpcCmd.AccessToken", "", &result)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal("fake-access-token"))
+				})
+			})
+
+		})
+
 		Context("fail", func() {
 			BeforeEach(func() {
 				app := &cli.App{
@@ -253,7 +521,7 @@ var _ = Describe("Server", func() {
 					},
 				}
 				outputCapture := &fakes.FakeOutputCapture{}
-				rpcService, err = NewRpcService(app, outputCapture, nil)
+				rpcService, err = NewRpcService(app, outputCapture, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				err := rpcService.Start()

@@ -45,6 +45,7 @@ type Reader interface {
 
 	AuthenticationEndpoint() string
 	LoggregatorEndpoint() string
+	DopplerEndpoint() string
 	UaaEndpoint() string
 	AccessToken() string
 	RefreshToken() string
@@ -61,6 +62,9 @@ type Reader interface {
 	IsLoggedIn() bool
 	IsSSLDisabled() bool
 	IsMinApiVersion(string) bool
+	IsMinCliVersion(string) bool
+	MinCliVersion() string
+	MinRecommendedCliVersion() string
 
 	AsyncTimeout() uint
 	Trace() string
@@ -77,8 +81,11 @@ type ReadWriter interface {
 	ClearSession()
 	SetApiEndpoint(string)
 	SetApiVersion(string)
+	SetMinCliVersion(string)
+	SetMinRecommendedCliVersion(string)
 	SetAuthenticationEndpoint(string)
 	SetLoggregatorEndpoint(string)
+	SetDopplerEndpoint(string)
 	SetUaaEndpoint(string)
 	SetAccessToken(string)
 	SetRefreshToken(string)
@@ -157,6 +164,13 @@ func (c *ConfigRepository) AuthenticationEndpoint() (authEndpoint string) {
 func (c *ConfigRepository) LoggregatorEndpoint() (logEndpoint string) {
 	c.read(func() {
 		logEndpoint = c.data.LoggregatorEndPoint
+	})
+	return
+}
+
+func (c *ConfigRepository) DopplerEndpoint() (logEndpoint string) {
+	c.read(func() {
+		logEndpoint = c.data.DopplerEndPoint
 	})
 	return
 }
@@ -267,6 +281,31 @@ func (c *ConfigRepository) IsMinApiVersion(v string) bool {
 	return apiVersion >= v
 }
 
+func (c *ConfigRepository) IsMinCliVersion(version string) bool {
+	if version == "BUILT_FROM_SOURCE" {
+		return true
+	}
+	var minCliVersion string
+	c.read(func() {
+		minCliVersion = c.data.MinCliVersion
+	})
+	return version >= minCliVersion
+}
+
+func (c *ConfigRepository) MinCliVersion() (minCliVersion string) {
+	c.read(func() {
+		minCliVersion = c.data.MinCliVersion
+	})
+	return
+}
+
+func (c *ConfigRepository) MinRecommendedCliVersion() (minRecommendedCliVersion string) {
+	c.read(func() {
+		minRecommendedCliVersion = c.data.MinRecommendedCliVersion
+	})
+	return
+}
+
 func (c *ConfigRepository) AsyncTimeout() (timeout uint) {
 	c.read(func() {
 		timeout = c.data.AsyncTimeout
@@ -325,6 +364,18 @@ func (c *ConfigRepository) SetApiVersion(version string) {
 	})
 }
 
+func (c *ConfigRepository) SetMinCliVersion(version string) {
+	c.write(func() {
+		c.data.MinCliVersion = version
+	})
+}
+
+func (c *ConfigRepository) SetMinRecommendedCliVersion(version string) {
+	c.write(func() {
+		c.data.MinRecommendedCliVersion = version
+	})
+}
+
 func (c *ConfigRepository) SetAuthenticationEndpoint(endpoint string) {
 	c.write(func() {
 		c.data.AuthorizationEndpoint = endpoint
@@ -334,6 +385,12 @@ func (c *ConfigRepository) SetAuthenticationEndpoint(endpoint string) {
 func (c *ConfigRepository) SetLoggregatorEndpoint(endpoint string) {
 	c.write(func() {
 		c.data.LoggregatorEndPoint = endpoint
+	})
+}
+
+func (c *ConfigRepository) SetDopplerEndpoint(endpoint string) {
+	c.write(func() {
+		c.data.DopplerEndPoint = endpoint
 	})
 }
 

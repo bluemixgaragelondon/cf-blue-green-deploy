@@ -1,5 +1,7 @@
 package plugin
 
+import "github.com/cloudfoundry/cli/plugin/models"
+
 /**
 	Command interface needs to be implemented for a runnable plugin of `cf`
 **/
@@ -14,6 +16,21 @@ type Plugin interface {
 type CliConnection interface {
 	CliCommandWithoutTerminalOutput(args ...string) ([]string, error)
 	CliCommand(args ...string) ([]string, error)
+	GetCurrentOrg() (plugin_models.Organization, error)
+	GetCurrentSpace() (plugin_models.Space, error)
+	Username() (string, error)
+	UserGuid() (string, error)
+	UserEmail() (string, error)
+	IsLoggedIn() (bool, error)
+	IsSSLDisabled() (bool, error)
+	HasOrganization() (bool, error)
+	HasSpace() (bool, error)
+	ApiEndpoint() (string, error)
+	ApiVersion() (string, error)
+	HasAPIEndpoint() (bool, error)
+	LoggregatorEndpoint() (string, error)
+	DopplerEndpoint() (string, error)
+	AccessToken() (string, error)
 }
 
 type VersionType struct {
