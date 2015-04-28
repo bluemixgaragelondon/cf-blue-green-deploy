@@ -1,4 +1,3 @@
-// Must not trigger a new plugin release
 package main
 
 import (
