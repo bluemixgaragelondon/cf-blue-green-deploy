@@ -1,6 +1,8 @@
 package main_test
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/cloudfoundry/cli/cf/manifest"
 	"github.com/cloudfoundry/cli/generic"
@@ -41,9 +43,17 @@ var _ = Describe("Manifest reader", func() {
             host: foohost`,
 			}
 
-			It("Returns the host for the passed app name", func() {
+			It("Returns the params for the passed app name", func() {
 				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(ContainElement("foohost"))
 			})
+		})
+	})
+
+	Context("When no manifest file is present", func() {
+		repo := FakeRepo{err: errors.New("Error finding manifest")}
+
+		It("Returns nil", func() {
+			Expect(GetAppFromManifest(&repo, "foo")).To(BeNil())
 		})
 	})
 })

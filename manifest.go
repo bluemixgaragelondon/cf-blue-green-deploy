@@ -9,7 +9,11 @@ import (
 type ManifestReader func(manifest.ManifestRepository, string) *models.AppParams
 
 func GetAppFromManifest(repo manifest.ManifestRepository, appName string) *models.AppParams {
-	m, _ := repo.ReadManifest("")
+	m, err := repo.ReadManifest("")
+	if err != nil {
+		return nil
+	}
+
 	apps, _ := m.Applications()
 
 	if len(apps) == 1 {
