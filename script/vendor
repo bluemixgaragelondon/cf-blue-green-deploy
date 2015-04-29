@@ -5,22 +5,12 @@
 CF_CLI_VERSION="v6.11.2"
 
 main() {
-  update_go_pkg github.com/onsi/ginkgo/ginkgo
-  update_go_pkg github.com/onsi/gomega
-  ignore_failures update_go_pkg github.com/cloudfoundry/cli
+  go get -u github.com/onsi/ginkgo/ginkgo
+  go get -u github.com/onsi/gomega
+  go get -d github.com/cloudfoundry/cli
   cf_cli_set_version
   cf_cli_generate_language_resources
   update_godeps
-}
-
-update_go_pkg() {
-  go get -u "$1"
-}
-
-ignore_failures() {
-  set +e
-  "$@"
-  set -e
 }
 
 cf_cli_set_version() {
