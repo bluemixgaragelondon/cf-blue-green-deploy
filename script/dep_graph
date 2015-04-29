@@ -1,4 +1,7 @@
 #!/bin/bash
 
-goviz -i hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy | dot -Tpng -o deps.png
-open deps.png
+go_project=cf-blue-green-deploy
+graph_file="/tmp/${go_project}_dep_graph.png"
+
+goviz -i "hub.jazz.net/git/bluemixgarage/$go_project" | dot -Tpng -o "$graph_file"
+open "$graph_file"

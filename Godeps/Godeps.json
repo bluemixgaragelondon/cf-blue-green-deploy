@@ -3,7 +3,31 @@
 	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
+			"ImportPath": "github.com/cloudfoundry-incubator/candiedyaml",
+			"Rev": "884e358e25b53c57d4717ca0791306adb174add1"
+		},
+		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/configuration",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf/errors",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf/formatters",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf/i18n",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf/manifest",
 			"Comment": "v6.11.1-7-gee883c0",
 			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
 		},
@@ -13,9 +37,28 @@
 			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
 		},
 		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf/resources",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/generic",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
 			"ImportPath": "github.com/cloudfoundry/cli/plugin",
 			"Comment": "v6.11.1-7-gee883c0",
 			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/words",
+			"Comment": "v6.11.1-7-gee883c0",
+			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+		},
+		{
+			"ImportPath": "github.com/nicksnyder/go-i18n/i18n",
+			"Rev": "c722cd1cec3e26a1393aecf0058c9f3a037a9657"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -26,6 +69,10 @@
 			"ImportPath": "github.com/onsi/gomega",
 			"Comment": "v1.0-25-g85936b2",
 			"Rev": "85936b29809b7df066a8d839dd105e158e510264"
+		},
+		{
+			"ImportPath": "github.com/pivotal-cf-experimental/jibber_jabber",
+			"Rev": "901694860a59e63e1d392e6597ca919364f6abd1"
 		}
 	]
 }
