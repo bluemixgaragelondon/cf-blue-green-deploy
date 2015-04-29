@@ -1,6 +1,9 @@
 {
 	"ImportPath": "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy",
 	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/cloudfoundry-incubator/candiedyaml",
@@ -8,53 +11,53 @@
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/configuration",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/errors",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/formatters",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/i18n",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/manifest",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/models",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/cf/resources",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/generic",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/plugin",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/words",
-			"Comment": "v6.11.1-7-gee883c0",
-			"Rev": "ee883c00672cd91f0606570a615f06f5cf499529"
+			"Comment": "v6.11.2",
+			"Rev": "2a26d5588d6ffc38cb08183244d8c0b7a5504f14"
 		},
 		{
 			"ImportPath": "github.com/nicksnyder/go-i18n/i18n",
@@ -62,13 +65,13 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.1.0-33-g17ea479",
-			"Rev": "17ea479729ee427265ac1e913443018350946ddf"
+			"Comment": "v1.1.0-44-gae043a2",
+			"Rev": "ae043a2b2a91d6441adedc96d2c01958a78ee516"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-25-g85936b2",
-			"Rev": "85936b29809b7df066a8d839dd105e158e510264"
+			"Comment": "v1.0-41-ga91b9a2",
+			"Rev": "a91b9a2e8063d07570320914bfe10a91d9323074"
 		},
 		{
 			"ImportPath": "github.com/pivotal-cf-experimental/jibber_jabber",
