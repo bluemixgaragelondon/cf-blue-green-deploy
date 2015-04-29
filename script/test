@@ -6,7 +6,7 @@ main() {
   . script/with_env
   install_test_dependencies
 
-  within_app use_vendored_packages
+  within_app script/setup
   within_app run_tests
   within_app prepare_code_coverage_results
 }
@@ -21,10 +21,6 @@ within_app() {
   pushd "${GOPATH}/src/${APP_PKG_NAME}" >/dev/null
   "$@"
   popd >/dev/null
-}
-
-use_vendored_packages() {
-    godep restore
 }
 
 run_tests() {
