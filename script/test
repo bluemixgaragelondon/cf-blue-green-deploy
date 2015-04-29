@@ -12,7 +12,14 @@ main() {
 }
 
 install_test_dependencies() {
-  which godep > /dev/null 2>&1 || go get github.com/tools/godep
+  if ! [ -d "$GOPATH"/src/github.com/smarterclayton/godep ]
+  then
+    go get -d github.com/smarterclayton/godep
+    pushd "$GOPATH"/src/github.com/smarterclayton/godep
+      git checkout handle_large_files
+      go install
+    popd
+  fi
   which ginkgo > /dev/null 2>&1|| go get github.com/onsi/ginkgo/ginkgo
   go tool | grep cover > /dev/null 2>&1 || go get golang.org/x/tools/cmd/cover
 }
