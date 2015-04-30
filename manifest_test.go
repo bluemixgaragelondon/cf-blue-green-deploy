@@ -4,14 +4,19 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
+	"github.com/cloudfoundry/cli/cf/i18n"
 	"github.com/cloudfoundry/cli/cf/manifest"
 	"github.com/cloudfoundry/cli/generic"
+	go_i18n "github.com/nicksnyder/go-i18n/i18n"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 )
 
 var _ = Describe("Manifest reader", func() {
+	// testing code that calls into cf cli requires T to point to a translate func
+	i18n.T, _ = go_i18n.Tfunc("")
+
 	Context("When the manifest file is present", func() {
 		Context("when the manifest contain a host but no app name", func() {
 			repo := FakeRepo{yaml: `---
@@ -36,15 +41,26 @@ var _ = Describe("Manifest reader", func() {
 
 		Context("when the manifest contains multiple apps with 1 matching", func() {
 			repo := FakeRepo{yaml: `---
-        applications:
-          - name: bar
-            host: barhost
-          - name: foo
-            host: foohost`,
+applications:
+- name: bar
+  host: barhost
+- name: foo
+  hosts:
+  - host1
+  - host2
+  domains:
+  - example1.com
+  - example2.com`,
 			}
 
-			It("Returns the params for the passed app name", func() {
-				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(ContainElement("foohost"))
+			It("Returns the correct app", func() {
+				name := "foo"
+				hosts := []string{"host1", "host2"}
+				domains := []string{"example1.com", "example2.com"}
+
+				Expect(*GetAppFromManifest(&repo, "foo").Name).To(Equal(name))
+				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(BeEquivalentTo(hosts))
+				Expect(*GetAppFromManifest(&repo, "foo").Domains).To(BeEquivalentTo(domains))
 			})
 		})
 	})

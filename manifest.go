@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/cloudfoundry/cli/cf/manifest"
-
 	"github.com/cloudfoundry/cli/cf/models"
 )
 
