@@ -31,7 +31,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc, Out: bgdOut}
 	})
 
-	Describe("RemapRoutesFromLiveappToNewApp", func() {
+	Describe("route re-mapping from live app to new app", func() {
 		var (
 			liveApp, newApp Application
 		)
@@ -286,7 +286,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			p.AppLister = appLister
 		})
 
-		It("pushes an app with the timestamp appended to its name", func() {
+		It("pushes an app with new appended to its name", func() {
 			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
