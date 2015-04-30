@@ -15,10 +15,6 @@ func TestLoadTranslationFile(t *testing.T) {
 	t.Skipf("not implemented")
 }
 
-func TestParseTranslationFileBytes(t *testing.T) {
-	t.Skipf("not implemented")
-}
-
 func TestAddTranslation(t *testing.T) {
 	t.Skipf("not implemented")
 }
