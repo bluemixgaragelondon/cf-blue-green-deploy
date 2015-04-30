@@ -54,13 +54,9 @@ applications:
 			}
 
 			It("Returns the correct app", func() {
-				name := "foo"
-				hosts := []string{"host1", "host2"}
-				domains := []string{"example1.com", "example2.com"}
-
-				Expect(*GetAppFromManifest(&repo, "foo").Name).To(Equal(name))
-				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(BeEquivalentTo(hosts))
-				Expect(*GetAppFromManifest(&repo, "foo").Domains).To(BeEquivalentTo(domains))
+				Expect(*GetAppFromManifest(&repo, "foo").Name).To(Equal("foo"))
+				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(ConsistOf("host1", "host2"))
+				Expect(*GetAppFromManifest(&repo, "foo").Domains).To(ConsistOf("example1.com", "example2.com"))
 			})
 		})
 	})
