@@ -22,9 +22,10 @@ var _ = Describe("Manifest reader", func() {
 			repo := FakeRepo{yaml: `---
         host: foo`,
 			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns params that contain the host", func() {
-				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(ContainElement("foo"))
+				Expect(*manifestAppFinder.AppParams().Hosts).To(ContainElement("foo"))
 			})
 		})
 
@@ -33,9 +34,10 @@ var _ = Describe("Manifest reader", func() {
         name: bar
         host: foo`,
 			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns nil", func() {
-				Expect(GetAppFromManifest(&repo, "foo")).To(BeNil())
+				Expect(manifestAppFinder.AppParams()).To(BeNil())
 			})
 		})
 
@@ -52,20 +54,67 @@ applications:
   - example1.com
   - example2.com`,
 			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns the correct app", func() {
-				Expect(*GetAppFromManifest(&repo, "foo").Name).To(Equal("foo"))
-				Expect(*GetAppFromManifest(&repo, "foo").Hosts).To(ConsistOf("host1", "host2"))
-				Expect(*GetAppFromManifest(&repo, "foo").Domains).To(ConsistOf("example1.com", "example2.com"))
+				Expect(*manifestAppFinder.AppParams().Name).To(Equal("foo"))
+				Expect(*manifestAppFinder.AppParams().Hosts).To(ConsistOf("host1", "host2"))
+				Expect(*manifestAppFinder.AppParams().Domains).To(ConsistOf("example1.com", "example2.com"))
 			})
 		})
 	})
 
 	Context("When no manifest file is present", func() {
 		repo := FakeRepo{err: errors.New("Error finding manifest")}
+		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 		It("Returns nil", func() {
-			Expect(GetAppFromManifest(&repo, "foo")).To(BeNil())
+			Expect(manifestAppFinder.AppParams()).To(BeNil())
+		})
+	})
+
+	Context("When manifest file is empty", func() {
+		repo := FakeRepo{yaml: ``}
+		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+
+		It("Returns nil", func() {
+			Expect(manifestAppFinder.AppParams()).To(BeNil())
+		})
+	})
+
+	Describe("OurManifest", func() {
+		Describe("return Application from manifest", func() {
+			It("creates Application from AppParams", func() {
+				repo := FakeRepo{yaml: `---
+name: foo
+hosts:
+- host1
+- host2
+domains:
+- example1.com
+- example2.com`,
+				}
+				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+
+				app := manifestAppFinder.Application()
+
+				Expect(app.Name).To(Equal("foo"))
+				Expect(app.Routes).To(ConsistOf(
+					Route{Host: "host1", Domain: Domain{Name: "example1.com"}},
+					Route{Host: "host1", Domain: Domain{Name: "example2.com"}},
+					Route{Host: "host2", Domain: Domain{Name: "example1.com"}},
+					Route{Host: "host2", Domain: Domain{Name: "example2.com"}},
+				))
+			})
+
+			Context("when no matching application", func() {
+				It("returns nil", func() {
+					repo := FakeRepo{yaml: ``}
+					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+
+					Expect(manifestAppFinder.Application()).To(BeNil())
+				})
+			})
 		})
 	})
 })
