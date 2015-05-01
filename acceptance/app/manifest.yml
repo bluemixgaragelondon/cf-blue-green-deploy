@@ -1,5 +1,10 @@
 name: cf-blue-green-deploy-test-app
-host: testhost
 command: ./start $PORT
 memory: 8M
 buildpack: https://github.com/ph3nx/heroku-binary-buildpack.git
+hosts:
+  - bgd1
+  - bgd2
+domains:
+  - bluegreen.ibm
+  - 5.10.124.141.xip.io
