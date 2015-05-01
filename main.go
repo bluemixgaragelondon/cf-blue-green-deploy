@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cloudfoundry/cli/cf/manifest"
 	"github.com/cloudfoundry/cli/plugin"
 )
 
@@ -32,17 +33,18 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	if !p.Deploy(defaultCfDomain, args) {
+	if !p.Deploy(defaultCfDomain, manifest.ManifestDiskRepository{}, args) {
 		fmt.Println("Smoke tests failed")
 		os.Exit(1)
 	}
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, args []string) bool {
+func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestRepository, args []string) bool {
 	appName := args[1]
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveApp := p.Deployer.LiveApp(appName)
+
 	newAppName := appName + "-new"
 	// load routes from manifest
 	newApp := Application{

@@ -36,7 +36,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", []string{"bgd", "app-name"})
+				p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -58,7 +58,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", []string{"bgd", "app-name"})
+				p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -86,7 +86,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -100,7 +100,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					result := p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(result).To(Equal(true))
 				})
@@ -120,7 +120,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -133,7 +133,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					result := p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(result).To(Equal(false))
 				})
