@@ -16,8 +16,13 @@ func (f *ManifestAppFinder) Application() *Application {
 	if appParams := f.AppParams(); appParams != nil {
 		app := Application{Name: *appParams.Name}
 
-		for _, domain := range *appParams.Domains {
-			for _, host := range *appParams.Hosts {
+		for _, host := range *appParams.Hosts {
+			if appParams.Domains == nil {
+				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: DefaultCfDomain}})
+				continue
+			}
+
+			for _, domain := range *appParams.Domains {
 				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: domain}})
 			}
 		}

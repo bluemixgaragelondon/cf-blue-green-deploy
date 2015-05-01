@@ -84,15 +84,15 @@ applications:
 
 	Describe("OurManifest", func() {
 		Describe("return Application from manifest", func() {
-			It("creates Application from AppParams", func() {
+			It("returns Application", func() {
 				repo := FakeRepo{yaml: `---
 name: foo
 hosts:
 - host1
 - host2
 domains:
-- example1.com
-- example2.com`,
+- example.com
+- example.net`,
 				}
 				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
@@ -100,11 +100,31 @@ domains:
 
 				Expect(app.Name).To(Equal("foo"))
 				Expect(app.Routes).To(ConsistOf(
-					Route{Host: "host1", Domain: Domain{Name: "example1.com"}},
-					Route{Host: "host1", Domain: Domain{Name: "example2.com"}},
-					Route{Host: "host2", Domain: Domain{Name: "example1.com"}},
-					Route{Host: "host2", Domain: Domain{Name: "example2.com"}},
+					Route{Host: "host1", Domain: Domain{Name: "example.com"}},
+					Route{Host: "host1", Domain: Domain{Name: "example.net"}},
+					Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+					Route{Host: "host2", Domain: Domain{Name: "example.net"}},
 				))
+			})
+
+			Context("when app has just hosts, no domains", func() {
+				It("returns Application", func() {
+					DefaultCfDomain = "example.com"
+					repo := FakeRepo{yaml: `---
+name: foo
+hosts:
+- host1
+- host2`,
+					}
+					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+					app := manifestAppFinder.Application()
+
+					Expect(app.Name).To(Equal("foo"))
+					Expect(app.Routes).To(ConsistOf(
+						Route{Host: "host1", Domain: Domain{Name: "example.com"}},
+						Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+					))
+				})
 			})
 
 			Context("when no matching application", func() {
