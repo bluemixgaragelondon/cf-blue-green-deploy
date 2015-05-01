@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry/cli/cf/manifest"
 	"github.com/cloudfoundry/cli/cf/models"
 )
@@ -33,12 +35,16 @@ func (f *ManifestAppFinder) Application(defaultDomain string) *Application {
 }
 
 func (f *ManifestAppFinder) AppParams() *models.AppParams {
-	manifest, err := f.Repo.ReadManifest("")
+	manifest, err := f.Repo.ReadManifest("./")
 	if err != nil {
 		return nil
 	}
 
-	apps, _ := manifest.Applications()
+	apps, err := manifest.Applications()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
 
 	for index, app := range apps {
 		if app.IsHostEmpty() {
