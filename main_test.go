@@ -1,9 +1,11 @@
 package main_test
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
@@ -142,6 +144,60 @@ var _ = Describe("BGD Plugin", func() {
 				})
 			})
 		})
+
+		Describe("DefaultCfDomain", func() {
+			connection := &fakes.FakeCliConnection{}
+			p := CfPlugin{Connection: connection}
+
+			Context("when CF command succeeds", func() {
+				It("returns CF default shared domain", func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return []string{`{
+     "total_results": 2,
+     "total_pages": 1,
+     "prev_url": null,
+     "next_url": null,
+     "resources": [
+        {
+           "metadata": {
+              "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
+              "url": "/v2/shared_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
+              "created_at": "2014-10-20T09:21:39+00:00",
+              "updated_at": null
+           },
+           "entity": {
+              "name": "eu-gb.mybluemix.net"
+           }
+        }
+     ]
+  }`}, nil
+					}
+					domain, _ := p.DefaultCfDomain()
+					Expect(domain).To(Equal("eu-gb.mybluemix.net"))
+				})
+			})
+
+			Context("when CF command fails", func() {
+				It("returns error", func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("cf curl failed")
+					}
+					_, err := p.DefaultCfDomain()
+					Expect(err).To(MatchError("cf curl failed"))
+				})
+			})
+
+			Context("when CF command returns invalid JSON", func() {
+				It("returns error", func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return []string{`{"resources": { "entity": "foo" }}`}, nil
+					}
+					_, err := p.DefaultCfDomain()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
 	})
 })
 

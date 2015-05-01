@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +11,8 @@ import (
 
 var PluginVersion string
 
+var DefaultCfDomain string
+
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
@@ -17,10 +20,17 @@ type CfPlugin struct {
 
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
+
+	var err error
+	if DefaultCfDomain, err = p.DefaultCfDomain(); err != nil {
+		fmt.Println("Failed to get default shared domain")
+		os.Exit(1)
+	}
+
 	p.Deployer.Setup(cliConnection)
 
 	if len(args) < 2 {
-		fmt.Printf("App name must be provided")
+		fmt.Println("App name must be provided")
 		os.Exit(1)
 	}
 
@@ -87,6 +97,28 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 			},
 		},
 	}
+}
+
+func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
+	var res []string
+	if res, err = p.Connection.CliCommand("curl", "/v2/shared_domains"); err != nil {
+		return
+	}
+
+	response := struct {
+		Resources []struct {
+			Entity struct {
+				Name string
+			}
+		}
+	}{}
+
+	if err = json.Unmarshal([]byte(res[0]), &response); err != nil {
+		return
+	}
+
+	domain = response.Resources[0].Entity.Name
+	return
 }
 
 func GenerateAppName(base string) string {
