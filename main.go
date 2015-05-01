@@ -11,8 +11,6 @@ import (
 
 var PluginVersion string
 
-var DefaultCfDomain string
-
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
@@ -21,8 +19,8 @@ type CfPlugin struct {
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Connection = cliConnection
 
-	var err error
-	if DefaultCfDomain, err = p.DefaultCfDomain(); err != nil {
+	defaultCfDomain, err := p.DefaultCfDomain()
+	if err != nil {
 		fmt.Println("Failed to get default shared domain")
 		os.Exit(1)
 	}
@@ -34,18 +32,18 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	if !p.Deploy(args) {
+	if !p.Deploy(defaultCfDomain, args) {
 		fmt.Println("Smoke tests failed")
 		os.Exit(1)
 	}
 }
 
-func (p *CfPlugin) Deploy(args []string) bool {
+func (p *CfPlugin) Deploy(defaultCfDomain string, args []string) bool {
 	appName := args[1]
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveApp := p.Deployer.LiveApp(appName)
-	newApp := p.Deployer.PushNewApp(appName)
+	newApp := p.Deployer.PushNewApp(appName, defaultCfDomain)
 
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
@@ -64,7 +62,6 @@ func (p *CfPlugin) Deploy(args []string) bool {
 			p.Deployer.MapAllRoutes(&newApp)
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
 			p.Deployer.RenameApp(&newApp, appName)
-			// p.Deployer.UpdateAppName(null, newApp)
 		}
 		return true
 	} else {

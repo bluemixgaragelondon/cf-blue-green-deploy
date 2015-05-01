@@ -8,21 +8,21 @@ import (
 
 var _ = Describe("Application", func() {
 	Describe("default route", func() {
-		Context("when there is one route that has a timestamp", func() {
-			It("returns that route", func() {
-				app := Application{
-					Name: "app-20150410155216",
-					Routes: []Route{
-						{Host: "app-20150410155216", Domain: Domain{Name: "mybluemix.net"}},
-						{Host: "app", Domain: Domain{Name: "example.com"}},
-					},
-				}
+		It("returns the route with host same as app name and default domain", func() {
+			app := Application{
+				DefaultDomain: "mybluemix.net",
+				Name:          "app-new",
+				Routes: []Route{
+					{Host: "app-new", Domain: Domain{Name: "example.com"}},
+					{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}},
+					{Host: "app", Domain: Domain{Name: "example.com"}},
+				},
+			}
 
-				Expect(app.DefaultRoute()).To(Equal(Route{
-					Host:   "app-20150410155216",
-					Domain: Domain{Name: "mybluemix.net"},
-				}))
-			})
+			Expect(app.DefaultRoute()).To(Equal(Route{
+				Host:   "app-new",
+				Domain: Domain{Name: "mybluemix.net"},
+			}))
 		})
 	})
 })

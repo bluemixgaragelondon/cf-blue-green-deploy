@@ -12,13 +12,13 @@ type ManifestAppFinder struct {
 	AppName string
 }
 
-func (f *ManifestAppFinder) Application() *Application {
+func (f *ManifestAppFinder) Application(defaultDomain string) *Application {
 	if appParams := f.AppParams(); appParams != nil {
-		app := Application{Name: *appParams.Name}
+		app := Application{Name: *appParams.Name, DefaultDomain: defaultDomain}
 
 		for _, host := range *appParams.Hosts {
 			if appParams.Domains == nil {
-				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: DefaultCfDomain}})
+				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: app.DefaultDomain}})
 				continue
 			}
 

@@ -96,7 +96,7 @@ domains:
 				}
 				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
-				app := manifestAppFinder.Application()
+				app := manifestAppFinder.Application("example.com")
 
 				Expect(app.Name).To(Equal("foo"))
 				Expect(app.Routes).To(ConsistOf(
@@ -109,7 +109,6 @@ domains:
 
 			Context("when app has just hosts, no domains", func() {
 				It("returns Application", func() {
-					DefaultCfDomain = "example.com"
 					repo := FakeRepo{yaml: `---
 name: foo
 hosts:
@@ -117,7 +116,7 @@ hosts:
 - host2`,
 					}
 					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
-					app := manifestAppFinder.Application()
+					app := manifestAppFinder.Application("example.com")
 
 					Expect(app.Name).To(Equal("foo"))
 					Expect(app.Routes).To(ConsistOf(
@@ -132,7 +131,7 @@ hosts:
 					repo := FakeRepo{yaml: ``}
 					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
-					Expect(manifestAppFinder.Application()).To(BeNil())
+					Expect(manifestAppFinder.Application("example.com")).To(BeNil())
 				})
 			})
 		})

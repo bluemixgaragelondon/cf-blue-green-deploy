@@ -17,7 +17,7 @@ type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string) Application
+	PushNewApp(string, string) Application
 	DeleteAllAppsExceptLiveApp(string)
 	LiveApp(string) *Application
 	RunSmokeTests(string, string) bool
@@ -59,13 +59,15 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 	p.DeleteAppVersions(oldAppVersions)
 }
 
-func (p *BlueGreenDeploy) PushNewApp(appName string) (newApp Application) {
+func (p *BlueGreenDeploy) PushNewApp(appName string, domainName string) (newApp Application) {
 	newApp.Name = GenerateAppName(appName)
-	if _, err := p.Connection.CliCommand("push", newApp.Name, "-n", newApp.Name, "-d", DefaultCfDomain); err != nil {
+	newApp.DefaultDomain = domainName
+
+	if _, err := p.Connection.CliCommand("push", newApp.Name, "-n", newApp.Name, "-d", newApp.DefaultDomain); err != nil {
 		p.ErrorFunc("Could not push new version", err)
 	}
 
-	newApp.Routes = append(newApp.Routes, Route{Host: newApp.Name, Domain: Domain{Name: DefaultCfDomain}})
+	newApp.Routes = append(newApp.Routes, Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}})
 	return
 }
 

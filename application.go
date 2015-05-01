@@ -3,8 +3,9 @@ package main
 import "fmt"
 
 type Application struct {
-	Name   string
-	Routes []Route
+	DefaultDomain string
+	Name          string
+	Routes        []Route
 }
 
 type Route struct {
@@ -18,7 +19,7 @@ type Domain struct {
 
 func (a *Application) DefaultRoute() Route {
 	for _, route := range a.Routes {
-		if route.Host == a.Name {
+		if route.Host == a.Name && route.Domain.Name == a.DefaultDomain {
 			return route
 		}
 	}

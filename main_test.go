@@ -44,7 +44,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy([]string{"bgd", "app-name"})
+				p.Deploy("example.com", []string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -66,7 +66,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy([]string{"bgd", "app-name"})
+				p.Deploy("example.com", []string{"bgd", "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -94,7 +94,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -108,7 +108,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					result := p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(result).To(Equal(true))
 				})
@@ -128,7 +128,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -141,7 +141,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					result := p.Deploy("example.com", []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
 
 					Expect(result).To(Equal(false))
 				})
@@ -215,10 +215,10 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(appName string) Application {
+func (p *BlueGreenDeployFake) PushNewApp(appName string, domainName string) Application {
 	appName = appName + "-new"
 	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
-	return Application{Name: appName, Routes: []Route{{Host: appName, Domain: Domain{Name: "example.com"}}}}
+	return Application{Name: appName, Routes: []Route{{Host: appName, Domain: Domain{Name: domainName}}}, DefaultDomain: domainName}
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
