@@ -324,7 +324,15 @@ var _ = Describe("BlueGreenDeploy", func() {
 			p.PushNewApp("app-name")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
-				To(MatchRegexp(`-n app-name-new$`))
+				To(MatchRegexp(`-n app-name-new`))
+		})
+
+		It("pushes with the default cf domain", func() {
+			DefaultCfDomain = "example.com"
+			p.PushNewApp("app-name")
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`-d example.com`))
 		})
 
 		It("returns the new app as an Application", func() {
