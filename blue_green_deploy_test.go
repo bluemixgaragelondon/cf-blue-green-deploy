@@ -31,7 +31,34 @@ var _ = Describe("BlueGreenDeploy", func() {
 		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc, Out: bgdOut}
 	})
 
-	Describe("route re-mapping from live app to new app", func() {
+	Describe("map all routes", func() {
+		var (
+			manifestApp Application
+		)
+
+		BeforeEach(func() {
+			manifestApp = Application{
+				Name: "new",
+				Routes: []Route{
+					{Host: "host", Domain: Domain{Name: "example.com"}},
+					{Host: "host", Domain: Domain{Name: "example.net"}},
+				},
+			}
+		})
+
+		It("maps all", func() {
+			p.MapAllRoutes(&manifestApp)
+
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(Equal([]string{
+				"map-route new example.com -n host",
+				"map-route new example.net -n host",
+			}))
+		})
+	})
+
+	Describe("route remapping from live app to new app", func() {
 		var (
 			liveApp, newApp Application
 		)

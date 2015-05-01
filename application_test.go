@@ -7,7 +7,7 @@ import (
 )
 
 var _ = Describe("Application", func() {
-	Describe("DefaultRoute", func() {
+	Describe("default route", func() {
 		Context("when there is one route that has a timestamp", func() {
 			It("returns that route", func() {
 				app := Application{
@@ -28,7 +28,7 @@ var _ = Describe("Application", func() {
 })
 
 var _ = Describe("Route", func() {
-	Describe("FQDN()", func() {
+	Describe("fqdn", func() {
 		It("returns the fqdn of the route", func() {
 			route := Route{Host: "testroute", Domain: Domain{Name: "example.com"}}
 			Expect(route.FQDN()).To(Equal("testroute.example.com"))

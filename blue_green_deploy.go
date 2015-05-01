@@ -152,6 +152,12 @@ func (p *BlueGreenDeploy) RenameApp(app *Application, newName string) {
 	app.Name = newName
 }
 
+func (p *BlueGreenDeploy) MapAllRoutes(app *Application) {
+	for _, route := range app.Routes {
+		p.mapRoute(*app, route)
+	}
+}
+
 func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {
 	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
 
