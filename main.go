@@ -103,7 +103,7 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 
 func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	var res []string
-	if res, err = p.Connection.CliCommand("curl", "/v2/shared_domains"); err != nil {
+	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
 		return
 	}
 

@@ -154,7 +154,7 @@ var _ = Describe("BGD Plugin", func() {
 
 			Context("when CF command succeeds", func() {
 				It("returns CF default shared domain", func() {
-					connection.CliCommandStub = func(args ...string) ([]string, error) {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{`{
      "total_results": 2,
      "total_pages": 1,
@@ -182,7 +182,7 @@ var _ = Describe("BGD Plugin", func() {
 
 			Context("when CF command fails", func() {
 				It("returns error", func() {
-					connection.CliCommandStub = func(args ...string) ([]string, error) {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return nil, errors.New("cf curl failed")
 					}
 					_, err := p.DefaultCfDomain()
@@ -192,7 +192,7 @@ var _ = Describe("BGD Plugin", func() {
 
 			Context("when CF command returns invalid JSON", func() {
 				It("returns error", func() {
-					connection.CliCommandStub = func(args ...string) ([]string, error) {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{`{"resources": { "entity": "foo" }}`}, nil
 					}
 					_, err := p.DefaultCfDomain()
