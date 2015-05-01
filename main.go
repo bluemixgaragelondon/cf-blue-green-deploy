@@ -20,6 +20,10 @@ type CfPlugin struct {
 }
 
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+	if len(args) > 0 && args[0] == "CLI-MESSAGE-UNINSTALL" {
+		return
+	}
+
 	p.Connection = cliConnection
 
 	defaultCfDomain, err := p.DefaultCfDomain()
