@@ -43,7 +43,14 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, args []string) bool {
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveApp := p.Deployer.LiveApp(appName)
-	newApp := p.Deployer.PushNewApp(appName, defaultCfDomain)
+	newAppName := appName + "-new"
+	// load routes from manifest
+	newApp := Application{
+		Name:          newAppName,
+		DefaultDomain: defaultCfDomain,
+		Routes:        []Route{{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}},
+	}
+	p.Deployer.PushNewApp(&newApp)
 
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
@@ -118,10 +125,6 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 
 	domain = response.Resources[0].Entity.Name
 	return
-}
-
-func GenerateAppName(base string) string {
-	return base + "-new"
 }
 
 func ExtractIntegrationTestScript(args []string) string {

@@ -28,14 +28,6 @@ var _ = Describe("BGD Plugin", func() {
 		})
 	})
 
-	Describe("app name generator", func() {
-		generated := GenerateAppName("foo")
-
-		It("uses the passed name with -new appended", func() {
-			Expect(generated).To(Equal("foo-new"))
-		})
-	})
-
 	Describe("blue green flow", func() {
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
@@ -215,10 +207,8 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(appName string, domainName string) Application {
-	appName = appName + "-new"
-	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
-	return Application{Name: appName, Routes: []Route{{Host: appName, Domain: Domain{Name: domainName}}}, DefaultDomain: domainName}
+func (p *BlueGreenDeployFake) PushNewApp(app *Application) {
+	p.flow = append(p.flow, fmt.Sprintf("push %s", app.Name))
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {

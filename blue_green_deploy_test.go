@@ -305,32 +305,27 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("pushing a new app", func() {
+		newApp := Application{Name: "app-name-new", DefaultDomain: "example.com"}
+
 		It("pushes an app with new appended to its name", func() {
-			p.PushNewApp("app-name", "example.com")
+			p.PushNewApp(&newApp)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`^push app-name-new`))
 		})
 
 		It("uses the generated name for the route", func() {
-			p.PushNewApp("app-name", "example.com")
+			p.PushNewApp(&newApp)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-n app-name-new`))
 		})
 
 		It("pushes with the default cf domain", func() {
-			p.PushNewApp("app-name", "example.com")
+			p.PushNewApp(&newApp)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-d example.com`))
-		})
-
-		It("returns the new app as an Application", func() {
-			var newApp Application = p.PushNewApp("app-name", "example.com")
-
-			Expect(newApp.Name).To(MatchRegexp(`^app-name-new$`))
-			Expect(newApp.Routes[0].Host).To(Equal("app-name-new"))
 		})
 
 		Context("when the push fails", func() {
@@ -341,7 +336,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 
 			It("returns an error", func() {
-				p.PushNewApp("app-name", "example.com")
+				p.PushNewApp(&newApp)
 
 				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to push app"))
 			})
