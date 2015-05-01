@@ -51,6 +51,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"remap routes from app-name-live to app-name-new",
+					"map all app-name-new routes",
 					"unmap temporary route from app-name-new",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
@@ -71,6 +72,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
+					"map all app-name-new routes",
 					"unmap temporary route from app-name-new",
 					"rename app-name-new to app-name",
 				}))
@@ -99,6 +101,7 @@ var _ = Describe("BGD Plugin", func() {
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
+						"map all app-name-new routes",
 						"unmap temporary route from app-name-new",
 						"rename app-name-new to app-name",
 					}))
@@ -241,4 +244,8 @@ func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp Application) 
 
 func (p *BlueGreenDeployFake) RenameApp(app *Application, newName string) {
 	p.flow = append(p.flow, fmt.Sprintf("rename %s to %s", app.Name, newName))
+}
+
+func (p *BlueGreenDeployFake) MapAllRoutes(app *Application) {
+	p.flow = append(p.flow, fmt.Sprintf("map all %s routes", app.Name))
 }

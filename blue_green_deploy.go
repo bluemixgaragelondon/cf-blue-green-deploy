@@ -24,6 +24,7 @@ type BlueGreenDeployer interface {
 	RemapRoutesFromLiveAppToNewApp(Application, Application)
 	UnmapTemporaryRouteFromNewApp(Application)
 	RenameApp(*Application, string)
+	MapAllRoutes(*Application)
 }
 
 type BlueGreenDeploy struct {
