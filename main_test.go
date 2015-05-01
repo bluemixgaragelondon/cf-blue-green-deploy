@@ -43,7 +43,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"remap routes from app-name-live to app-name-new",
-					"map all app-name-new routes",
+					"mapped 1 routes",
 					"unmap temporary route from app-name-new",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
@@ -64,7 +64,35 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"map all app-name-new routes",
+					"mapped 1 routes",
+					"unmap temporary route from app-name-new",
+					"rename app-name-new to app-name",
+				}))
+			})
+		})
+
+		Context("when app has manifest", func() {
+			It("maps manifest routes", func() {
+				b := &BlueGreenDeployFake{liveApp: nil}
+				p := CfPlugin{
+					Deployer: b,
+				}
+				repo := &FakeRepo{yaml: `---
+name: app-name
+hosts:
+- host1
+- host2
+domains:
+- example.com
+- example.net`}
+
+				p.Deploy("example.com", repo, []string{"bgd", "app-name"})
+
+				Expect(b.flow).To(Equal([]string{
+					"delete old apps",
+					"get current live app",
+					"push app-name-new",
+					"mapped 5 routes",
 					"unmap temporary route from app-name-new",
 					"rename app-name-new to app-name",
 				}))
@@ -93,7 +121,7 @@ var _ = Describe("BGD Plugin", func() {
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"map all app-name-new routes",
+						"mapped 1 routes",
 						"unmap temporary route from app-name-new",
 						"rename app-name-new to app-name",
 					}))
@@ -237,5 +265,5 @@ func (p *BlueGreenDeployFake) RenameApp(app *Application, newName string) {
 }
 
 func (p *BlueGreenDeployFake) MapAllRoutes(app *Application) {
-	p.flow = append(p.flow, fmt.Sprintf("map all %s routes", app.Name))
+	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(app.Routes)))
 }
