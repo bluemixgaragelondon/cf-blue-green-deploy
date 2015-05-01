@@ -65,14 +65,7 @@ func (p *BlueGreenDeploy) PushNewApp(appName string) (newApp Application) {
 		p.ErrorFunc("Could not push new version", err)
 	}
 
-	apps, _ := p.AppsInCurrentSpace()
-	for i, app := range apps {
-		if app.Name == newApp.Name {
-			newApp = apps[i]
-			break
-		}
-	}
-
+	newApp.Routes = append(newApp.Routes, Route{Host: newApp.Name, Domain: Domain{Name: DefaultCfDomain}})
 	return
 }
 
