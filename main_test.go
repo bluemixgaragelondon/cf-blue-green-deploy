@@ -43,10 +43,10 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"remap routes from app-name-live to app-name-new",
-					"mapped 1 routes",
-					"unmap temporary route from app-name-new",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
+					"mapped 1 routes",
+					"unmap temporary route from app-name-new",
 				}))
 			})
 		})
