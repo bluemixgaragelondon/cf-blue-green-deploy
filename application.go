@@ -24,7 +24,7 @@ func (a *Application) DefaultRoute() Route {
 		}
 	}
 
-	return Route{}
+	return a.Routes[0]
 }
 
 func (r Route) FQDN() string {
