@@ -42,11 +42,11 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
+					"unmap temporary route from app-name-new",
 					"remap routes from app-name-live to app-name-new",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
 					"mapped 1 routes",
-					"unmap temporary route from app-name-new",
 				}))
 			})
 		})
@@ -64,8 +64,8 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"mapped 1 routes",
 					"unmap temporary route from app-name-new",
+					"mapped 1 routes",
 					"rename app-name-new to app-name",
 				}))
 			})
@@ -92,8 +92,8 @@ domains:
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"mapped 5 routes",
 					"unmap temporary route from app-name-new",
+					"mapped 5 routes",
 					"rename app-name-new to app-name",
 				}))
 			})
@@ -121,8 +121,8 @@ domains:
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"mapped 1 routes",
 						"unmap temporary route from app-name-new",
+						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
 				})
