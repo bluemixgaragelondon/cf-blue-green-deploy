@@ -5,6 +5,7 @@
 PLUGIN_NAME="${PLUGIN_NAME:?Must be set in .env}"
 PLUGIN_VERSION="${PLUGIN_VERSION:?Must be set in .env}"
 
+script/deps
 script/test
 
 targets=(
@@ -18,7 +19,7 @@ do
   read platform goos goarch <<< $target
 
   binary_name="${PLUGIN_NAME}.$platform"
-  GOOS="$goos" GOARCH="$goarch" godep go build -ldflags "-X main.PluginVersion ${PLUGIN_VERSION}" -o "$binary_name"
+  GOOS="$goos" GOARCH="$goarch" go build -ldflags "-X main.PluginVersion ${PLUGIN_VERSION}" -o "$binary_name"
   mv "$binary_name" artefacts
 done
 

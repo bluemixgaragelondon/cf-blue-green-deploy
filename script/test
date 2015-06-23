@@ -30,7 +30,7 @@ within_app() {
 }
 
 run_tests() {
-  GOPATH="$PWD/Godeps/_workspace:$GOPATH" ginkgo ${GINKGO_ARGS[*]} -r -randomizeAllSpecs
+  ginkgo ${GINKGO_ARGS[*]} -r -randomizeAllSpecs
 }
 
 prepare_code_coverage_results() {

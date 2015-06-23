@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+[ -z "$DEBUG" ] || set -x
+
+CF_CLI_VERSION="v6.11.2"
+
+main() {
+  # go get fails because of generated deps
+  go get -t || true
+  # sort out those generated deps
+  cf_cli_set_version
+  cf_cli_generate_language_resources
+}
+
+cf_cli_set_version() {
+  pushd "$GOPATH/src/github.com/cloudfoundry/cli"
+    git checkout "$CF_CLI_VERSION"
+  popd
+}
+
+cf_cli_generate_language_resources() {
+  pushd "$GOPATH/src/github.com/cloudfoundry/cli"
+    bin/generate-language-resources
+  popd
+}
+
+main
