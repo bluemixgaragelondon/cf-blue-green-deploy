@@ -14,7 +14,6 @@ main() {
 
   if [ -z "$TURBO" ]
   then
-    script/setup
     script/build
     script/install
 
