@@ -6,7 +6,7 @@ main() {
   . script/with_env
   install_test_dependencies
 
-  within_app run_tests ${GINKGO_ARGS[*]}
+  within_app run_tests 
 
   within_app prepare_code_coverage_results
 }
@@ -23,11 +23,7 @@ within_app() {
 }
 
 run_tests() {
-	if [ -z "$1" ]; then
-		ginkgo -r -randomizeAllSpecs
-	else
-		ginkgo "$1" -r -randomizeAllSpecs
-	fi
+		ginkgo ${GINKGO_ARGS[*]} "$@" -r -randomizeAllSpecs
 }
 
 prepare_code_coverage_results() {
