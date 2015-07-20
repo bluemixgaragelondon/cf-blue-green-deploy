@@ -21,7 +21,8 @@ type BlueGreenDeployer interface {
 	DeleteAllAppsExceptLiveApp(string)
 	LiveApp(string) *Application
 	RunSmokeTests(string, string) bool
-	RemapRoutesFromLiveAppToNewApp(Application, Application)
+	CopyLiveAppRoutesToNewApp(Application, Application)
+	UnmapRoutesFromOldApp(*Application)
 	UnmapTemporaryRouteFromNewApp(Application)
 	RenameApp(*Application, string)
 	MapAllRoutes(*Application)
@@ -111,10 +112,15 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
 	return true
 }
 
-func (p *BlueGreenDeploy) RemapRoutesFromLiveAppToNewApp(liveApp, newApp Application) {
+func (p *BlueGreenDeploy) CopyLiveAppRoutesToNewApp(liveApp Application, newApp Application) {
 	for _, route := range liveApp.Routes {
 		p.mapRoute(newApp, route)
-		p.unmapRoute(liveApp, route)
+	}
+}
+
+func (p *BlueGreenDeploy) UnmapRoutesFromOldApp(oldApp *Application) {
+	for _, route := range oldApp.Routes {
+		p.unmapRoute(*oldApp, route)
 	}
 }
 

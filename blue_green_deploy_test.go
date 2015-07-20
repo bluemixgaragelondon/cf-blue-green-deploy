@@ -58,7 +58,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("route remapping from live app to new app", func() {
+	Describe("copy routes from live app to new app", func() {
 		var (
 			liveApp, newApp Application
 		)
@@ -76,16 +76,41 @@ var _ = Describe("BlueGreenDeploy", func() {
 			}
 		})
 
-		It("map and unmap all routes from live app to the new app including the default route", func() {
-			p.RemapRoutesFromLiveAppToNewApp(liveApp, newApp)
+		It("copies all routes from live app to new app including the default route", func() {
+			p.CopyLiveAppRoutesToNewApp(liveApp, newApp)
 
 			cfCommands := getAllCfCommands(connection)
 
 			Expect(cfCommands).To(Equal([]string{
 				"map-route new mybluemix.net -n live",
-				"unmap-route live mybluemix.net -n live",
 				"map-route new example.com -n live",
-				"unmap-route live example.com -n live",
+			}))
+		})
+	})
+
+	Describe("remove routes from old app", func() {
+		var (
+			oldApp Application
+		)
+
+		BeforeEach(func() {
+			oldApp = Application{
+				Name: "old",
+				Routes: []Route{
+					{Host: "live", Domain: Domain{Name: "mybluemix.net"}},
+					{Host: "live", Domain: Domain{Name: "example.com"}},
+				},
+			}
+		})
+
+		It("unmaps all routes from the old app", func() {
+			p.UnmapRoutesFromOldApp(&oldApp)
+
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(Equal([]string{
+				"unmap-route old mybluemix.net -n live",
+				"unmap-route old example.com -n live",
 			}))
 		})
 	})
