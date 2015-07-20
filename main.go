@@ -79,8 +79,8 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 			p.Deployer.MapAllRoutes(&newApp)
 		} else {
 			p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
-			p.Deployer.MapAllRoutes(&newApp)
 			p.Deployer.RenameApp(&newApp, appName)
+			p.Deployer.MapAllRoutes(&newApp)
 		}
 		return true
 	} else {
