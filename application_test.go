@@ -1,9 +1,9 @@
 package main_test
 
 import (
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 )
 
 var _ = Describe("Application", func() {

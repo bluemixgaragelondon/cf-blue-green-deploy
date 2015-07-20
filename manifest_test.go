@@ -3,6 +3,7 @@ package main_test
 import (
 	"errors"
 
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/cloudfoundry/cli/cf/i18n"
 	"github.com/cloudfoundry/cli/cf/manifest"
@@ -10,7 +11,6 @@ import (
 	go_i18n "github.com/nicksnyder/go-i18n/i18n"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 )
 
 var _ = Describe("Manifest reader", func() {

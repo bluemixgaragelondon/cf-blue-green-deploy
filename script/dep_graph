@@ -3,5 +3,5 @@
 go_project=cf-blue-green-deploy
 graph_file="/tmp/${go_project}_dep_graph.png"
 
-goviz -i "hub.jazz.net/git/bluemixgarage/$go_project" | dot -Tpng -o "$graph_file"
+goviz -i "github.com/bluemixgaragelondon/$go_project" | dot -Tpng -o "$graph_file"
 open "$graph_file"

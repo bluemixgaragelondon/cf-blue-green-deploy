@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "hub.jazz.net/git/bluemixgarage/cf-blue-green-deploy"
 )
 
 var _ = Describe("BGD Plugin", func() {
