@@ -6,7 +6,7 @@ CF_CLI_VERSION="v6.11.2"
 
 main() {
   # go get fails because of generated deps
-  go get -t || true
+  go get -u -t || true
   # sort out those generated deps
   cf_cli_set_version
   cf_cli_generate_language_resources
