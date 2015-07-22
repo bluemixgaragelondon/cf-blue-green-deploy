@@ -52,13 +52,14 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	liveApp := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
+
+	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
+
 	newApp := Application{
-		Name:          newAppName,
-		DefaultDomain: defaultCfDomain,
-		Routes:        []Route{{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}},
+		Name:   newAppName,
+		Routes: []Route{tempRoute},
 	}
 
-	tempRoute := Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}}
 	p.Deployer.PushNewApp(&newApp, tempRoute)
 
 	f := ManifestAppFinder{AppName: appName, Repo: repo}

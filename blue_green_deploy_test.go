@@ -122,7 +122,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 				{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}},
 				{Host: "app", Domain: Domain{Name: "mybluemix.net"}},
 			},
-			DefaultDomain: "mybluemix.net",
 		}
 
 		tempRoute := Route{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}}
@@ -332,8 +331,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("pushing a new app", func() {
-		newApp := Application{Name: "app-name-new", DefaultDomain: "example.com"}
-		newRoute := Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}}
+		newApp := Application{Name: "app-name-new"}
+		newRoute := Route{Host: newApp.Name, Domain: Domain{Name: "example.com"}}
 
 		It("pushes an app with new appended to its name", func() {
 			p.PushNewApp(&newApp, newRoute)

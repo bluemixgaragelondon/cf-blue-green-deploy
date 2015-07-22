@@ -3,9 +3,8 @@ package main
 import "fmt"
 
 type Application struct {
-	DefaultDomain string
-	Name          string
-	Routes        []Route
+	Name   string
+	Routes []Route
 }
 
 type Route struct {
