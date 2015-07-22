@@ -236,7 +236,7 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(app *Application) {
+func (p *BlueGreenDeployFake) PushNewApp(app *Application, route Route) {
 	p.flow = append(p.flow, fmt.Sprintf("push %s", app.Name))
 }
 

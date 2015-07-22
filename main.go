@@ -57,14 +57,14 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		DefaultDomain: defaultCfDomain,
 		Routes:        []Route{{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}},
 	}
-	p.Deployer.PushNewApp(&newApp)
+
+	tempRoute := Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}}
+	p.Deployer.PushNewApp(&newApp, tempRoute)
 
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestApp := f.Application(defaultCfDomain); manifestApp != nil {
 		newApp.Routes = append(newApp.Routes, manifestApp.Routes...)
 	}
-
-	tempRoute := Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}}
 
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
