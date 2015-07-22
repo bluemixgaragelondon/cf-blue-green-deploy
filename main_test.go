@@ -42,7 +42,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap temporary route from app-name-new",
+					"unmap route app-name-new.example.com from app-name-new",
 					"copy routes from app-name-live to app-name-new",
 					"mapped 1 routes",
 					"rename app-name-live to app-name-old",
@@ -65,7 +65,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap temporary route from app-name-new",
+					"unmap route app-name-new.example.com from app-name-new",
 					"mapped 1 routes",
 					"rename app-name-new to app-name",
 				}))
@@ -93,7 +93,7 @@ domains:
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap temporary route from app-name-new",
+					"unmap route app-name-new.example.com from app-name-new",
 					"mapped 5 routes",
 					"rename app-name-new to app-name",
 				}))
@@ -122,7 +122,7 @@ domains:
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"unmap temporary route from app-name-new",
+						"unmap route app-name-new.example.com from app-name-new",
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
@@ -156,7 +156,7 @@ domains:
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"unmap temporary route from app-name-new",
+						"unmap route app-name-new.example.com from app-name-new",
 						"rename app-name-new to app-name-failed",
 					}))
 				})
@@ -258,7 +258,7 @@ func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application
 }
 
 func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp Application, tempRoute Route) {
-	p.flow = append(p.flow, fmt.Sprintf("unmap temporary route from %s", newApp.Name))
+	p.flow = append(p.flow, fmt.Sprintf("unmap route %s from %s", tempRoute.FQDN(), newApp.Name))
 }
 
 func (p *BlueGreenDeployFake) RenameApp(app *Application, newName string) {
