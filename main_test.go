@@ -79,13 +79,14 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 				repo := &FakeRepo{yaml: `---
-name: app-name
-hosts:
-- host1
-- host2
-domains:
-- example.com
-- example.net`}
+          name: app-name
+          hosts:
+           - host1
+           - host2
+          domains:
+           - example.com
+           - example.net
+        `}
 
 				p.Deploy("example.com", repo, []string{"bgd", "app-name"})
 

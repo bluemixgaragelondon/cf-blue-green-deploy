@@ -43,16 +43,16 @@ var _ = Describe("Manifest reader", func() {
 
 		Context("when the manifest contains multiple apps with 1 matching", func() {
 			repo := FakeRepo{yaml: `---
-applications:
-- name: bar
-  host: barhost
-- name: foo
-  hosts:
-  - host1
-  - host2
-  domains:
-  - example1.com
-  - example2.com`,
+        applications:
+        - name: bar
+          host: barhost
+        - name: foo
+          hosts:
+          - host1
+          - host2
+          domains:
+          - example1.com
+          - example2.com`,
 			}
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
@@ -85,13 +85,13 @@ applications:
 	Describe("Route Lister", func() {
 		It("returns a list of Routes from the manifest", func() {
 			repo := FakeRepo{yaml: `---
-name: foo
-hosts:
-- host1
-- host2
-domains:
-- example.com
-- example.net`,
+          name: foo
+          hosts:
+          - host1
+          - host2
+          domains:
+          - example.com
+          - example.net`,
 			}
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
@@ -108,10 +108,10 @@ domains:
 		Context("when app has just hosts, no domains", func() {
 			It("returns Application", func() {
 				repo := FakeRepo{yaml: `---
-name: foo
-hosts:
-- host1
-- host2`,
+          name: foo
+          hosts:
+          - host1
+          - host2`,
 				}
 				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 				routes := manifestAppFinder.RoutesFromManifest("example.com")
