@@ -125,7 +125,7 @@ func (p *BlueGreenDeploy) UnmapRoutesFromOldApp(oldApp *Application) {
 }
 
 func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(newApp Application) {
-	p.unmapRoute(newApp, newApp.DefaultRoute())
+	p.unmapRoute(newApp, Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}})
 }
 
 func (p *BlueGreenDeploy) mapRoute(a Application, r Route) {

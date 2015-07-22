@@ -6,46 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Application", func() {
-	Describe("default route", func() {
-		It("returns the route with host same as app name and default domain", func() {
-			app := Application{
-				DefaultDomain: "mybluemix.net",
-				Name:          "app-new",
-				Routes: []Route{
-					{Host: "app-new", Domain: Domain{Name: "example.com"}},
-					{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}},
-					{Host: "app", Domain: Domain{Name: "example.com"}},
-				},
-			}
-
-			Expect(app.DefaultRoute()).To(Equal(Route{
-				Host:   "app-new",
-				Domain: Domain{Name: "mybluemix.net"},
-			}))
-		})
-
-		Context("when no route matches default domain", func() {
-			It("returns first route where host matches app name", func() {
-				app := Application{
-					DefaultDomain: "",
-					Name:          "app-new",
-					Routes: []Route{
-						{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}},
-						{Host: "app-new", Domain: Domain{Name: "example.com"}},
-						{Host: "app", Domain: Domain{Name: "example.com"}},
-					},
-				}
-
-				Expect(app.DefaultRoute()).To(Equal(Route{
-					Host:   "app-new",
-					Domain: Domain{Name: "mybluemix.net"},
-				}))
-			})
-		})
-	})
-})
-
 var _ = Describe("Route", func() {
 	Describe("fqdn", func() {
 		It("returns the fqdn of the route", func() {

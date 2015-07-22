@@ -67,7 +67,8 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
-		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, newApp.DefaultRoute().FQDN())
+		route := Route{Host: newApp.Name, Domain: Domain{Name: newApp.DefaultDomain}}
+		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, route.FQDN())
 	}
 
 	p.Deployer.UnmapTemporaryRouteFromNewApp(newApp)
