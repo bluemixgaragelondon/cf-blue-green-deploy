@@ -14,22 +14,23 @@ type ManifestAppFinder struct {
 	AppName string
 }
 
-func (f *ManifestAppFinder) Application(defaultDomain string) *Application {
+func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []Route {
 	if appParams := f.AppParams(); appParams != nil {
-		app := Application{Name: *appParams.Name}
+
+		manifestRoutes := make([]Route, 0)
 
 		for _, host := range *appParams.Hosts {
 			if appParams.Domains == nil {
-				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: defaultDomain}})
+				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: defaultDomain}})
 				continue
 			}
 
 			for _, domain := range *appParams.Domains {
-				app.Routes = append(app.Routes, Route{Host: host, Domain: Domain{Name: domain}})
+				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: domain}})
 			}
 		}
 
-		return &app
+		return manifestRoutes
 	}
 	return nil
 }

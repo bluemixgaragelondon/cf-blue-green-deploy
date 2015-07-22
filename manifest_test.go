@@ -82,10 +82,9 @@ applications:
 		})
 	})
 
-	Describe("OurManifest", func() {
-		Describe("return Application from manifest", func() {
-			It("returns Application", func() {
-				repo := FakeRepo{yaml: `---
+	Describe("Route Lister", func() {
+		It("returns a list of Routes from the manifest", func() {
+			repo := FakeRepo{yaml: `---
 name: foo
 hosts:
 - host1
@@ -93,46 +92,43 @@ hosts:
 domains:
 - example.com
 - example.net`,
-				}
-				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
-				app := manifestAppFinder.Application("example.com")
+			routes := manifestAppFinder.RoutesFromManifest("example.com")
 
-				Expect(app.Name).To(Equal("foo"))
-				Expect(app.Routes).To(ConsistOf(
-					Route{Host: "host1", Domain: Domain{Name: "example.com"}},
-					Route{Host: "host1", Domain: Domain{Name: "example.net"}},
-					Route{Host: "host2", Domain: Domain{Name: "example.com"}},
-					Route{Host: "host2", Domain: Domain{Name: "example.net"}},
-				))
-			})
+			Expect(routes).To(ConsistOf(
+				Route{Host: "host1", Domain: Domain{Name: "example.com"}},
+				Route{Host: "host1", Domain: Domain{Name: "example.net"}},
+				Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+				Route{Host: "host2", Domain: Domain{Name: "example.net"}},
+			))
+		})
 
-			Context("when app has just hosts, no domains", func() {
-				It("returns Application", func() {
-					repo := FakeRepo{yaml: `---
+		Context("when app has just hosts, no domains", func() {
+			It("returns Application", func() {
+				repo := FakeRepo{yaml: `---
 name: foo
 hosts:
 - host1
 - host2`,
-					}
-					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
-					app := manifestAppFinder.Application("example.com")
+				}
+				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+				routes := manifestAppFinder.RoutesFromManifest("example.com")
 
-					Expect(app.Name).To(Equal("foo"))
-					Expect(app.Routes).To(ConsistOf(
-						Route{Host: "host1", Domain: Domain{Name: "example.com"}},
-						Route{Host: "host2", Domain: Domain{Name: "example.com"}},
-					))
-				})
+				Expect(routes).To(ConsistOf(
+					Route{Host: "host1", Domain: Domain{Name: "example.com"}},
+					Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+				))
 			})
+		})
 
-			Context("when no matching application", func() {
-				It("returns nil", func() {
-					repo := FakeRepo{yaml: ``}
-					manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+		Context("when no matching application", func() {
+			It("returns nil", func() {
+				repo := FakeRepo{yaml: ``}
+				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
-					Expect(manifestAppFinder.Application("example.com")).To(BeNil())
-				})
+				Expect(manifestAppFinder.RoutesFromManifest("example.com")).To(BeNil())
 			})
 		})
 	})
