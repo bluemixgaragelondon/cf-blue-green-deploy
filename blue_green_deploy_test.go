@@ -125,8 +125,10 @@ var _ = Describe("BlueGreenDeploy", func() {
 			DefaultDomain: "mybluemix.net",
 		}
 
+		tempRoute := Route{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}}
+
 		It("unmaps the temporary route", func() {
-			p.UnmapTemporaryRouteFromNewApp(newApp)
+			p.UnmapTemporaryRouteFromNewApp(newApp, tempRoute)
 
 			cfCommands := getAllCfCommands(connection)
 
@@ -143,7 +145,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 
 			It("returns an error", func() {
-				p.UnmapTemporaryRouteFromNewApp(newApp)
+				p.UnmapTemporaryRouteFromNewApp(newApp, tempRoute)
 
 				Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
 			})
