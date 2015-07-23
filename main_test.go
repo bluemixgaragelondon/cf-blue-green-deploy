@@ -237,8 +237,8 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(app *Application, route Route) {
-	p.flow = append(p.flow, fmt.Sprintf("push %s", app.Name))
+func (p *BlueGreenDeployFake) PushNewApp(appName string, route Route) {
+	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
