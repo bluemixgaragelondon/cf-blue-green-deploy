@@ -22,9 +22,9 @@ type BlueGreenDeployer interface {
 	LiveApp(string) *Application
 	RunSmokeTests(string, string) bool
 	CopyLiveAppRoutesToNewApp(Application, Application)
-	UnmapRoutesFromOldApp(*Application)
+	UnmapRoutesFromOldApp(string, []Route)
 	UnmapTemporaryRouteFromNewApp(string, Route)
-	RenameApp(*Application, string)
+	RenameApp(string, string)
 	MapAllRoutes(*Application)
 }
 
@@ -118,9 +118,9 @@ func (p *BlueGreenDeploy) CopyLiveAppRoutesToNewApp(liveApp Application, newApp 
 	}
 }
 
-func (p *BlueGreenDeploy) UnmapRoutesFromOldApp(oldApp *Application) {
-	for _, route := range oldApp.Routes {
-		p.unmapRoute(oldApp.Name, route)
+func (p *BlueGreenDeploy) UnmapRoutesFromOldApp(oldAppName string, routes []Route) {
+	for _, route := range routes {
+		p.unmapRoute(oldAppName, route)
 	}
 }
 
@@ -140,12 +140,10 @@ func (p *BlueGreenDeploy) unmapRoute(appName string, r Route) {
 	}
 }
 
-func (p *BlueGreenDeploy) RenameApp(app *Application, newName string) {
-	if _, err := p.Connection.CliCommand("rename", app.Name, newName); err != nil {
+func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
+	if _, err := p.Connection.CliCommand("rename", app, newName); err != nil {
 		p.ErrorFunc("Could not rename app", err)
 	}
-
-	app.Name = newName
 }
 
 func (p *BlueGreenDeploy) MapAllRoutes(app *Application) {

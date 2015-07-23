@@ -104,7 +104,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("unmaps all routes from the old app", func() {
-			p.UnmapRoutesFromOldApp(&oldApp)
+			p.UnmapRoutesFromOldApp(oldApp.Name, oldApp.Routes)
 
 			cfCommands := getAllCfCommands(connection)
 
@@ -152,10 +152,10 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("renaming an app", func() {
-		var app *Application
+		var app string
 
 		BeforeEach(func() {
-			app = &Application{Name: "foo"}
+			app = "foo"
 		})
 
 		It("renames the app", func() {
@@ -165,12 +165,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 			Expect(cfCommands).To(ContainElement(
 				"rename foo bar",
 			))
-		})
-
-		It("changes the name property of the app", func() {
-			p.RenameApp(app, "bar")
-
-			Expect(app.Name).To(Equal("bar"))
 		})
 
 		Context("when renaming the app fails", func() {
