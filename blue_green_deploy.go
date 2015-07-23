@@ -19,7 +19,7 @@ type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
 	PushNewApp(string, Route)
 	DeleteAllAppsExceptLiveApp(string)
-	LiveApp(string) *Application
+	LiveApp(string) (string, []Route)
 	RunSmokeTests(string, string) bool
 	CopyLiveAppRoutesToNewApp(string, string, []Route)
 	UnmapRoutesFromOldApp(string, []Route)
@@ -82,15 +82,19 @@ func (p *BlueGreenDeploy) FilterApps(appName string, apps []Application) (curren
 	return
 }
 
-func (p *BlueGreenDeploy) LiveApp(appName string) (liveApp *Application) {
+func (p *BlueGreenDeploy) LiveApp(appName string) (string, []Route) {
 	appsInSpace, err := p.AppLister.AppsInCurrentSpace()
 	if err != nil {
 		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
 	}
 
-	liveApp, _ = p.FilterApps(appName, appsInSpace)
+	liveApp, _ := p.FilterApps(appName, appsInSpace)
 
-	return
+	if liveApp == nil {
+		return "", nil
+	} else {
+		return liveApp.Name, liveApp.Routes
+	}
 }
 
 func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {

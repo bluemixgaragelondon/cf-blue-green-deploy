@@ -245,9 +245,13 @@ func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
 	p.flow = append(p.flow, "delete old apps")
 }
 
-func (p *BlueGreenDeployFake) LiveApp(string) *Application {
+func (p *BlueGreenDeployFake) LiveApp(string) (string, []Route) {
 	p.flow = append(p.flow, "get current live app")
-	return p.liveApp
+	if p.liveApp == nil {
+		return "", nil
+	} else {
+		return p.liveApp.Name, p.liveApp.Routes
+	}
 }
 func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
 	p.flow = append(p.flow, fmt.Sprintf("%s %s", script, fqdn))

@@ -49,7 +49,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	appName := args[1]
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
-	liveApp := p.Deployer.LiveApp(appName)
+	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
 
@@ -73,12 +73,12 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	p.Deployer.UnmapTemporaryRouteFromNewApp(newAppName, tempRoute)
 
 	if promoteNewApp {
-		if liveApp != nil {
-			p.Deployer.CopyLiveAppRoutesToNewApp(liveApp.Name, newAppName, liveApp.Routes)
+		if liveAppName != "" {
+			p.Deployer.CopyLiveAppRoutesToNewApp(liveAppName, newAppName, liveAppRoutes)
 			p.Deployer.MapAllRoutes(newAppName, newAppRoutes)
-			p.Deployer.RenameApp(liveApp.Name, appName+"-old")
+			p.Deployer.RenameApp(liveAppName, appName+"-old")
 			p.Deployer.RenameApp(newAppName, appName)
-			p.Deployer.UnmapRoutesFromOldApp(appName+"-old", liveApp.Routes)
+			p.Deployer.UnmapRoutesFromOldApp(appName+"-old", liveAppRoutes)
 		} else {
 			p.Deployer.MapAllRoutes(newAppName, newAppRoutes)
 			p.Deployer.RenameApp(newAppName, appName)

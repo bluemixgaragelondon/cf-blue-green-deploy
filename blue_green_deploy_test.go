@@ -373,7 +373,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns the live app", func() {
 				p.AppLister = &fakeAppLister{Apps: []Application{oldApp, liveApp}}
 
-				Expect(p.LiveApp("app-name")).To(Equal(&liveApp))
+				name, _ := p.LiveApp("app-name")
+				Expect(name).To(Equal(liveApp.Name))
 			})
 		})
 
@@ -381,15 +382,17 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns the last pushed app", func() {
 				p.AppLister = &fakeAppLister{Apps: []Application{liveApp, newerLiveApp}}
 
-				Expect(p.LiveApp("app-name")).To(Equal(&newerLiveApp))
+				name, _ := p.LiveApp("app-name")
+				Expect(name).To(Equal(newerLiveApp.Name))
 			})
 		})
 
 		Context("with no apps", func() {
-			It("returns no app", func() {
+			It("returns an empty app name", func() {
 				p.AppLister = &fakeAppLister{Apps: []Application{}}
 
-				Expect(p.LiveApp("app-name")).To(BeNil())
+				name, _ := p.LiveApp("app-name")
+				Expect(name).To(BeEmpty())
 			})
 		})
 	})
