@@ -23,7 +23,7 @@ type BlueGreenDeployer interface {
 	RunSmokeTests(string, string) bool
 	CopyLiveAppRoutesToNewApp(Application, Application)
 	UnmapRoutesFromOldApp(*Application)
-	UnmapTemporaryRouteFromNewApp(Application, Route)
+	UnmapTemporaryRouteFromNewApp(string, Route)
 	RenameApp(*Application, string)
 	MapAllRoutes(*Application)
 }
@@ -120,12 +120,12 @@ func (p *BlueGreenDeploy) CopyLiveAppRoutesToNewApp(liveApp Application, newApp 
 
 func (p *BlueGreenDeploy) UnmapRoutesFromOldApp(oldApp *Application) {
 	for _, route := range oldApp.Routes {
-		p.unmapRoute(*oldApp, route)
+		p.unmapRoute(oldApp.Name, route)
 	}
 }
 
-func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(newApp Application, tempRoute Route) {
-	p.unmapRoute(newApp, tempRoute)
+func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(appName string, route Route) {
+	p.unmapRoute(appName, route)
 }
 
 func (p *BlueGreenDeploy) mapRoute(a Application, r Route) {
@@ -134,8 +134,8 @@ func (p *BlueGreenDeploy) mapRoute(a Application, r Route) {
 	}
 }
 
-func (p *BlueGreenDeploy) unmapRoute(a Application, r Route) {
-	if _, err := p.Connection.CliCommand("unmap-route", a.Name, r.Domain.Name, "-n", r.Host); err != nil {
+func (p *BlueGreenDeploy) unmapRoute(appName string, r Route) {
+	if _, err := p.Connection.CliCommand("unmap-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not unmap route", err)
 	}
 }

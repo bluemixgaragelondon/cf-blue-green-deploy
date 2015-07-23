@@ -258,8 +258,8 @@ func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application
 	p.flow = append(p.flow, fmt.Sprintf("remap routes from %s to %s", liveApp.Name, newApp.Name))
 }
 
-func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp Application, tempRoute Route) {
-	p.flow = append(p.flow, fmt.Sprintf("unmap route %s from %s", tempRoute.FQDN(), newApp.Name))
+func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp string, tempRoute Route) {
+	p.flow = append(p.flow, fmt.Sprintf("unmap route %s from %s", tempRoute.FQDN(), newApp))
 }
 
 func (p *BlueGreenDeployFake) RenameApp(app *Application, newName string) {
