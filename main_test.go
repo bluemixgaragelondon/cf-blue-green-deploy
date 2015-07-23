@@ -266,12 +266,12 @@ func (p *BlueGreenDeployFake) RenameApp(app string, newName string) {
 	p.flow = append(p.flow, fmt.Sprintf("rename %s to %s", app, newName))
 }
 
-func (p *BlueGreenDeployFake) MapAllRoutes(app *Application) {
-	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(app.Routes)))
+func (p *BlueGreenDeployFake) MapAllRoutes(appName string, routes []Route) {
+	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(routes)))
 }
 
-func (p *BlueGreenDeployFake) CopyLiveAppRoutesToNewApp(liveApp Application, newApp Application) {
-	p.flow = append(p.flow, fmt.Sprintf("copy routes from %s to %s", liveApp.Name, newApp.Name))
+func (p *BlueGreenDeployFake) CopyLiveAppRoutesToNewApp(liveAppName string, newAppName string, routes []Route) {
+	p.flow = append(p.flow, fmt.Sprintf("copy routes from %s to %s", liveAppName, newAppName))
 }
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromOldApp(oldAppName string, routes []Route) {

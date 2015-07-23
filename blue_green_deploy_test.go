@@ -47,7 +47,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("maps all", func() {
-			p.MapAllRoutes(&manifestApp)
+			p.MapAllRoutes(manifestApp.Name, manifestApp.Routes)
 
 			cfCommands := getAllCfCommands(connection)
 
@@ -77,7 +77,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("copies all routes from live app to new app including the default route", func() {
-			p.CopyLiveAppRoutesToNewApp(liveApp, newApp)
+			p.CopyLiveAppRoutesToNewApp(liveApp.Name, newApp.Name, liveApp.Routes)
 
 			cfCommands := getAllCfCommands(connection)
 

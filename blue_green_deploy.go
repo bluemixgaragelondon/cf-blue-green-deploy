@@ -21,11 +21,11 @@ type BlueGreenDeployer interface {
 	DeleteAllAppsExceptLiveApp(string)
 	LiveApp(string) *Application
 	RunSmokeTests(string, string) bool
-	CopyLiveAppRoutesToNewApp(Application, Application)
+	CopyLiveAppRoutesToNewApp(string, string, []Route)
 	UnmapRoutesFromOldApp(string, []Route)
 	UnmapTemporaryRouteFromNewApp(string, Route)
 	RenameApp(string, string)
-	MapAllRoutes(*Application)
+	MapAllRoutes(string, []Route)
 }
 
 type BlueGreenDeploy struct {
@@ -112,9 +112,9 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
 	return true
 }
 
-func (p *BlueGreenDeploy) CopyLiveAppRoutesToNewApp(liveApp Application, newApp Application) {
-	for _, route := range liveApp.Routes {
-		p.mapRoute(newApp, route)
+func (p *BlueGreenDeploy) CopyLiveAppRoutesToNewApp(liveAppName string, newAppName string, routes []Route) {
+	for _, route := range routes {
+		p.mapRoute(newAppName, route)
 	}
 }
 
@@ -128,8 +128,8 @@ func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(appName string, route Ro
 	p.unmapRoute(appName, route)
 }
 
-func (p *BlueGreenDeploy) mapRoute(a Application, r Route) {
-	if _, err := p.Connection.CliCommand("map-route", a.Name, r.Domain.Name, "-n", r.Host); err != nil {
+func (p *BlueGreenDeploy) mapRoute(appName string, r Route) {
+	if _, err := p.Connection.CliCommand("map-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not map route", err)
 	}
 }
@@ -146,9 +146,9 @@ func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 	}
 }
 
-func (p *BlueGreenDeploy) MapAllRoutes(app *Application) {
-	for _, route := range app.Routes {
-		p.mapRoute(*app, route)
+func (p *BlueGreenDeploy) MapAllRoutes(appName string, routes []Route) {
+	for _, route := range routes {
+		p.mapRoute(appName, route)
 	}
 }
 
