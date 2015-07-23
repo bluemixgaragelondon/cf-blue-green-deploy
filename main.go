@@ -55,16 +55,13 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 
 	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
 
-	newApp := Application{
-		Name:   newAppName,
-		Routes: []Route{tempRoute},
-	}
-
 	p.Deployer.PushNewApp(newAppName, tempRoute)
+
+	newAppRoutes := []Route{tempRoute}
 
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
-		newApp.Routes = append(newApp.Routes, manifestRoutes...)
+		newAppRoutes = append(newAppRoutes, manifestRoutes...)
 	}
 
 	promoteNewApp := true
@@ -73,17 +70,17 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
 
-	p.Deployer.UnmapTemporaryRouteFromNewApp(newApp.Name, tempRoute)
+	p.Deployer.UnmapTemporaryRouteFromNewApp(newAppName, tempRoute)
 
 	if promoteNewApp {
 		if liveApp != nil {
-			p.Deployer.CopyLiveAppRoutesToNewApp(liveApp.Name, newApp.Name, liveApp.Routes)
-			p.Deployer.MapAllRoutes(newAppName, newApp.Routes)
+			p.Deployer.CopyLiveAppRoutesToNewApp(liveApp.Name, newAppName, liveApp.Routes)
+			p.Deployer.MapAllRoutes(newAppName, newAppRoutes)
 			p.Deployer.RenameApp(liveApp.Name, appName+"-old")
 			p.Deployer.RenameApp(newAppName, appName)
 			p.Deployer.UnmapRoutesFromOldApp(appName+"-old", liveApp.Routes)
 		} else {
-			p.Deployer.MapAllRoutes(newAppName, newApp.Routes)
+			p.Deployer.MapAllRoutes(newAppName, newAppRoutes)
 			p.Deployer.RenameApp(newAppName, appName)
 		}
 		return true
