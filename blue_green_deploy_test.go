@@ -367,7 +367,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 	Describe("live app", func() {
 		oldApp := Application{Name: "app-name-old"}
 		liveApp := Application{Name: "app-name"}
-		newerLiveApp := Application{Name: "app-name"}
 
 		Context("with live and old apps", func() {
 			It("returns the live app", func() {
@@ -375,15 +374,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 				name, _ := p.LiveApp("app-name")
 				Expect(name).To(Equal(liveApp.Name))
-			})
-		})
-
-		Context("with multiple live apps", func() {
-			It("returns the last pushed app", func() {
-				p.AppLister = &fakeAppLister{Apps: []Application{liveApp, newerLiveApp}}
-
-				name, _ := p.LiveApp("app-name")
-				Expect(name).To(Equal(newerLiveApp.Name))
 			})
 		})
 
