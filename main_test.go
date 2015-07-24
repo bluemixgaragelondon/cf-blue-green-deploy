@@ -44,7 +44,7 @@ var _ = Describe("BGD Plugin", func() {
 					"push app-name-new",
 					"unmap route app-name-new.example.com from app-name-new",
 					"copy routes from app-name-live to app-name-new",
-					"mapped 1 routes",
+					"mapped 0 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
 					"unmap routes from app-name-old",
@@ -66,7 +66,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap route app-name-new.example.com from app-name-new",
-					"mapped 1 routes",
+					"mapped 0 routes",
 					"rename app-name-new to app-name",
 				}))
 			})
@@ -95,7 +95,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap route app-name-new.example.com from app-name-new",
-					"mapped 5 routes",
+					"mapped 4 routes",
 					"rename app-name-new to app-name",
 				}))
 
@@ -104,7 +104,6 @@ var _ = Describe("BGD Plugin", func() {
 					{Host: "host2", Domain: Domain{Name: "example.com"}},
 					{Host: "host1", Domain: Domain{Name: "example.net"}},
 					{Host: "host2", Domain: Domain{Name: "example.net"}},
-					{Host: "app-name-new", Domain: Domain{Name: "example.com"}},
 				}
 
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
@@ -134,7 +133,7 @@ var _ = Describe("BGD Plugin", func() {
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
 						"unmap route app-name-new.example.com from app-name-new",
-						"mapped 1 routes",
+						"mapped 0 routes",
 						"rename app-name-new to app-name",
 					}))
 				})

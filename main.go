@@ -57,7 +57,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 
 	p.Deployer.PushNewApp(newAppName, tempRoute)
 
-	newAppRoutes := []Route{tempRoute}
+	newAppRoutes := []Route{}
 
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
