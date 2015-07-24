@@ -98,6 +98,16 @@ var _ = Describe("BGD Plugin", func() {
 					"mapped 5 routes",
 					"rename app-name-new to app-name",
 				}))
+
+				expectedRoutes := []Route{
+					{Host: "host1", Domain: Domain{Name: "example.com"}},
+					{Host: "host2", Domain: Domain{Name: "example.com"}},
+					{Host: "host1", Domain: Domain{Name: "example.net"}},
+					{Host: "host2", Domain: Domain{Name: "example.net"}},
+					{Host: "app-name-new", Domain: Domain{Name: "example.com"}},
+				}
+
+				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 			})
 		})
 
@@ -231,6 +241,7 @@ type BlueGreenDeployFake struct {
 	AppLister
 	liveApp       *Application
 	passSmokeTest bool
+	mappedRoutes  []Route
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
@@ -271,6 +282,7 @@ func (p *BlueGreenDeployFake) RenameApp(app string, newName string) {
 }
 
 func (p *BlueGreenDeployFake) MapAllRoutes(appName string, routes []Route) {
+	p.mappedRoutes = routes
 	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(routes)))
 }
 
