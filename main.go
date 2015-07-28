@@ -64,6 +64,8 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		newAppRoutes = append(newAppRoutes, manifestRoutes...)
 	}
 
+	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
+
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
@@ -74,8 +76,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 
 	if promoteNewApp {
 		if liveAppName != "" {
-			p.Deployer.CopyLiveAppRoutesToNewApp(liveAppName, newAppName, liveAppRoutes)
-			p.Deployer.MapAllRoutes(newAppName, newAppRoutes)
+			p.Deployer.MapAllRoutes(newAppName, uniqueRoutes)
 			p.Deployer.RenameApp(liveAppName, appName+"-old")
 			p.Deployer.RenameApp(newAppName, appName)
 			p.Deployer.UnmapRoutesFromOldApp(appName+"-old", liveAppRoutes)
@@ -88,6 +89,22 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		p.Deployer.RenameApp(newAppName, appName+"-failed")
 		return false
 	}
+}
+
+func (p *CfPlugin) UnionRouteLists(listA []Route, listB []Route) []Route {
+	duplicateList := append(listA, listB...)
+
+	routesSet := make(map[Route]struct{})
+
+	for _, route := range duplicateList {
+		routesSet[route] = struct{}{}
+	}
+
+	uniqueRoutes := []Route{}
+	for route := range routesSet {
+		uniqueRoutes = append(uniqueRoutes, route)
+	}
+	return uniqueRoutes
 }
 
 func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {

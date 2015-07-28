@@ -43,12 +43,94 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap route app-name-new.example.com from app-name-new",
-					"copy routes from app-name-live to app-name-new",
 					"mapped 0 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
 					"unmap routes from app-name-old",
 				}))
+			})
+
+			Context("with an existing live route", func() {
+				It("maps the live app routes to the new app", func() {
+
+					liveAppRoutes := []Route{
+						{Host: "host1", Domain: Domain{Name: "example.com"}},
+						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					}
+
+					b := &BlueGreenDeployFake{
+						liveApp: &Application{Name: "app-name-live",
+							Routes: liveAppRoutes},
+					}
+					p := CfPlugin{
+						Deployer: b,
+					}
+
+					p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name"})
+
+					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
+				})
+			})
+
+			Context("with an existing live route and manifest", func() {
+				It("maps both manifest & live app routes", func() {
+					liveAppRoutes := []Route{
+						{Host: "host1", Domain: Domain{Name: "example.com"}},
+						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					}
+
+					b := &BlueGreenDeployFake{
+						liveApp: &Application{Name: "app-name-live",
+							Routes: liveAppRoutes},
+					}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &FakeRepo{yaml: `---
+          name: app-name
+          hosts:
+           - man1
+          domains:
+           - example.com
+        `}
+
+					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
+
+					expectedAppRoutes := append(liveAppRoutes, Route{Host: "man1", Domain: Domain{Name: "example.com"}})
+
+					Expect(b.mappedRoutes).To(ConsistOf(expectedAppRoutes))
+				})
+
+				It("maps unique routes", func() {
+					liveAppRoutes := []Route{
+						{Host: "host1", Domain: Domain{Name: "example.com"}},
+						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					}
+
+					b := &BlueGreenDeployFake{
+						liveApp: &Application{Name: "app-name-live",
+							Routes: liveAppRoutes},
+					}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &FakeRepo{yaml: `---
+          name: app-name
+          hosts:
+           - man1
+           - host1
+           - host2
+          domains:
+           - example.com
+        `}
+
+					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
+
+					expectedAppRoutes := append(liveAppRoutes, Route{Host: "man1", Domain: Domain{Name: "example.com"}})
+
+					Expect(b.mappedRoutes).To(ConsistOf(expectedAppRoutes))
+
+				})
 			})
 		})
 
@@ -231,7 +313,77 @@ var _ = Describe("BGD Plugin", func() {
 				})
 			})
 		})
+	})
 
+	Describe("Unique list of routes", func() {
+		p := CfPlugin{}
+
+		Context("when listA and ListB are empty", func() {
+			It("returns an empty list", func() {
+				listA := []Route{}
+				listB := []Route{}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(BeEmpty())
+			})
+		})
+		Context("when listA is Empty", func() {
+			It("returns listB", func() {
+				listA := []Route{}
+				listB := []Route{{Host: "foo"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(Equal(listB))
+			})
+		})
+		Context("when listB is Empty", func() {
+			It("returns listA", func() {
+				listA := []Route{{Host: "foo"}}
+				listB := []Route{}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
+			})
+		})
+		Context("when listB and listA contain the same routes", func() {
+			It("returns a list equal in contents to listB", func() {
+				listA := []Route{{Host: "foo"}}
+				listB := []Route{{Host: "foo"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
+			})
+		})
+		Context("when listB and listA contain different routes", func() {
+			It("returns a union of both routes", func() {
+				listA := []Route{{Host: "foo"}}
+				listB := []Route{{Host: "bar"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(append(listA, listB...)))
+			})
+		})
+		Context("when listA contains some routes not in listB", func() {
+			It("returns a union of both routes", func() {
+				listA := []Route{{Host: "foo"}, {Host: "bar"}}
+				listB := []Route{{Host: "foo"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
+			})
+		})
+		Context("when listB contains some routes not in listA", func() {
+			It("returns a union of both routes", func() {
+				listA := []Route{{Host: "foo"}}
+				listB := []Route{{Host: "foo"}, {Host: "bar"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listB))
+			})
+		})
+		Context("when list A and List B contain both shared and non-shared routes", func() {
+			It("returns a union of both routes", func() {
+				listA := []Route{{Host: "shared"}, {Host: "listAOnly"}}
+				listB := []Route{{Host: "shared"}, {Host: "listBOnly"}}
+
+				expectedRoutes := []Route{{Host: "shared"}, {Host: "listAOnly"}, {Host: "listBOnly"}}
+
+				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(expectedRoutes))
+			})
+		})
 	})
 })
 
