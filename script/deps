@@ -4,6 +4,9 @@
 
 CF_CLI_VERSION="v6.11.2"
 
+ . script/common
+GO_PACKAGE_PATH=$(get_go_package_dir)
+
 main() {
   # go get fails because of generated deps
   go get -u -t || true
@@ -13,13 +16,13 @@ main() {
 }
 
 cf_cli_set_version() {
-  pushd "$GOPATH/src/github.com/cloudfoundry/cli"
+  pushd "$GO_PACKAGE_PATH/src/github.com/cloudfoundry/cli"
     git checkout "$CF_CLI_VERSION"
   popd
 }
 
 cf_cli_generate_language_resources() {
-  pushd "$GOPATH/src/github.com/cloudfoundry/cli"
+  pushd "$GO_PACKAGE_PATH/src/github.com/cloudfoundry/cli"
     bin/generate-language-resources
   popd
 }

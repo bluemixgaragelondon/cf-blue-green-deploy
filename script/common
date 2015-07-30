@@ -57,3 +57,7 @@ platform_name() {
       ;;
   esac
 }
+
+get_go_package_dir() {
+  echo "$GOPATH" | cut -d : -f 1
+}

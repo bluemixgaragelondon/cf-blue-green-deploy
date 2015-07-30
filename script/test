@@ -2,6 +2,9 @@
 
 GINKGO_ARGS=($@)
 
+. script/common
+GO_PACKAGE_PATH=$(get_go_package_dir)
+
 main() {
   . script/with_env
   install_test_dependencies
@@ -17,7 +20,7 @@ install_test_dependencies() {
 }
 
 within_app() {
-  pushd "${GOPATH}/src/${APP_PKG_NAME}" >/dev/null
+  pushd "${GO_PACKAGE_PATH}/src/${APP_PKG_NAME}" >/dev/null
   "$@"
   popd >/dev/null
 }
