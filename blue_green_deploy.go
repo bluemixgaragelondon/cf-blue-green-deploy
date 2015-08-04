@@ -23,7 +23,7 @@ type BlueGreenDeployer interface {
 	RunSmokeTests(string, string) bool
 	UnmapRoutesFromApp(string, ...Route)
 	RenameApp(string, string)
-	MapRoutes(string, ...Route)
+	MapRoutesToApp(string, ...Route)
 }
 
 type BlueGreenDeploy struct {
@@ -138,7 +138,7 @@ func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 	}
 }
 
-func (p *BlueGreenDeploy) MapRoutes(appName string, routes ...Route) {
+func (p *BlueGreenDeploy) MapRoutesToApp(appName string, routes ...Route) {
 	for _, route := range routes {
 		p.mapRoute(appName, route)
 	}

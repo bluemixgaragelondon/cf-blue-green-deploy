@@ -76,12 +76,12 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 
 	if promoteNewApp {
 		if liveAppName != "" {
-			p.Deployer.MapRoutes(newAppName, uniqueRoutes...)
+			p.Deployer.MapRoutesToApp(newAppName, uniqueRoutes...)
 			p.Deployer.RenameApp(liveAppName, appName+"-old")
 			p.Deployer.RenameApp(newAppName, appName)
 			p.Deployer.UnmapRoutesFromApp(appName+"-old", liveAppRoutes...)
 		} else {
-			p.Deployer.MapRoutes(newAppName, newAppRoutes...)
+			p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
 			p.Deployer.RenameApp(newAppName, appName)
 		}
 		return true

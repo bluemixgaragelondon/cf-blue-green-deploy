@@ -47,7 +47,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("maps all", func() {
-			p.MapRoutes(manifestApp.Name, manifestApp.Routes...)
+			p.MapRoutesToApp(manifestApp.Name, manifestApp.Routes...)
 
 			cfCommands := getAllCfCommands(connection)
 
