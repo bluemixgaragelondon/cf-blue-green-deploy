@@ -47,7 +47,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("maps all", func() {
-			p.MapRoutes(manifestApp.Name, manifestApp.Routes)
+			p.MapRoutes(manifestApp.Name, manifestApp.Routes...)
 
 			cfCommands := getAllCfCommands(connection)
 
@@ -74,7 +74,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("unmaps all routes from the old app", func() {
-			p.UnmapRoutesFromApp(oldApp.Name, oldApp.Routes)
+			p.UnmapRoutesFromApp(oldApp.Name, oldApp.Routes...)
 
 			cfCommands := getAllCfCommands(connection)
 

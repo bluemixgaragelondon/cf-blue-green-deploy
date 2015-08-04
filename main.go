@@ -72,16 +72,16 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
 
-	p.Deployer.UnmapRoutesFromApp(newAppName, []Route{tempRoute})
+	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
 	if promoteNewApp {
 		if liveAppName != "" {
-			p.Deployer.MapRoutes(newAppName, uniqueRoutes)
+			p.Deployer.MapRoutes(newAppName, uniqueRoutes...)
 			p.Deployer.RenameApp(liveAppName, appName+"-old")
 			p.Deployer.RenameApp(newAppName, appName)
-			p.Deployer.UnmapRoutesFromApp(appName+"-old", liveAppRoutes)
+			p.Deployer.UnmapRoutesFromApp(appName+"-old", liveAppRoutes...)
 		} else {
-			p.Deployer.MapRoutes(newAppName, newAppRoutes)
+			p.Deployer.MapRoutes(newAppName, newAppRoutes...)
 			p.Deployer.RenameApp(newAppName, appName)
 		}
 		return true
