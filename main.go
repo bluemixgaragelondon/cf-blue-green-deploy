@@ -52,25 +52,21 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
-
 	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
-
 	p.Deployer.PushNewApp(newAppName, tempRoute)
-
-	newAppRoutes := []Route{}
-
-	f := ManifestAppFinder{AppName: appName, Repo: repo}
-	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
-		newAppRoutes = append(newAppRoutes, manifestRoutes...)
-	}
-
-	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
 
 	promoteNewApp := true
 	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
+
+	newAppRoutes := []Route{}
+	f := ManifestAppFinder{AppName: appName, Repo: repo}
+	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
+		newAppRoutes = append(newAppRoutes, manifestRoutes...)
+	}
+	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
