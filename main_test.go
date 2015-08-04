@@ -428,7 +428,7 @@ func (p *BlueGreenDeployFake) RenameApp(app string, newName string) {
 	p.flow = append(p.flow, fmt.Sprintf("rename %s to %s", app, newName))
 }
 
-func (p *BlueGreenDeployFake) MapAllRoutes(appName string, routes []Route) {
+func (p *BlueGreenDeployFake) MapRoutes(appName string, routes []Route) {
 	p.mappedRoutes = routes
 	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(routes)))
 }

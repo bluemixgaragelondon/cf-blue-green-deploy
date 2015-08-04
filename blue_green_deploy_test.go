@@ -31,7 +31,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc, Out: bgdOut}
 	})
 
-	Describe("map all routes", func() {
+	Describe("maps routes", func() {
 		var (
 			manifestApp Application
 		)
@@ -47,7 +47,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("maps all", func() {
-			p.MapAllRoutes(manifestApp.Name, manifestApp.Routes)
+			p.MapRoutes(manifestApp.Name, manifestApp.Routes)
 
 			cfCommands := getAllCfCommands(connection)
 
