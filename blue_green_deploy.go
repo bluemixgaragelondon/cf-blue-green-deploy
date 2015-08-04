@@ -23,7 +23,6 @@ type BlueGreenDeployer interface {
 	RunSmokeTests(string, string) bool
 	CopyLiveAppRoutesToNewApp(string, string, []Route)
 	UnmapRoutesFromApp(string, []Route)
-	UnmapTemporaryRouteFromNewApp(string, Route)
 	RenameApp(string, string)
 	MapAllRoutes(string, []Route)
 }
@@ -126,10 +125,6 @@ func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes []Route) 
 	for _, route := range routes {
 		p.unmapRoute(oldAppName, route)
 	}
-}
-
-func (p *BlueGreenDeploy) UnmapTemporaryRouteFromNewApp(appName string, route Route) {
-	p.unmapRoute(appName, route)
 }
 
 func (p *BlueGreenDeploy) mapRoute(appName string, r Route) {

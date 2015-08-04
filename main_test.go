@@ -42,7 +42,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap route app-name-new.example.com from app-name-new",
+					"unmap 1 routes from app-name-new",
 					"mapped 0 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
@@ -147,7 +147,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap route app-name-new.example.com from app-name-new",
+					"unmap 1 routes from app-name-new",
 					"mapped 0 routes",
 					"rename app-name-new to app-name",
 				}))
@@ -176,7 +176,7 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
-					"unmap route app-name-new.example.com from app-name-new",
+					"unmap 1 routes from app-name-new",
 					"mapped 4 routes",
 					"rename app-name-new to app-name",
 				}))
@@ -214,7 +214,7 @@ var _ = Describe("BGD Plugin", func() {
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"unmap route app-name-new.example.com from app-name-new",
+						"unmap 1 routes from app-name-new",
 						"mapped 0 routes",
 						"rename app-name-new to app-name",
 					}))
@@ -248,7 +248,7 @@ var _ = Describe("BGD Plugin", func() {
 						"get current live app",
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
-						"unmap route app-name-new.example.com from app-name-new",
+						"unmap 1 routes from app-name-new",
 						"rename app-name-new to app-name-failed",
 					}))
 				})
@@ -422,10 +422,6 @@ func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
 
 func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application, newApp Application) {
 	p.flow = append(p.flow, fmt.Sprintf("remap routes from %s to %s", liveApp.Name, newApp.Name))
-}
-
-func (p *BlueGreenDeployFake) UnmapTemporaryRouteFromNewApp(newApp string, tempRoute Route) {
-	p.flow = append(p.flow, fmt.Sprintf("unmap route %s from %s", tempRoute.FQDN(), newApp))
 }
 
 func (p *BlueGreenDeployFake) RenameApp(app string, newName string) {

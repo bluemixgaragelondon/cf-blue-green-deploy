@@ -115,42 +115,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("unmapping temporary route from new app", func() {
-		newApp := Application{
-			Name: "app-new",
-			Routes: []Route{
-				{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}},
-				{Host: "app", Domain: Domain{Name: "mybluemix.net"}},
-			},
-		}
-
-		tempRoute := Route{Host: "app-new", Domain: Domain{Name: "mybluemix.net"}}
-
-		It("unmaps the temporary route", func() {
-			p.UnmapTemporaryRouteFromNewApp(newApp.Name, tempRoute)
-
-			cfCommands := getAllCfCommands(connection)
-
-			Expect(cfCommands).To(Equal([]string{
-				"unmap-route app-new mybluemix.net -n app-new",
-			}))
-		})
-
-		Context("when the unmapping fails", func() {
-			BeforeEach(func() {
-				connection.CliCommandStub = func(args ...string) ([]string, error) {
-					return nil, errors.New("failed to unmap route")
-				}
-			})
-
-			It("returns an error", func() {
-				p.UnmapTemporaryRouteFromNewApp(newApp.Name, tempRoute)
-
-				Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
-			})
-		})
-	})
-
 	Describe("renaming an app", func() {
 		var app string
 
