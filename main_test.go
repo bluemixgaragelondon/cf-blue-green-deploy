@@ -384,6 +384,25 @@ var _ = Describe("BGD Plugin", func() {
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(expectedRoutes))
 			})
 		})
+		Context("when list A is nil", func() {
+			It("returns list B", func() {
+				listB := []Route{{Host: "foo"}}
+
+				Expect(p.UnionRouteLists(nil, listB)).To(ConsistOf(listB))
+			})
+		})
+		Context("when list B is nil", func() {
+			It("returns list A", func() {
+				listA := []Route{{Host: "foo"}}
+
+				Expect(p.UnionRouteLists(listA, nil)).To(ConsistOf(listA))
+			})
+		})
+		Context("when list A & list B are nil", func() {
+			It("returns an empty Array", func() {
+				Expect(p.UnionRouteLists(nil, nil)).To(BeEmpty())
+			})
+		})
 	})
 })
 
