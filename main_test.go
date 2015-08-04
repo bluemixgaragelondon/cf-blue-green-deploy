@@ -46,7 +46,7 @@ var _ = Describe("BGD Plugin", func() {
 					"mapped 0 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
-					"unmap routes from app-name-old",
+					"unmap 0 routes from app-name-old",
 				}))
 			})
 
@@ -442,5 +442,5 @@ func (p *BlueGreenDeployFake) CopyLiveAppRoutesToNewApp(liveAppName string, newA
 }
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes []Route) {
-	p.flow = append(p.flow, fmt.Sprintf("unmap routes from %s", oldAppName))
+	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
 }
