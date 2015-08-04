@@ -433,10 +433,6 @@ func (p *BlueGreenDeployFake) MapAllRoutes(appName string, routes []Route) {
 	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(routes)))
 }
 
-func (p *BlueGreenDeployFake) CopyLiveAppRoutesToNewApp(liveAppName string, newAppName string, routes []Route) {
-	p.flow = append(p.flow, fmt.Sprintf("copy routes from %s to %s", liveAppName, newAppName))
-}
-
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes []Route) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
 }

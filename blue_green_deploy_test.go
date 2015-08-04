@@ -58,36 +58,6 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
-	Describe("copy routes from live app to new app", func() {
-		var (
-			liveApp, newApp Application
-		)
-
-		BeforeEach(func() {
-			liveApp = Application{
-				Name: "live",
-				Routes: []Route{
-					{Host: "live", Domain: Domain{Name: "mybluemix.net"}},
-					{Host: "live", Domain: Domain{Name: "example.com"}},
-				},
-			}
-			newApp = Application{
-				Name: "new",
-			}
-		})
-
-		It("copies all routes from live app to new app including the default route", func() {
-			p.CopyLiveAppRoutesToNewApp(liveApp.Name, newApp.Name, liveApp.Routes)
-
-			cfCommands := getAllCfCommands(connection)
-
-			Expect(cfCommands).To(Equal([]string{
-				"map-route new mybluemix.net -n live",
-				"map-route new example.com -n live",
-			}))
-		})
-	})
-
 	Describe("remove routes from old app", func() {
 		var (
 			oldApp Application
