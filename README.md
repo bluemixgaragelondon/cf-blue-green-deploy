@@ -17,10 +17,9 @@ The plugin takes care of the following steps packaged into one command:
 
 ## How to use
 
-* Get the plugin from our repository
+* Get the plugin from the CF Community Repository
 ```
-cf add-plugin-repo garage https://garage-cf-plugins.eu-gb.mybluemix.net/
-cf install-plugin blue-green-deploy -r garage
+cf install-plugin blue-green-deploy -r CF-Community
 ```
 
 * Deploy your app
