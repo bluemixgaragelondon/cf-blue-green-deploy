@@ -61,16 +61,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
 
-	newAppRoutes := []Route{}
-	f := ManifestAppFinder{AppName: appName, Repo: repo}
-	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
-		newAppRoutes = append(newAppRoutes, manifestRoutes...)
-	}
-	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
-
-	if len(uniqueRoutes) == 0 {
-		uniqueRoutes = append(uniqueRoutes, Route{Host: appName, Domain: Domain{Name: defaultCfDomain}})
-	}
+	uniqueRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, repo, liveAppRoutes)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
@@ -89,6 +80,20 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 		p.Deployer.RenameApp(newAppName, appName+"-failed")
 		return false
 	}
+}
+
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.ManifestRepository, liveAppRoutes []Route) []Route{
+	newAppRoutes := []Route{}
+	f := ManifestAppFinder{AppName: appName, Repo: repo}
+	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
+		newAppRoutes = append(newAppRoutes, manifestRoutes...)
+	}
+	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
+
+	if len(uniqueRoutes) == 0 {
+		uniqueRoutes = append(uniqueRoutes, Route{Host: appName, Domain: Domain{Name: defaultCfDomain}})
+	}
+	return uniqueRoutes
 }
 
 func (p *CfPlugin) UnionRouteLists(listA []Route, listB []Route) []Route {
