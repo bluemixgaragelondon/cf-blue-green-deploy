@@ -33,6 +33,11 @@ cf blue-green-deploy app_name
 cf blue-green-deploy app_name --smoke-test <path to test script>
 ```
 
+* You can also use the shorter alias
+```
+cf bgd app_name
+```
+
 The only argument passed to the smoke test script is the FQDN of the newly
 pushed app. If the smoke test returns with a non-zero exit code the deploy
 process will stop and fail, the current live app will not be affected.
