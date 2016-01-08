@@ -43,7 +43,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap 1 routes from app-name-new",
-					"mapped 0 routes",
+					"mapped 1 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
 					"unmap 0 routes from app-name-old",
@@ -148,7 +148,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap 1 routes from app-name-new",
-					"mapped 0 routes",
+					"mapped 1 routes",
 					"rename app-name-new to app-name",
 				}))
 			})
@@ -190,6 +190,26 @@ var _ = Describe("BGD Plugin", func() {
 
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 			})
+			
+			Context("when no routes are specified in the manifest", func(){
+				It("maps the app name as the only route", func(){
+					b := &BlueGreenDeployFake{liveApp: nil}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &FakeRepo{yaml: `---
+						name: app-name
+						hosts:
+							- host1
+					`}
+
+					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
+
+					Expect(b.mappedRoutes).To(Equal([]Route{
+						{Host: "app-name", Domain: Domain{Name: "example.com"}},
+					}))
+				})
+			})
 		})
 
 		Context("when there is a smoke test defined", func() {
@@ -215,7 +235,7 @@ var _ = Describe("BGD Plugin", func() {
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
 						"unmap 1 routes from app-name-new",
-						"mapped 0 routes",
+						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
 				})
