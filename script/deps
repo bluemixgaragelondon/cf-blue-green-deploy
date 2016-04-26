@@ -17,7 +17,7 @@ main() {
 
 cf_cli_set_version() {
   pushd "$GO_PACKAGE_PATH/src/github.com/cloudfoundry/cli"
-    git checkout "$CF_CLI_VERSION"
+    git checkout -f "$CF_CLI_VERSION"
   popd
 }
 
