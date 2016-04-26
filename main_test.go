@@ -6,7 +6,7 @@ import (
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/fakes"
+	"github.com/cloudfoundry/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -282,7 +282,7 @@ var _ = Describe("BGD Plugin", func() {
 		})
 
 		Describe("DefaultCfDomain", func() {
-			connection := &fakes.FakeCliConnection{}
+			connection := &pluginfakes.FakeCliConnection{}
 			p := CfPlugin{Connection: connection}
 
 			Context("when CF command succeeds", func() {

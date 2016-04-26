@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
-	"github.com/cloudfoundry/cli/plugin/fakes"
+	"github.com/cloudfoundry/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -15,7 +15,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 	var (
 		bgdExitsWithErrors []error
 		bgdOut             *bytes.Buffer
-		connection         *fakes.FakeCliConnection
+		connection         *pluginfakes.FakeCliConnection
 		p                  BlueGreenDeploy
 		testErrorFunc      func(message string, err error)
 	)
@@ -27,7 +27,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		}
 		bgdOut = &bytes.Buffer{}
 
-		connection = &fakes.FakeCliConnection{}
+		connection = &pluginfakes.FakeCliConnection{}
 		p = BlueGreenDeploy{Connection: connection, ErrorFunc: testErrorFunc, Out: bgdOut}
 	})
 
@@ -425,7 +425,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 })
 
-func getAllCfCommands(connection *fakes.FakeCliConnection) (commands []string) {
+func getAllCfCommands(connection *pluginfakes.FakeCliConnection) (commands []string) {
 	commands = []string{}
 	for i := 0; i < connection.CliCommandCallCount(); i++ {
 		args := connection.CliCommandArgsForCall(i)

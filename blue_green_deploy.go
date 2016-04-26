@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
-	"github.com/cloudfoundry/cli/cf/configuration/core_config"
+	"github.com/cloudfoundry/cli/cf/configuration/confighelpers"
+	"github.com/cloudfoundry/cli/cf/configuration/coreconfig"
 	"github.com/cloudfoundry/cli/plugin"
 )
 
@@ -161,7 +161,7 @@ func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {
 }
 
 func getSpaceGuid() string {
-	configRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), func(err error) {
+	configRepo := coreconfig.NewRepositoryFromFilepath(confighelpers.DefaultFilePath(), func(err error) {
 		if err != nil {
 			fmt.Printf("Config error: %s", err)
 		}
