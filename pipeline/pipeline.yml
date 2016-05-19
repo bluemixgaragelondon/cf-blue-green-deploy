@@ -5,16 +5,8 @@ jobs:
       - get: git-resource
         trigger: true
       - task: build and test
-        config:
-          platform: linux
-          image: docker:///golang#1.6
-          inputs:
-            - name: git-resource
-              path: src/github.com/samze/cf-blue-green-deploy
-          outputs:
-            - name: artefacts
-          run:
-            path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
+        file: git-resource/pipeline/build.yml
+
 resources:
 - name: git-resource
   type: git

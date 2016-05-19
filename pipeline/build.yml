@@ -1,0 +1,10 @@
+---
+platform: linux
+image: docker:///golang#1.5.4
+inputs:
+  - name: git-resource
+    path: src/github.com/samze/cf-blue-green-deploy
+outputs:
+  - name: artefacts
+run:
+    path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
