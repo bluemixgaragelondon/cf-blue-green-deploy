@@ -18,16 +18,7 @@ jobs:
       - get: bgd-git
         passed: [build]
       - task: acceptance
-        config:
-          params:
-            CF_PASSWORD: {{cf-password}}
-          platform: linux
-          image: docker:///bluemixgaragelondon/golangcf:1.5
-          inputs:
-            - name: bgd-git
-              path: src/github.com/samze/cf-blue-green-deploy
-          run:
-              path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_acceptance
+        file: bgd-git/pipeline/acceptance.yml
 
 resources:
 - name: bgd-git
@@ -57,7 +48,7 @@ resources:
     auth_url: https://lon-identity.open.softlayer.com/v3
     domain: "884793"
     container: bgd-artefacts
-    regex: blue-green-deploy-([.0-9])+\.tar\.gz
+    regex: blue-green-deploy-([.0-9]+)\.tar\.gz
     region: #Resource does not support regions, defaults to dallas
 
 resource_types:

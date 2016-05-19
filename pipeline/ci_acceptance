@@ -2,8 +2,6 @@
 set -e
 set -x
 
-env
-
 export GOPATH=$PWD
 pushd src/github.com/samze/cf-blue-green-deploy
   ./script/test_acceptance
