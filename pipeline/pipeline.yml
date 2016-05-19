@@ -1,9 +1,12 @@
 ---
 jobs:
   - name: build
+  serial_groups: [version]
     plan:
       - get: git-resource
         trigger: true
+      - get: version
+        params: {bump: patch}
       - task: build and test
         file: git-resource/pipeline/build.yml
 
@@ -12,3 +15,14 @@ resources:
   type: git
   source:
     uri: https://github.com/samze/cf-blue-green-deploy
+- name: version
+  type: semver
+  initial_version: 1.0.6
+  source:
+    driver: swift
+    container: bgd-version
+    region_name: dallas
+    identity_endpoint: https://lon-identity.open.softlayer.com/v3
+    domain_id: "884793"
+    username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
+    api_key: {{swift-password}}

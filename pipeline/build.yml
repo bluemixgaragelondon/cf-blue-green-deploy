@@ -7,4 +7,4 @@ inputs:
 outputs:
   - name: artefacts
 run:
-    path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
+    ath: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
