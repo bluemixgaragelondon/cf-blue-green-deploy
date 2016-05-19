@@ -19,6 +19,8 @@ jobs:
         passed: [build]
       - task: acceptance
         file: bgd-git/pipeline/acceptance.yml
+        params:
+          CF_PASSWORD: {{cf-password}}
 
 resources:
 - name: bgd-git
