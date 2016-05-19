@@ -1,7 +1,7 @@
 ---
 jobs:
   - name: build
-  serial_groups: [version]
+    serial_groups: [version]
     plan:
       - get: git-resource
         trigger: true
@@ -17,12 +17,14 @@ resources:
     uri: https://github.com/samze/cf-blue-green-deploy
 - name: version
   type: semver
-  initial_version: 1.0.6
   source:
+    initial_version: "1.0.6"
     driver: swift
-    container: bgd-version
-    region_name: dallas
-    identity_endpoint: https://lon-identity.open.softlayer.com/v3
-    domain_id: "884793"
-    username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
-    api_key: {{swift-password}}
+    openstack:
+      container: bgd-version
+      item_name: version
+      region: dallas
+      identity_endpoint: https://lon-identity.open.softlayer.com/v3
+      domain_name: "884793"
+      username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
+      password: {{swift-password}}
