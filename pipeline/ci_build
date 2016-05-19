@@ -1,5 +1,9 @@
 #!/bin/bash
 
-export GOPATH=$PWD/go
-./script/build
-cp -r ./artefacts ../artefacts
+export GOPATH=$PWD
+
+pushd src/github.com/samze/cf-blue-green-deploy
+  ./script/build
+popd
+
+cp -r src/github.com/samze/cf-blue-green-deploy/artefacts artefacts
