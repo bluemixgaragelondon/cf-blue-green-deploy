@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export GOPATH=$PWD/go
+./script/build
+cp -r ./artefacts ../artefacts

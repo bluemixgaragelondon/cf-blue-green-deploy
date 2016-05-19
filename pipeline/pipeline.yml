@@ -1,0 +1,22 @@
+---
+jobs:
+  - name: build
+    plan:
+      - get: git-resource
+        trigger: true
+      - task: build and test
+        config:
+          platform: linux
+          image: docker:///golang#1.6-alpine
+          inputs:
+            - name: git-resource
+              path: /go/src/github.com/samze/cf-blue-green-deploy
+          outputs:
+            - name: artefacts
+          run:
+            path: ./go/src/github.com/samze/cf-blue-green-deploy/script/ci_build
+resources:
+- name: git-resource
+  type: git
+  source:
+    uri: https://github.com/samze/cf-blue-green-deploy
