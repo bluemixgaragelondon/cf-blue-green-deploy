@@ -9,16 +9,32 @@ jobs:
         params: {bump: patch}
       - task: build and test
         file: bgd-git/pipeline/build.yml
-      - task: bgd-artefact-swift
-        params: {file: artefacts/blue-green-deploy-*.tar.gz}
+      - put: bgd-artefact-swift
+        params: {from: artefacts/.*\.tar\.gz}
       - put: version
         params: {file: version/number}
+  - name: acceptance
+    plan:
+      - get: bgd-git
+        passed: [build]
+      - task: acceptance
+        config:
+          params:
+            CF_PASSWORD: {{cf-password}}
+          platform: linux
+          image: docker:///bluemixgaragelondon/golangcf:1.5
+          inputs:
+            - name: bgd-git
+              path: src/github.com/samze/cf-blue-green-deploy
+          run:
+              path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_acceptance
 
 resources:
 - name: bgd-git
   type: git
   source:
     uri: https://github.com/samze/cf-blue-green-deploy
+
 - name: version
   type: semver
   source:
@@ -32,6 +48,7 @@ resources:
       domain_name: "884793"
       username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
       password: {{swift-password}}
+
 - name: bgd-artefact-swift
   type: swift
   source:
@@ -40,5 +57,11 @@ resources:
     auth_url: https://lon-identity.open.softlayer.com/v3
     domain: "884793"
     container: bgd-artefacts
-    regex: eAscot-([.0-9])+\.xcarchive\.zip
+    regex: blue-green-deploy-([.0-9])+\.tar\.gz
     region: #Resource does not support regions, defaults to dallas
+
+resource_types:
+- name: swift
+  type: docker-image
+  source:
+    repository: databus23/concourse-swift-resource
