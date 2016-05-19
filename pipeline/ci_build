@@ -13,3 +13,6 @@ popd
 tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/samze/cf-blue-green-deploy/artefacts
 
 mv blue-green-deploy-$VERSION.tar.gz artefacts
+
+ls
+ls artefacts

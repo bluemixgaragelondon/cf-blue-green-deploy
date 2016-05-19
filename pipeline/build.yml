@@ -2,7 +2,7 @@
 platform: linux
 image: docker:///golang#1.5.4
 inputs:
-  - name: git-resource
+  - name: bgd-git
     path: src/github.com/samze/cf-blue-green-deploy
   - name: version
 outputs:

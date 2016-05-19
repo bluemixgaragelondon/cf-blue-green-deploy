@@ -3,15 +3,19 @@ jobs:
   - name: build
     serial_groups: [version]
     plan:
-      - get: git-resource
+      - get: bgd-git
         trigger: true
       - get: version
         params: {bump: patch}
       - task: build and test
-        file: git-resource/pipeline/build.yml
+        file: bgd-git/pipeline/build.yml
+      - task: bgd-artefact-swift
+        params: {file: artefacts/blue-green-deploy-*.tar.gz}
+      - put: version
+        params: {file: version/number}
 
 resources:
-- name: git-resource
+- name: bgd-git
   type: git
   source:
     uri: https://github.com/samze/cf-blue-green-deploy
@@ -28,3 +32,13 @@ resources:
       domain_name: "884793"
       username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
       password: {{swift-password}}
+- name: bgd-artefact-swift
+  type: swift
+  source:
+    username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
+    api_key: {{swift-password}}
+    auth_url: https://lon-identity.open.softlayer.com/v3
+    domain: "884793"
+    container: bgd-artefacts
+    regex: eAscot-([.0-9])+\.xcarchive\.zip
+    region: #Resource does not support regions, defaults to dallas
