@@ -4,6 +4,7 @@ image: docker:///golang#1.5.4
 inputs:
   - name: git-resource
     path: src/github.com/samze/cf-blue-green-deploy
+  - name: version
 outputs:
   - name: artefacts
 run:
