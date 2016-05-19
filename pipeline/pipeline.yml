@@ -7,14 +7,14 @@ jobs:
       - task: build and test
         config:
           platform: linux
-          image: docker:///golang#1.6-alpine
+          image: docker:///golang#1.6
           inputs:
             - name: git-resource
-              path: /go/src/github.com/samze/cf-blue-green-deploy
+              path: src/github.com/samze/cf-blue-green-deploy
           outputs:
             - name: artefacts
           run:
-            path: ./go/src/github.com/samze/cf-blue-green-deploy/script/ci_build
+            path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
 resources:
 - name: git-resource
   type: git
