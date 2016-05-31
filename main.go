@@ -52,11 +52,16 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
-	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
+	promoteNewApp := true
+
+	var smokeTestDomain, smokeTestScript string
+	if smokeTestScript, smokeTestDomain = ExtractIntegrationTestScript(args); smokeTestDomain == "" {
+		smokeTestDomain = defaultCfDomain
+	}
+
+	tempRoute := Route{Host: newAppName, Domain: Domain{Name: smokeTestDomain}}
 	p.Deployer.PushNewApp(newAppName, tempRoute)
 
-	promoteNewApp := true
-	smokeTestScript := ExtractIntegrationTestScript(args)
 	if smokeTestScript != "" {
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
@@ -82,7 +87,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	}
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.ManifestRepository, liveAppRoutes []Route) []Route{
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.ManifestRepository, liveAppRoutes []Route) []Route {
 	newAppRoutes := []Route{}
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
@@ -131,7 +136,8 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				UsageDetails: plugin.Usage{
 					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT]",
 					Options: map[string]string{
-						"smoke-test": "The test script to run.",
+						"smoke-test":   "The test script to run.",
+						"smoke-domain": "An optional domain to use for the smoke tests.",
 					},
 				},
 			},
@@ -161,11 +167,12 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	return
 }
 
-func ExtractIntegrationTestScript(args []string) string {
+func ExtractIntegrationTestScript(args []string) (string, string) {
 	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
 	script := f.String("smoke-test", "", "")
+	domain := f.String("smoke-domain", "", "")
 	f.Parse(args[2:])
-	return *script
+	return *script, *domain
 }
 
 func main() {

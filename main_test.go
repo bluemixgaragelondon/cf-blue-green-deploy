@@ -16,14 +16,24 @@ var _ = Describe("BGD Plugin", func() {
 		Context("when smoke test flag is not provided", func() {
 			It("returns empty string", func() {
 				args := []string{"blue-green-deploy", "appName"}
-				Expect(ExtractIntegrationTestScript(args)).To(Equal(""))
+				testScript, _ := ExtractIntegrationTestScript(args)
+				Expect(testScript).To(Equal(""))
 			})
 		})
 
 		Context("when smoke test flag provided", func() {
 			It("returns flag value", func() {
 				args := []string{"blue-green-deploy", "appName", "--smoke-test=script/test"}
-				Expect(ExtractIntegrationTestScript(args)).To(Equal("script/test"))
+				testScript, _ := ExtractIntegrationTestScript(args)
+				Expect(testScript).To(Equal("script/test"))
+			})
+		})
+
+		Context("when smoke test domain flag provided", func() {
+			It("returns flag value", func() {
+				args := []string{"blue-green-deploy", "appName", "--smoke-test=script/test", "--smoke-domain=example.com"}
+				_, smokeDomain := ExtractIntegrationTestScript(args)
+				Expect(smokeDomain).To(Equal("example.com"))
 			})
 		})
 	})
@@ -190,9 +200,9 @@ var _ = Describe("BGD Plugin", func() {
 
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 			})
-			
-			Context("when no routes are specified in the manifest", func(){
-				It("maps the app name as the only route", func(){
+
+			Context("when no routes are specified in the manifest", func() {
+				It("maps the app name as the only route", func() {
 					b := &BlueGreenDeployFake{liveApp: nil}
 					p := CfPlugin{
 						Deployer: b,
@@ -213,6 +223,42 @@ var _ = Describe("BGD Plugin", func() {
 		})
 
 		Context("when there is a smoke test defined", func() {
+			Context("and a smoke-domain is defined", func() {
+				var (
+					b *BlueGreenDeployFake
+					p CfPlugin
+				)
+
+				BeforeEach(func() {
+					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					p = CfPlugin{
+						Deployer: b,
+					}
+				})
+				It("uses the specified smoke-domain", func() {
+					p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test", "--smoke-domain", "smoke-example.com"})
+					Expect(b.flow).To(ContainElement("script/smoke-test app-name-new.smoke-example.com"))
+				})
+			})
+
+			Context("and a smoke-domain is not defined", func() {
+				var (
+					b *BlueGreenDeployFake
+					p CfPlugin
+				)
+
+				BeforeEach(func() {
+					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					p = CfPlugin{
+						Deployer: b,
+					}
+				})
+				It("uses the default domain", func() {
+					p.Deploy("example.com", &FakeRepo{}, []string{"bgd", "app-name", "--smoke-test", "script/smoke-test"})
+					Expect(b.flow).To(ContainElement("script/smoke-test app-name-new.example.com"))
+				})
+			})
+
 			Context("when it succeeds", func() {
 				var (
 					b *BlueGreenDeployFake
