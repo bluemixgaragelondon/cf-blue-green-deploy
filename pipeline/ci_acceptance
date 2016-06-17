@@ -3,6 +3,12 @@ set -e
 set -x
 
 export GOPATH=$PWD
+
+pushd bgd-artefact-swift
+  tar -xvf "${PLUGIN_NAME}"*
+  cf install-plugin "${plugin_name}.$(platform_name)" <<< "y"
+popd
+
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/test_acceptance
 popd

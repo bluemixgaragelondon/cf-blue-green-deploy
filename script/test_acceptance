@@ -14,15 +14,13 @@ main() {
 
   if [ -z "$TURBO" ]
   then
-    script/build
-    script/install
 
     push_example_apps
   fi
 
   pushd acceptance/app >/dev/null
     assert_plugin_output_includes_successful_smoke_test_output
-		ignore_any_failures
+    ignore_any_failures
     assert_plugin_fails_if_smoke_test_script_fails
   popd >/dev/null
 
