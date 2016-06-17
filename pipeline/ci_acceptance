@@ -2,6 +2,8 @@
 set -e
 set -x
 
+. script/with_env
+
 export GOPATH=$PWD
 
 pushd bgd-artefact-swift
