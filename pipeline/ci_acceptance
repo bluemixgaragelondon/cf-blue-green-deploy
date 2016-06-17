@@ -2,16 +2,16 @@
 set -e
 set -x
 
-. script/with_env
-
 export GOPATH=$PWD
 
-pushd bgd-artefact-swift
-  tar -xvf $(cat filename)
-  cf install-plugin "${plugin_name}.$(platform_name)" <<< "y"
-popd
-
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  . script/with_env
+
+  pushd bgd-artefact-swift
+    tar -xvf "$(cat filename)"
+    cf install-plugin "${plugin_name}.$(platform_name)" <<< "y"
+  popd
+
   ./script/test_acceptance
 popd
 
