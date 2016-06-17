@@ -3,9 +3,9 @@ platform: linux
 image: docker:///golang#1.5.4
 inputs:
   - name: bgd-git
-    path: src/github.com/samze/cf-blue-green-deploy
+    path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   - name: version
 outputs:
   - name: artefacts
 run:
-    path: src/github.com/samze/cf-blue-green-deploy/pipeline/ci_build
+    path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy/pipeline/ci_build

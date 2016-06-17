@@ -6,11 +6,11 @@ export GOPATH=$PWD
 
 VERSION=$(cat version/number)
 
-pushd src/github.com/samze/cf-blue-green-deploy
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/build
 popd
 
-tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/samze/cf-blue-green-deploy/artefacts
+tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
 
 mv blue-green-deploy-$VERSION.tar.gz artefacts
 

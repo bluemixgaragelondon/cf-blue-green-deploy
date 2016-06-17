@@ -3,7 +3,7 @@ set -e
 set -x
 
 export GOPATH=$PWD
-pushd src/github.com/samze/cf-blue-green-deploy
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/test_acceptance
 popd
 
