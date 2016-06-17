@@ -39,13 +39,13 @@ resources:
       region: dallas
       identity_endpoint: https://lon-identity.open.softlayer.com/v3
       domain_name: "884793"
-      username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
+      username: {{swift-username}}
       password: {{swift-password}}
 
 - name: bgd-artefact-swift
   type: swift
   source:
-    username: Admin_59b0cc6a2d2ecf5582604b7719de479daa567470
+    username: {{swift-username}}
     api_key: {{swift-password}}
     auth_url: https://lon-identity.open.softlayer.com/v3
     domain: "884793"
