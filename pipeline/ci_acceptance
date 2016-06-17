@@ -5,7 +5,7 @@ set -x
 export GOPATH=$PWD
 
 pushd bgd-artefact-swift
-  tar -xvf "${PLUGIN_NAME}"*
+  tar -xvf $(cat filename)
   cf install-plugin "${plugin_name}.$(platform_name)" <<< "y"
 popd
 
