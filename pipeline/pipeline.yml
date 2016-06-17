@@ -17,6 +17,8 @@ jobs:
     plan:
       - get: bgd-git
         passed: [build]
+      - get: bgd-artefact-swift
+        passed: [build]
       - task: acceptance
         file: bgd-git/pipeline/acceptance.yml
         params:
