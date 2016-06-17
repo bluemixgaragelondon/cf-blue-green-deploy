@@ -1,0 +1,8 @@
+---
+platform: linux
+image: docker:///concourse/cf-resource
+inputs:
+- name: bgd-git
+  path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+run:
+  path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy/pipeline/ci_acceptance

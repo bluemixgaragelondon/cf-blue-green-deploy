@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+set -x
+
+export GOPATH=$PWD
+
+VERSION=$(cat version/number)
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  ./script/build
+popd
+
+tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
+
+mv blue-green-deploy-$VERSION.tar.gz artefacts
+
+ls
+ls artefacts
