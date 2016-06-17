@@ -29,6 +29,7 @@ resources:
   type: git
   source:
     uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
+    branch: pipeline
 
 - name: version
   type: semver
