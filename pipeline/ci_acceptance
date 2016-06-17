@@ -1,6 +1,5 @@
 #!/bin/bash
-set -e
-set -x
+set -e -x
 
 export GOPATH=$PWD
 
@@ -10,11 +9,9 @@ popd
 
 pushd bgd-artefact-swift
   tar -xvf "$(cat filename)"
-  cf install-plugin "${plugin_name}.$(platform_name)" <<< "y"
+  cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
 popd
 
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/test_acceptance
 popd
-
-
