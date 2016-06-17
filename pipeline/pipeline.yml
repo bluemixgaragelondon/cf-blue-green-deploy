@@ -18,6 +18,7 @@ jobs:
       - get: bgd-git
         passed: [build]
       - get: bgd-artefact-swift
+        trigger: true
         passed: [build]
       - task: acceptance
         file: bgd-git/pipeline/acceptance.yml
