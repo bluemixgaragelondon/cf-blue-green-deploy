@@ -1,6 +1,6 @@
 ---
 platform: linux
-image: docker:///bluemixgaragelondon/golangcf#1.5
+image: docker:///concourse/cf-resource
 inputs:
 - name: bgd-git
   path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy
