@@ -10,7 +10,7 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/build
 popd
 
-tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
+tar -C src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts -zcvf blue-green-deploy-$VERSION.tar.gz .
 
 mv blue-green-deploy-$VERSION.tar.gz artefacts
 
