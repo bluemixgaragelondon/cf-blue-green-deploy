@@ -14,5 +14,3 @@ tar -zcvf blue-green-deploy-$VERSION.tar.gz src/github.com/bluemixgaragelondon/c
 
 mv blue-green-deploy-$VERSION.tar.gz artefacts
 
-ls
-ls artefacts
