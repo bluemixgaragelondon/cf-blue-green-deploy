@@ -16,7 +16,6 @@ jobs:
   - name: acceptance
     plan:
       - get: bgd-git
-        passed: [build]
       - get: bgd-artefact-swift
         trigger: true
         passed: [build]
