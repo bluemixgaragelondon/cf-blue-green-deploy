@@ -23,14 +23,6 @@ jobs:
         file: bgd-git/pipeline/acceptance.yml
         params:
           CF_PASSWORD: {{cf-password}}
-  - name: plugin-build
-    plan:
-      - get: garage-cf-plugins-git
-      - get: bgd-artefact-swift
-        trigger: true
-        passed: [acceptance]
-      - task: build-plugin-repo
-        file: 
 
 resources:
 - name: bgd-git
@@ -39,16 +31,9 @@ resources:
     uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
     branch: pipeline
 
-resources:
-- name: garage-cf-plugins-git
-  type: git
-  source:
-    uri: https://github.com/bluemixgaragelondon/garage-cf-plugins
-
 - name: version
   type: semver
   source:
-    initial_version: 1.0.6
     driver: swift
     openstack:
       container: bgd-version
