@@ -34,11 +34,16 @@ resources:
 - name: version
   type: semver
   source:
-    driver: git
-    uri: {{git-repo-url}}
-    branch: pipeline
-    file: version
-    git_user: garage@uk.ibm.com
+    initial_version: 1.0.6
+    driver: swift
+    openstack:
+      container: bgd-version
+      item_name: version
+      region: dallas
+      identity_endpoint: https://lon-identity.open.softlayer.com/v3
+      domain_name: "884793"
+      username: {{swift-username}}
+      password: {{swift-password}}
 
 - name: bgd-artefact-swift
   type: swift
