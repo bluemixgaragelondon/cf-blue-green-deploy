@@ -3,6 +3,8 @@ set -e -x
 
 export GOPATH=$PWD
 
+export PLUGIN_VERSION=$(cat version/number)
+
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   . script/with_env
   ./script/build
