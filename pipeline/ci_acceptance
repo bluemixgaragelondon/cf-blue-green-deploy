@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e -x
 
-export GOPATH=$PWD
-
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   . script/with_env
 popd
