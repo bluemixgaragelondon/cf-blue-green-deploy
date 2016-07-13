@@ -19,6 +19,10 @@ type CfPlugin struct {
 	Deployer   BlueGreenDeployer
 }
 
+func usage() string {
+	return "cf bgd <app_name> [manifest_path] [--smoke-test <smoke_test_script>]"
+}
+
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if len(args) > 0 && args[0] == "CLI-MESSAGE-UNINSTALL" {
 		return
@@ -35,7 +39,7 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	p.Deployer.Setup(cliConnection)
 
 	if len(args) < 2 {
-		fmt.Println("App name must be provided")
+		fmt.Println(usage())
 		os.Exit(1)
 	}
 
@@ -171,6 +175,18 @@ func ExtractIntegrationTestScript(args []string) string {
 func main() {
 	// T needs to point to a translate func, otherwise cf internals blow up
 	i18n.T, _ = go_i18n.Tfunc("")
+
+	// Args format is <exec_name> <pid> <command> <args>...
+	if len(os.Args) >= 4 && (os.Args[3] == "--help" || os.Args[3] == "-h" || os.Args[3] == "help") {
+		fmt.Println(usage())
+		os.Exit(0)
+	}
+
+	var manifest string
+	if len(os.Args) >= 5 {
+		manifest = os.Args[4]
+	}
+
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
@@ -178,6 +194,7 @@ func main() {
 				os.Exit(1)
 			},
 			Out: os.Stdout,
+			ManifestPath: manifest,
 		},
 	}
 
