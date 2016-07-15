@@ -129,10 +129,10 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [--manifest MANIFEST_FILE]",
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
 					Options: map[string]string{
 						"-smoke-test": "The test script to run.",
-						"-manifest": "manifest file to use instead of manifest.yml.",
+						"f": "manifest file to use instead of manifest.yml.",
 					},
 				},
 			},
@@ -164,7 +164,7 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 
 func ExtractIntegrationTestScript(args []string) string {
 	f := flag.NewFlagSet("blue-green-deploy", flag.ContinueOnError)
-	f.String("manifest", "", "") // Necessary, otherwise it will complain "provided but not defined"
+	f.String("f", "", "") // Necessary, otherwise it will complain "provided but not defined"
 	script := f.String("smoke-test", "", "")
 	if err := f.Parse(args[2:]); err != nil {
 		fmt.Println(err)
@@ -178,10 +178,11 @@ func main() {
 	i18n.T, _ = go_i18n.Tfunc("")
 
 	flag := flag.NewFlagSet("blue-green-deploy", flag.ContinueOnError)
-	manifest := flag.String("manifest", "", "")
+	manifest := flag.String("f", "", "")
 	flag.String("smoke-test", "", "") // Necessary, otherwise it will complain "provided but not defined"
 
 	// Args format is <exec_name> <pid> <command> <args>...
+	// Hence, if we have more than three args, the fourth and beyond are the things like --smoke-test or -f
 	if len(os.Args) > 3 {
 		if err := flag.Parse(os.Args[4:]); err != nil {
 			fmt.Println(err)
