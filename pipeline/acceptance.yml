@@ -1,6 +1,8 @@
 ---
 platform: linux
-image: docker:///viniciusffj/docker-cf-cli
+image_resource:
+  type: docker-image
+  source: {repository: viniciusffj/docker-cf-cli}
 inputs:
   - name: bgd-git
     path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy

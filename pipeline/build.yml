@@ -1,6 +1,8 @@
 ---
 platform: linux
-image: docker:///golang#1.5.4
+image_resource:
+  type: docker-image
+  source: {repository: golang, tag: "1.5.4"}
 inputs:
   - name: bgd-git
     path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy
