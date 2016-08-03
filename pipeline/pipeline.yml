@@ -3,6 +3,8 @@ jobs:
   - name: build
     serial_groups: [version]
     plan:
+      - get: midday-timer
+        trigger: true
       - get: bgd-git
         trigger: true
       - get: version
@@ -30,6 +32,18 @@ resources:
   source:
     uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
     branch: pipeline
+
+- name: midday-timer
+  type: time
+  source:
+    start: 12:00 +0000
+    stop: 13:00 +0000
+    days:
+      - Monday
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
 
 - name: version
   type: semver
