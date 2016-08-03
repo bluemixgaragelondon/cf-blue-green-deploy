@@ -71,6 +71,7 @@ resources:
 - name: version
   type: semver
   source:
+    initial_version: "0.0.0" #Bug in the semver-resource, this is required.
     driver: swift
     openstack:
       container: bgd-version
