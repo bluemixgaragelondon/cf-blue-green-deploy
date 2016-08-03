@@ -25,6 +25,18 @@ jobs:
         file: bgd-git/pipeline/acceptance.yml
         params:
           CF_PASSWORD: {{cf-password}}
+  - name: build-plugin-repo
+    plan:
+    - get: garage-cf-plugins-git
+    - get: bgd-artefact-swift
+      passed:
+      - acceptance
+      trigger: true
+    - task: build-plugin-repo
+      file: garage-cf-plugins-git/pipeline/build.yml
+    - put: garage-cf-plugins-git
+      params:
+        repository: updated-garage-cf-plugins-git
 
 resources:
 - name: bgd-git
@@ -32,6 +44,17 @@ resources:
   source:
     uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
     branch: pipeline
+
+- name: garage-cf-plugins-git
+  type: git
+  source:
+    branch: master
+    uri: {{garage-cf-plugin-repo}}
+    git_config:
+    - name: user.name
+      value: BluemixGarage CI
+    - name: user.email
+      value: garage+ci@uk.ibm.com
 
 - name: midday-timer
   type: time
