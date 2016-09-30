@@ -152,11 +152,13 @@ func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {
 		return nil, err
 	}
 
+	var joined_output = strings.Join(output, "\n")
+
 	apps := struct {
 		Apps []Application
 	}{}
 
-	json.Unmarshal([]byte(output[0]), &apps)
+	json.Unmarshal([]byte(joined_output), &apps)
 	return apps.Apps, nil
 }
 
