@@ -5,6 +5,10 @@
 PLUGIN_NAME="${PLUGIN_NAME:?Must be set in .env}"
 PLUGIN_VERSION="${PLUGIN_VERSION:?Must be set in .env}"
 
+# This is necessary to get the project building on Go 1.6
+# Building the project will fail on Go 1.7+ as this env var will be ignored
+export GO15VENDOREXPERIMENT=0
+
 script/deps
 script/test
 
@@ -12,11 +16,14 @@ targets=(
   "osx darwin amd64"
   "linux32 linux 386"
   "linux64 linux amd64"
+  "windows32 windows 386"
+  "windows64 windows amd64"
 )
 
 for target in "${targets[@]}"
 do
   read platform goos goarch <<< $target
+  echo "Building platform $platform"
 
   binary_name="${PLUGIN_NAME}.$platform"
   GOOS="$goos" GOARCH="$goarch" go build -ldflags "-X main.PluginVersion=${PLUGIN_VERSION}" -o "$binary_name"

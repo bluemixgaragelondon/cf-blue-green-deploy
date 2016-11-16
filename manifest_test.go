@@ -17,6 +17,32 @@ var _ = Describe("Manifest reader", func() {
 	// testing code that calls into cf cli requires T to point to a translate func
 	i18n.T, _ = go_i18n.Tfunc("")
 
+	Context("when a custom manifest file is provided", func() {
+		It("should load that file from the repository", func() {
+			repo := FakeRepo{yaml: `---
+        host: foo`,
+			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo, ManifestPath: "manifest-tst.yml"}
+
+			manifestAppFinder.RoutesFromManifest("example.com")
+
+			Expect(repo.path).To(Equal("manifest-tst.yml"))
+		})
+	})
+
+	Context("when a custom manifest file is not provided", func() {
+		It("should load that file from the repository", func() {
+			repo := FakeRepo{yaml: `---
+        host: foo`,
+			}
+			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+
+			manifestAppFinder.RoutesFromManifest("example.com")
+
+			Expect(repo.path).To(Equal("./"))
+		})
+	})
+
 	Context("When the manifest file is present", func() {
 		Context("when the manifest contain a host but no app name", func() {
 			repo := FakeRepo{yaml: `---
@@ -137,9 +163,11 @@ var _ = Describe("Manifest reader", func() {
 type FakeRepo struct {
 	yaml string
 	err  error
+	path string
 }
 
 func (r *FakeRepo) ReadManifest(path string) (*manifest.Manifest, error) {
+	r.path = path
 	yamlMap := generic.NewMap()
 	candiedyaml.Unmarshal([]byte(r.yaml), yamlMap)
 	return &manifest.Manifest{Data: yamlMap}, r.err

@@ -10,8 +10,9 @@ import (
 type ManifestReader func(manifest.ManifestRepository, string) *models.AppParams
 
 type ManifestAppFinder struct {
-	Repo    manifest.ManifestRepository
-	AppName string
+	Repo         manifest.ManifestRepository
+	ManifestPath string
+	AppName      string
 }
 
 func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []Route {
@@ -36,7 +37,14 @@ func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []Route {
 }
 
 func (f *ManifestAppFinder) AppParams() *models.AppParams {
-	manifest, err := f.Repo.ReadManifest("./")
+	var manifest *manifest.Manifest
+	var err error
+	if f.ManifestPath == "" {
+		manifest, err = f.Repo.ReadManifest("./")
+	} else {
+		manifest, err = f.Repo.ReadManifest(f.ManifestPath)
+	}
+
 	if err != nil {
 		return nil
 	}
