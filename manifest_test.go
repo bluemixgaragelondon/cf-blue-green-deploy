@@ -5,17 +5,23 @@ import (
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/cloudfoundry-incubator/candiedyaml"
-	"github.com/cloudfoundry/cli/cf/i18n"
-	"github.com/cloudfoundry/cli/cf/manifest"
-	"github.com/cloudfoundry/cli/generic"
-	go_i18n "github.com/nicksnyder/go-i18n/i18n"
+	"code.cloudfoundry.org/cli/cf/manifest"
+	"code.cloudfoundry.org/cli/cf/i18n"
+	"code.cloudfoundry.org/cli/utils/generic"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
+type localeGetter struct{}
+
+func (l localeGetter) Locale() string {
+	return "en-us"
+}
+
 var _ = Describe("Manifest reader", func() {
+
 	// testing code that calls into cf cli requires T to point to a translate func
-	i18n.T, _ = go_i18n.Tfunc("")
+	i18n.T = i18n.Init(localeGetter{})
 
 	Context("When the manifest file is present", func() {
 		Context("when the manifest contain a host but no app name", func() {
@@ -25,7 +31,7 @@ var _ = Describe("Manifest reader", func() {
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns params that contain the host", func() {
-				Expect(*manifestAppFinder.AppParams().Hosts).To(ContainElement("foo"))
+				Expect(manifestAppFinder.AppParams().Hosts).To(ContainElement("foo"))
 			})
 		})
 
@@ -58,8 +64,8 @@ var _ = Describe("Manifest reader", func() {
 
 			It("Returns the correct app", func() {
 				Expect(*manifestAppFinder.AppParams().Name).To(Equal("foo"))
-				Expect(*manifestAppFinder.AppParams().Hosts).To(ConsistOf("host1", "host2"))
-				Expect(*manifestAppFinder.AppParams().Domains).To(ConsistOf("example1.com", "example2.com"))
+				Expect(manifestAppFinder.AppParams().Hosts).To(ConsistOf("host1", "host2"))
+				Expect(manifestAppFinder.AppParams().Domains).To(ConsistOf("example1.com", "example2.com"))
 			})
 		})
 	})

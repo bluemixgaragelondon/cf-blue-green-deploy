@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 
-	"github.com/cloudfoundry/cli/cf/manifest"
-	"github.com/cloudfoundry/cli/cf/models"
+	"code.cloudfoundry.org/cli/cf/manifest"
+	"code.cloudfoundry.org/cli/cf/models"
 )
 
-type ManifestReader func(manifest.ManifestRepository, string) *models.AppParams
+type ManifestReader func(manifest.Repository, string) *models.AppParams
 
 type ManifestAppFinder struct {
-	Repo    manifest.ManifestRepository
+	Repo    manifest.Repository
 	AppName string
 }
 
@@ -19,13 +19,13 @@ func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []Route {
 
 		manifestRoutes := make([]Route, 0)
 
-		for _, host := range *appParams.Hosts {
+		for _, host := range appParams.Hosts {
 			if appParams.Domains == nil {
 				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: defaultDomain}})
 				continue
 			}
 
-			for _, domain := range *appParams.Domains {
+			for _, domain := range appParams.Domains {
 				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: domain}})
 			}
 		}

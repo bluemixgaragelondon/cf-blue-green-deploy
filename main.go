@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/cli/cf/i18n"
-	"github.com/cloudfoundry/cli/cf/manifest"
-	"github.com/cloudfoundry/cli/plugin"
-	go_i18n "github.com/nicksnyder/go-i18n/i18n"
+	"code.cloudfoundry.org/cli/cf/manifest"
+	"code.cloudfoundry.org/cli/plugin"
+	"strings"
 )
 
 var PluginVersion string
@@ -39,13 +38,13 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	if !p.Deploy(defaultCfDomain, manifest.ManifestDiskRepository{}, args) {
+	if !p.Deploy(defaultCfDomain, manifest.DiskRepository{}, args) {
 		fmt.Println("Smoke tests failed")
 		os.Exit(1)
 	}
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestRepository, args []string) bool {
+func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args []string) bool {
 	appName := args[1]
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
@@ -82,7 +81,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.ManifestReposito
 	}
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.ManifestRepository, liveAppRoutes []Route) []Route{
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.Repository, liveAppRoutes []Route) []Route {
 	newAppRoutes := []Route{}
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
@@ -153,7 +152,10 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 		}
 	}{}
 
-	if err = json.Unmarshal([]byte(res[0]), &response); err != nil {
+	var json_string string
+	json_string = strings.Join(res, "\n")
+
+	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
 		return
 	}
 
@@ -169,8 +171,6 @@ func ExtractIntegrationTestScript(args []string) string {
 }
 
 func main() {
-	// T needs to point to a translate func, otherwise cf internals blow up
-	i18n.T, _ = go_i18n.Tfunc("")
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
