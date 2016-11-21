@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e -x
+
+export GOPATH=$PWD
+export PLUGIN_VERSION=$(cat version/number)
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  . script/with_env
+  ./script/build
+popd
+
+tar -C src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts -zcvf blue-green-deploy-"$PLUGIN_VERSION.tar.gz" .
+
+mv blue-green-deploy-"$PLUGIN_VERSION.tar.gz" artefacts
+

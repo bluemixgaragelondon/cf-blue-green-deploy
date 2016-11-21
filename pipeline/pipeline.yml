@@ -1,0 +1,100 @@
+---
+jobs:
+  - name: build
+    serial_groups: [version]
+    plan:
+      - get: midday-timer
+        trigger: true
+      - get: bgd-git
+        trigger: true
+      - get: version
+        params: {bump: patch}
+      - task: build and test
+        file: bgd-git/pipeline/build.yml
+      - put: bgd-artefact-swift
+        params: {from: artefacts/.*\.tar\.gz}
+      - put: version
+        params: {file: version/number}
+  - name: acceptance
+    plan:
+      - get: bgd-git
+      - get: bgd-artefact-swift
+        trigger: true
+        passed: [build]
+      - task: acceptance
+        file: bgd-git/pipeline/acceptance.yml
+        params:
+          CF_PASSWORD: {{cf-password}}
+  - name: build-plugin-repo
+    plan:
+    - get: garage-cf-plugins-git
+    - get: bgd-artefact-swift
+      passed:
+      - acceptance
+      trigger: true
+    - task: build-plugin-repo
+      file: garage-cf-plugins-git/pipeline/build.yml
+    - put: garage-cf-plugins-git
+      params:
+        repository: updated-garage-cf-plugins-git
+
+resources:
+- name: bgd-git
+  type: git
+  source:
+    uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
+    branch: pipeline
+
+- name: garage-cf-plugins-git
+  type: git
+  source:
+    branch: master
+    uri: {{garage-cf-plugin-repo}}
+    git_config:
+    - name: user.name
+      value: BluemixGarage CI
+    - name: user.email
+      value: garage+ci@uk.ibm.com
+
+- name: midday-timer
+  type: time
+  source:
+    start: 12:00 +0000
+    stop: 13:00 +0000
+    days:
+      - Monday
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
+
+- name: version
+  type: semver
+  source:
+    initial_version: "0.0.0" #Bug in the semver-resource, this is required.
+    driver: swift
+    openstack:
+      container: bgd-version
+      item_name: version
+      region: dallas
+      identity_endpoint: https://lon-identity.open.softlayer.com/v3
+      domain_name: "884793"
+      username: {{swift-username}}
+      password: {{swift-password}}
+
+- name: bgd-artefact-swift
+  type: swift
+  source:
+    username: {{swift-username}}
+    api_key: {{swift-password}}
+    auth_url: https://lon-identity.open.softlayer.com/v3
+    domain: "884793"
+    container: bgd-artefacts
+    regex: blue-green-deploy-([.0-9]+)\.tar\.gz
+    region: #Resource does not support regions, defaults to dallas
+
+resource_types:
+- name: swift
+  type: docker-image
+  source:
+    repository: databus23/concourse-swift-resource

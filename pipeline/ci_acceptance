@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e -x
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  . script/with_env
+popd
+
+pushd bgd-artefact-swift
+  tar -xvf "$(cat filename)"
+  cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
+popd
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  ./script/test_acceptance
+popd

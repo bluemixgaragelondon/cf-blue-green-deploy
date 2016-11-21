@@ -9,7 +9,7 @@ GO_PACKAGE_PATH=$(get_go_package_dir)
 
 main() {
   # go get fails because of generated deps
-  go get -u -t || true
+  go get -t || true
   # sort out those generated deps
   cf_cli_set_version
   cf_cli_generate_language_resources
@@ -17,6 +17,7 @@ main() {
 
 cf_cli_set_version() {
   pushd "$GO_PACKAGE_PATH/src/github.com/cloudfoundry/cli"
+    git fetch
     git checkout -f "$CF_CLI_VERSION"
   popd
 }
