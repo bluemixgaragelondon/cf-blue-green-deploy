@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cloudfoundry/cli/cf/configuration/confighelpers"
-	"github.com/cloudfoundry/cli/cf/configuration/coreconfig"
-	"github.com/cloudfoundry/cli/plugin"
+	"code.cloudfoundry.org/cli/cf/configuration/confighelpers"
+	"code.cloudfoundry.org/cli/cf/configuration/coreconfig"
+	"code.cloudfoundry.org/cli/plugin"
 )
 
 type ErrorHandler func(string, error)
@@ -152,20 +152,23 @@ func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {
 		return nil, err
 	}
 
+	var joined_output = strings.Join(output, "\n")
+
 	apps := struct {
 		Apps []Application
 	}{}
 
-	json.Unmarshal([]byte(output[0]), &apps)
+	json.Unmarshal([]byte(joined_output), &apps)
 	return apps.Apps, nil
 }
 
 func getSpaceGuid() string {
-	configRepo := coreconfig.NewRepositoryFromFilepath(confighelpers.DefaultFilePath(), func(err error) {
+	path, _ := confighelpers.DefaultFilePath()
+	configRepo := coreconfig.NewRepositoryFromFilepath(path, func(err error) {
 		if err != nil {
 			fmt.Printf("Config error: %s", err)
 		}
 	})
 
-	return configRepo.SpaceFields().Guid
+	return configRepo.SpaceFields().GUID
 }
