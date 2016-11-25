@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/cli/cf/i18n"
 	"code.cloudfoundry.org/cli/cf/manifest"
 	"code.cloudfoundry.org/cli/plugin"
+	go_i18n "github.com/nicksnyder/go-i18n/i18n"
 	"strings"
 )
 
@@ -171,6 +173,9 @@ func ExtractIntegrationTestScript(args []string) string {
 }
 
 func main() {
+	// T needs to point to a translate func, otherwise cf internals blow up
+	i18n.T, _ = go_i18n.Tfunc("")
+
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
