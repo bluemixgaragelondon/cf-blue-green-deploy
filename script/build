@@ -12,6 +12,8 @@ targets=(
   "osx darwin amd64"
   "linux32 linux 386"
   "linux64 linux amd64"
+  "windows32 windows 386"
+  "windows64 windows amd64"
 )
 
 for target in "${targets[@]}"
