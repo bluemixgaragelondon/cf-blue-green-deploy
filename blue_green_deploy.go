@@ -31,6 +31,7 @@ type BlueGreenDeploy struct {
 	Out        io.Writer
 	ErrorFunc  ErrorHandler
 	AppLister
+	ManifestPath string
 }
 
 type AppLister interface {
@@ -59,7 +60,11 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 }
 
 func (p *BlueGreenDeploy) PushNewApp(appName string, route Route) {
-	if _, err := p.Connection.CliCommand("push", appName, "-n", route.Host, "-d", route.Domain.Name); err != nil {
+	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
+	if p.ManifestPath != "" {
+		args = append(args, "-f", p.ManifestPath)
+	}
+	if _, err := p.Connection.CliCommand(args...); err != nil {
 		p.ErrorFunc("Could not push new version", err)
 	}
 }

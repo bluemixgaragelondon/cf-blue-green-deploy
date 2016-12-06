@@ -283,6 +283,21 @@ var _ = Describe("BlueGreenDeploy", func() {
 				To(MatchRegexp(`-d example.com`))
 		})
 
+		It("pushes with the specified manifest, if present in deployer", func() {
+			p.ManifestPath = "./manifest-tst.yml"
+			p.PushNewApp(newApp, newRoute)
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`-f ./manifest-tst.yml`))
+		})
+
+		It("pushes without a manifest arg, if no manifest in deployer", func() {
+			p.PushNewApp(newApp, newRoute)
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(Not(MatchRegexp(`-f `)))
+		})
+
 		Context("when the push fails", func() {
 			BeforeEach(func() {
 				connection.CliCommandStub = func(args ...string) ([]string, error) {

@@ -130,9 +130,10 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT]",
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
 					Options: map[string]string{
 						"smoke-test": "The test script to run.",
+						"f": "Path to manifest",
 					},
 				},
 			},
@@ -167,6 +168,8 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 
 func ExtractIntegrationTestScript(args []string) string {
 	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
+	// All plugin flags need to be defined, otherwise the parser will complain about "provided but not defined"
+	f.String("f", "", "")
 	script := f.String("smoke-test", "", "")
 	f.Parse(args[2:])
 	return *script
@@ -176,6 +179,20 @@ func main() {
 	// T needs to point to a translate func, otherwise cf internals blow up
 	i18n.T, _ = go_i18n.Tfunc("")
 
+	flag := flag.NewFlagSet("blue-green-deploy", flag.ContinueOnError)
+	manifest := flag.String("f", "", "")
+	// All plugin flags need to be defined, otherwise the parser will complain about "provided but not defined"
+	flag.String("smoke-test", "", "")
+
+	// Args format is <exec_name> <pid> <command> <args>...
+	// Hence, if we have more than three args, the fourth and beyond are the things like --smoke-test or -f
+	if len(os.Args) > 3 {
+		if err := flag.Parse(os.Args[4:]); err != nil {
+			fmt.Println(err)
+			os.Exit(2)
+		}
+	}
+
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
@@ -183,6 +200,7 @@ func main() {
 				os.Exit(1)
 			},
 			Out: os.Stdout,
+			ManifestPath: *manifest,
 		},
 	}
 
