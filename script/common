@@ -3,6 +3,8 @@
 login_to_bluemix() {
   CF_URL="${CF_URL:?must be defined}"
   CF_USERNAME="${CF_USERNAME:?must be defined}"
+  # Two-step check for existence of either CF_TOKEN *or* CF_PASSWORD; if CF_TOKEN is set we won't ever use the value of CF_PASSWORD
+  CF_PASSWORD="${CF_PASSWORD:=$CF_TOKEN}"
   CF_PASSWORD="${CF_PASSWORD:?must be defined}"
   CF_ORG="${CF_ORG:?must be defined}"
   CF_SPACE="${CF_SPACE:?must be defined}"
