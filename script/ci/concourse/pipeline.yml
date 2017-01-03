@@ -10,7 +10,7 @@ jobs:
       - get: version
         params: {bump: patch}
       - task: build and test
-        file: bgd-git/pipeline/build.yml
+        file: bgd-git/script/ci/concourse/build.yml
       - put: bgd-artefact-swift
         params: {from: artefacts/.*\.tar\.gz}
       - put: version
@@ -22,7 +22,7 @@ jobs:
         trigger: true
         passed: [build]
       - task: acceptance
-        file: bgd-git/pipeline/acceptance.yml
+        file: bgd-git/script/ci/concourse/acceptance.yml
         params:
           CF_PASSWORD: {{cf-password}}
   - name: build-plugin-repo
@@ -33,7 +33,7 @@ jobs:
       - acceptance
       trigger: true
     - task: build-plugin-repo
-      file: garage-cf-plugins-git/pipeline/build.yml
+      file: garage-cf-plugins-git/script/ci/concourse/build.yml
     - put: garage-cf-plugins-git
       params:
         repository: updated-garage-cf-plugins-git
@@ -43,7 +43,7 @@ resources:
   type: git
   source:
     uri: https://github.com/bluemixgaragelondon/cf-blue-green-deploy
-    branch: pipeline
+    branch: master
 
 - name: garage-cf-plugins-git
   type: git
