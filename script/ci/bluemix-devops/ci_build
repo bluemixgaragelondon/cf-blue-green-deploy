@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e -x
+
+# Install Go 
+wget https://raw.githubusercontent.com/canha/golang-tools-install-script/28fb3d63e3746acfa624d28395a0df3e0f9fca1e/goinstall.sh >/dev/null 2>&1
+bash goinstall.sh --64
+source /home/pipeline/.bashrc
+
+# Update the directory structure of the extract to be go-friendly
+mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+shopt -s dotglob nullglob extglob
+mv !(go) go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy 
+cd go 
+
+# Run the build
+export GOPATH=$PWD
+export PLUGIN_VERSION=$(cat version/number)
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  . script/with_env
+  ./script/build
+popd
+
+tar -C src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts -zcvf blue-green-deploy-"$PLUGIN_VERSION.tar.gz" .
+
+mv blue-green-deploy-"$PLUGIN_VERSION.tar.gz" artefacts
+
