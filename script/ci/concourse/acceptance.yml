@@ -8,4 +8,4 @@ inputs:
     path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   - name: bgd-artefact-swift
 run:
-  path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy/pipeline/ci_acceptance
+  path: src/github.com/bluemixgaragelondon/cf-blue-green-deploy/script/ci/concourse/ci_acceptance
