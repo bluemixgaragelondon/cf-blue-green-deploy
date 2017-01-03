@@ -18,6 +18,7 @@ cd garage-cf-plugins
 # Use the version in source control in github bgd, and add a build number
 ../semver-tool/src/semver bump --force ${PLUGIN_VERSION}
 ../semver-tool/src/semver bump build ${BUILD_NUMBER}
+# The semver tool writes its version to .version
 git add .version
 export PLUGIN_VERSION=$(cat .version)
 
