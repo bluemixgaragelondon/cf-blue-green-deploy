@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e -x
+
+git clone https://${PLUGIN_REPO_USERID}:${PLUGIN_REPO_PASSWORD}@hub.jazz.net/git/bluemixgarage/garage-cf-plugins
+git clone https://github.com/fsaintjacques/semver-tool
+pushd semver-tool
+git checkout tags/1.2.1
+popd
+
+git config --global user.name "BluemixGarage CI"
+git config --global user.email "garage+ci@uk.ibm.com"
+
+. .env
+
+cd garage-cf-plugins
+
+# Take care of version manipulation 
+# Use the version in source control in github bgd, and add a build number
+../semver-tool/src/semver bump --force ${PLUGIN_VERSION}
+../semver-tool/src/semver bump build ${BUILD_NUMBER}
+git add .version
+export PLUGIN_VERSION=$(cat .version)
+
+cd ..
+cp artefacts/* garage-cf-plugins/build
+cd garage-cf-plugins
+script/ci
+git push origin master
