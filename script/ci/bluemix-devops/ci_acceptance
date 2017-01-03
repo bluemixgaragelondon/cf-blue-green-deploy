@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e -x
+
+# Set CF_HOME or the scripts will set it to the wrong thing 
+export CF_HOME=~
+
+# Update the directory structure of the extract to be go-friendly
+mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+shopt -s dotglob nullglob extglob
+mv !(go) go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy 
+cd go 
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  . script/with_env
+popd
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
+  cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
+popd
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  ./script/test_acceptance
+popd
