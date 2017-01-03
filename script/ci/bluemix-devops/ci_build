@@ -21,5 +21,3 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/build
 popd
 
-mv blue-green-deploy-"$PLUGIN_VERSION.tar.gz" artefacts
-
