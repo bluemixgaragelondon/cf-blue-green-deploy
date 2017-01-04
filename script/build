@@ -16,6 +16,8 @@ targets=(
   "windows64 windows amd64"
 )
 
+mkdir -p artefacts
+
 for target in "${targets[@]}"
 do
   read platform goos goarch <<< $target
