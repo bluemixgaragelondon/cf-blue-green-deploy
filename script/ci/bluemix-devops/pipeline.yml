@@ -1,0 +1,73 @@
+---
+stages:
+- name: Build
+  inputs:
+  - url: https://github.com/bluemixgaragelondon/cf-blue-green-deploy.git
+    type: git
+    branch: master
+    dir_name: null
+  triggers:
+  - type: commit
+  jobs:
+  - name: Build
+    type: builder
+    artifact_dir: go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+    build_type: shell
+    script: |
+      #!/bin/bash
+      set -e -x
+
+      script/ci/bluemix-devops/ci_build
+    enable_tests: true
+    test_file_pattern: go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy/junit.xml
+- name: Acceptance Tests
+  inputs:
+  - type: job
+    stage: Build
+    job: Build
+    dir_name: null
+  triggers:
+  - type: stage
+  jobs:
+  - name: Tests
+    type: deployer
+    target:
+      region_id: ibm:yp:eu-gb
+      organization: bluemix-garage-london
+      space: cf-bgd
+      application: Pipeline
+    script: |-
+      #!/bin/bash
+
+      script/ci/bluemix-devops/ci_acceptance
+- name: Publish
+  inputs:
+  - type: job
+    stage: Build
+    job: Build
+    dir_name: null
+  triggers:
+  - type: stage
+  properties:
+  - name: PLUGIN_REPO_PASSWORD
+    type: secure
+  - name: PLUGIN_REPO_USERID
+    type: secure
+  jobs:
+  - name: Deploy to Garage Plugin Repo
+    type: deployer
+    target:
+      region_id: ibm:yp:eu-gb
+      organization: bluemix-garage-london
+      space: ci
+      application: Pipeline
+    script: |-
+      #!/bin/bash
+      set -e -x
+
+      script/ci/bluemix-devops/ci_publish
+hooks:
+- enabled: true
+  label: null
+  ssl_enabled: false
+  url: https://devops-api.ng.bluemix.net/v1/messaging/webhook/publish
