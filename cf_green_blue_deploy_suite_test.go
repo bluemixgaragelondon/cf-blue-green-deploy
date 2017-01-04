@@ -2,6 +2,7 @@ package main_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 
 	"testing"
@@ -9,5 +10,6 @@ import (
 
 func TestCfGreenBlueDeploy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CfGreenBlueDeploy Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "CfGreenBlueDeploy Suite", []Reporter{junitReporter})
 }
