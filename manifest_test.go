@@ -3,25 +3,15 @@ package main_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/cli/cf/i18n"
-	"code.cloudfoundry.org/cli/cf/manifest"
 	"code.cloudfoundry.org/cli/utils/generic"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type localeGetter struct{}
-
-func (l localeGetter) Locale() string {
-	return "en-us"
-}
-
 var _ = Describe("Manifest reader", func() {
-
-	// testing code that calls into cf cli requires T to point to a translate func
-	i18n.T = i18n.Init(localeGetter{})
 
 	Context("when a custom manifest file is provided", func() {
 		It("should load that file from the repository", func() {

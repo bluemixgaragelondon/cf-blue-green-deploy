@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-
-	"code.cloudfoundry.org/cli/cf/manifest"
-	"code.cloudfoundry.org/cli/cf/models"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
 )
 
 type ManifestReader func(manifest.Repository, string) *models.AppParams
