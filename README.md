@@ -19,8 +19,11 @@ The plugin takes care of the following steps packaged into one command:
 
 * Get the plugin from the CF Community Repository
 ```
+cf add-plugin-repo CF-Community https://plugins.cloudfoundry.org
 cf install-plugin blue-green-deploy -r CF-Community
 ```
+
+In scripts, add the `-f` flag to `install-plugin` for non-interactive mode. 
 
 * Deploy your app
 ```
