@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/cf/formatters"
-	"code.cloudfoundry.org/cli/utils/generic"
 	"code.cloudfoundry.org/cli/utils/words/generator"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 )
 
 type Manifest struct {

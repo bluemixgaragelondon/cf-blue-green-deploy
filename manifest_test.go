@@ -3,9 +3,9 @@ package main_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/cli/utils/generic"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

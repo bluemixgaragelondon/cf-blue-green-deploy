@@ -8,6 +8,11 @@ import (
 	"os"
 	"path/filepath"
 
+<<<<<<< HEAD
+=======
+	"code.cloudfoundry.org/cli/cf/errors"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
+>>>>>>> copy generic package from CF code base
 	"gopkg.in/yaml.v2"
 )
 
