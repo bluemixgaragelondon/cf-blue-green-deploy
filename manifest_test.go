@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
@@ -120,10 +121,10 @@ var _ = Describe("Manifest reader", func() {
 			routes := manifestAppFinder.RoutesFromManifest("example.com")
 
 			Expect(routes).To(ConsistOf(
-				Route{Host: "host1", Domain: Domain{Name: "example.com"}},
-				Route{Host: "host1", Domain: Domain{Name: "example.net"}},
-				Route{Host: "host2", Domain: Domain{Name: "example.com"}},
-				Route{Host: "host2", Domain: Domain{Name: "example.net"}},
+				plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+				plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+				plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+				plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
 			))
 		})
 
@@ -139,8 +140,8 @@ var _ = Describe("Manifest reader", func() {
 				routes := manifestAppFinder.RoutesFromManifest("example.com")
 
 				Expect(routes).To(ConsistOf(
-					Route{Host: "host1", Domain: Domain{Name: "example.com"}},
-					Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 				))
 			})
 		})

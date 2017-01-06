@@ -1,6 +1,7 @@
 package main
 
 import (
+	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
@@ -14,19 +15,19 @@ type ManifestAppFinder struct {
 	AppName string
 }
 
-func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []Route {
+func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
 	if appParams := f.AppParams(); appParams != nil {
 
-		manifestRoutes := make([]Route, 0)
+		manifestRoutes := make([]plugin_models.GetApp_RouteSummary, 0)
 
 		for _, host := range appParams.Hosts {
 			if appParams.Domains == nil {
-				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: defaultDomain}})
+				manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: defaultDomain}})
 				continue
 			}
 
 			for _, domain := range appParams.Domains {
-				manifestRoutes = append(manifestRoutes, Route{Host: host, Domain: Domain{Name: domain}})
+				manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: domain}})
 			}
 		}
 

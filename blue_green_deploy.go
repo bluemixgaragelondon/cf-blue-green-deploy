@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -9,39 +8,29 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/configuration/confighelpers"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/configuration/coreconfig"
+	"code.cloudfoundry.org/cli/plugin/models"
 )
 
 type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string, Route, string)
+	PushNewApp(string, plugin_models.GetApp_RouteSummary, string)
 	DeleteAllAppsExceptLiveApp(string)
-	LiveApp(string) (string, []Route)
+	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
 	RunSmokeTests(string, string) bool
-	UnmapRoutesFromApp(string, ...Route)
+	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
-	MapRoutesToApp(string, ...Route)
+	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
 }
 
 type BlueGreenDeploy struct {
 	Connection plugin.CliConnection
 	Out        io.Writer
 	ErrorFunc  ErrorHandler
-	AppLister
 }
 
-type AppLister interface {
-	AppsInCurrentSpace() ([]Application, error)
-}
-
-type CfCurlAppLister struct {
-	Connection plugin.CliConnection
-}
-
-func (p *BlueGreenDeploy) DeleteAppVersions(apps []Application) {
+func (p *BlueGreenDeploy) DeleteAppVersions(apps []plugin_models.GetAppsModel) {
 	for _, app := range apps {
 		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
 			p.ErrorFunc("Could not delete old app version", err)
@@ -50,15 +39,15 @@ func (p *BlueGreenDeploy) DeleteAppVersions(apps []Application) {
 }
 
 func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
-	appsInSpace, err := p.AppLister.AppsInCurrentSpace()
+	appsInSpace, err := p.Connection.GetApps()
 	if err != nil {
 		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
 	}
-	_, oldAppVersions := p.FilterApps(appName, appsInSpace)
+	oldAppVersions := p.GetOldApps(appName, appsInSpace)
 	p.DeleteAppVersions(oldAppVersions)
 }
 
-func (p *BlueGreenDeploy) PushNewApp(appName string, route Route, manifestPath string) {
+func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary, manifestPath string) {
 	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
 	if manifestPath != "" {
 		args = append(args, "-f", manifestPath)
@@ -68,40 +57,31 @@ func (p *BlueGreenDeploy) PushNewApp(appName string, route Route, manifestPath s
 	}
 }
 
-func (p *BlueGreenDeploy) FilterApps(appName string, apps []Application) (currentApp *Application, oldApps []Application) {
+func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetAppsModel) (oldApps []plugin_models.GetAppsModel) {
 	r := regexp.MustCompile(fmt.Sprintf("^%s(-old|-failed|-new)?$", appName))
-	for index, app := range apps {
+	for _, app := range apps {
 		if !r.MatchString(app.Name) {
 			continue
 		}
 
 		if strings.HasSuffix(app.Name, "-old") || strings.HasSuffix(app.Name, "-failed") || strings.HasSuffix(app.Name, "-new") {
 			oldApps = append(oldApps, app)
-		} else {
-			currentApp = &apps[index]
 		}
 	}
 	return
 }
 
-func (p *BlueGreenDeploy) LiveApp(appName string) (string, []Route) {
-	appsInSpace, err := p.AppLister.AppsInCurrentSpace()
+func (p *BlueGreenDeploy) LiveApp(appName string) (string, []plugin_models.GetApp_RouteSummary) {
+	liveApp, err := p.Connection.GetApp(appName)
 	if err != nil {
 		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
 	}
 
-	liveApp, _ := p.FilterApps(appName, appsInSpace)
-
-	if liveApp == nil {
-		return "", nil
-	} else {
-		return liveApp.Name, liveApp.Routes
-	}
+	return liveApp.Name, liveApp.Routes
 }
 
 func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
 	p.Connection = connection
-	p.AppLister = &CfCurlAppLister{Connection: connection}
 }
 
 func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
@@ -118,19 +98,19 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
 	return true
 }
 
-func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes ...Route) {
+func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	for _, route := range routes {
 		p.unmapRoute(oldAppName, route)
 	}
 }
 
-func (p *BlueGreenDeploy) mapRoute(appName string, r Route) {
+func (p *BlueGreenDeploy) mapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
 	if _, err := p.Connection.CliCommand("map-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not map route", err)
 	}
 }
 
-func (p *BlueGreenDeploy) unmapRoute(appName string, r Route) {
+func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
 	if _, err := p.Connection.CliCommand("unmap-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not unmap route", err)
 	}
@@ -142,37 +122,8 @@ func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 	}
 }
 
-func (p *BlueGreenDeploy) MapRoutesToApp(appName string, routes ...Route) {
+func (p *BlueGreenDeploy) MapRoutesToApp(appName string, routes ...plugin_models.GetApp_RouteSummary) {
 	for _, route := range routes {
 		p.mapRoute(appName, route)
 	}
-}
-
-func (l *CfCurlAppLister) AppsInCurrentSpace() ([]Application, error) {
-	path := fmt.Sprintf("/v2/spaces/%s/summary", getSpaceGuid())
-
-	output, err := l.Connection.CliCommandWithoutTerminalOutput("curl", path)
-	if err != nil {
-		return nil, err
-	}
-
-	var joined_output = strings.Join(output, "\n")
-
-	apps := struct {
-		Apps []Application
-	}{}
-
-	json.Unmarshal([]byte(joined_output), &apps)
-	return apps.Apps, nil
-}
-
-func getSpaceGuid() string {
-	path, _ := confighelpers.DefaultFilePath()
-	configRepo := coreconfig.NewRepositoryFromFilepath(path, func(err error) {
-		if err != nil {
-			fmt.Printf("Config error: %s", err)
-		}
-	})
-
-	return configRepo.SpaceFields().GUID
 }

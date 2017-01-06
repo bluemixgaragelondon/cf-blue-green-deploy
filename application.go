@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"code.cloudfoundry.org/cli/plugin/models"
+	"fmt"
+)
 
 type Application struct {
 	Name   string
@@ -16,6 +19,6 @@ type Domain struct {
 	Name string
 }
 
-func (r Route) FQDN() string {
+func FQDN(r plugin_models.GetApp_RouteSummary) string {
 	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
 }

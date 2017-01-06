@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
 	"strings"
 )
@@ -52,13 +53,13 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
-	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
+	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}}
 	p.Deployer.PushNewApp(newAppName, tempRoute, p.Args.ManifestPath)
 
 	promoteNewApp := true
 	smokeTestScript := p.Args.SmokeTestPath
 	if smokeTestScript != "" {
-		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
+		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, FQDN(tempRoute))
 	}
 
 	newAppRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, repo, liveAppRoutes)
@@ -82,8 +83,8 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args
 	}
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.Repository, liveAppRoutes []Route) []Route {
-	newAppRoutes := []Route{}
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.Repository, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
+	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 	f := ManifestAppFinder{AppName: appName, Repo: repo}
 	if manifestRoutes := f.RoutesFromManifest(defaultCfDomain); manifestRoutes != nil {
 		newAppRoutes = append(newAppRoutes, manifestRoutes...)
@@ -91,21 +92,21 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo 
 	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
 
 	if len(uniqueRoutes) == 0 {
-		uniqueRoutes = append(uniqueRoutes, Route{Host: appName, Domain: Domain{Name: defaultCfDomain}})
+		uniqueRoutes = append(uniqueRoutes, plugin_models.GetApp_RouteSummary{Host: appName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}})
 	}
 	return uniqueRoutes
 }
 
-func (p *CfPlugin) UnionRouteLists(listA []Route, listB []Route) []Route {
+func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, listB []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	duplicateList := append(listA, listB...)
 
-	routesSet := make(map[Route]struct{})
+	routesSet := make(map[plugin_models.GetApp_RouteSummary]struct{})
 
 	for _, route := range duplicateList {
 		routesSet[route] = struct{}{}
 	}
 
-	uniqueRoutes := []Route{}
+	uniqueRoutes := []plugin_models.GetApp_RouteSummary{}
 	for route := range routesSet {
 		uniqueRoutes = append(uniqueRoutes, route)
 	}

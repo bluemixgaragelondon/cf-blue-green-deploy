@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -31,7 +32,7 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("blue green flow", func() {
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
-				b := &BlueGreenDeployFake{liveApp: &Application{Name: "app-name-live"}}
+				b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}}
 				p := CfPlugin{
 					Deployer: b,
 				}
@@ -53,13 +54,13 @@ var _ = Describe("BGD Plugin", func() {
 			Context("with an existing live route", func() {
 				It("maps the live app routes to the new app", func() {
 
-					liveAppRoutes := []Route{
-						{Host: "host1", Domain: Domain{Name: "example.com"}},
-						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					liveAppRoutes := []plugin_models.GetApp_RouteSummary{
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 					}
 
 					b := &BlueGreenDeployFake{
-						liveApp: &Application{Name: "app-name-live",
+						liveApp: &plugin_models.GetAppModel{Name: "app-name-live",
 							Routes: liveAppRoutes},
 					}
 					p := CfPlugin{
@@ -74,13 +75,13 @@ var _ = Describe("BGD Plugin", func() {
 
 			Context("with an existing live route and manifest", func() {
 				It("maps both manifest & live app routes", func() {
-					liveAppRoutes := []Route{
-						{Host: "host1", Domain: Domain{Name: "example.com"}},
-						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					liveAppRoutes := []plugin_models.GetApp_RouteSummary{
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 					}
 
 					b := &BlueGreenDeployFake{
-						liveApp: &Application{Name: "app-name-live",
+						liveApp: &plugin_models.GetAppModel{Name: "app-name-live",
 							Routes: liveAppRoutes},
 					}
 					p := CfPlugin{
@@ -96,19 +97,19 @@ var _ = Describe("BGD Plugin", func() {
 
 					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
 
-					expectedAppRoutes := append(liveAppRoutes, Route{Host: "man1", Domain: Domain{Name: "example.com"}})
+					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
 					Expect(b.mappedRoutes).To(ConsistOf(expectedAppRoutes))
 				})
 
 				It("maps unique routes", func() {
-					liveAppRoutes := []Route{
-						{Host: "host1", Domain: Domain{Name: "example.com"}},
-						{Host: "host2", Domain: Domain{Name: "example.com"}},
+					liveAppRoutes := []plugin_models.GetApp_RouteSummary{
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 					}
 
 					b := &BlueGreenDeployFake{
-						liveApp: &Application{Name: "app-name-live",
+						liveApp: &plugin_models.GetAppModel{Name: "app-name-live",
 							Routes: liveAppRoutes},
 					}
 					p := CfPlugin{
@@ -126,7 +127,7 @@ var _ = Describe("BGD Plugin", func() {
 
 					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
 
-					expectedAppRoutes := append(liveAppRoutes, Route{Host: "man1", Domain: Domain{Name: "example.com"}})
+					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
 					Expect(b.mappedRoutes).To(ConsistOf(expectedAppRoutes))
 
@@ -181,18 +182,18 @@ var _ = Describe("BGD Plugin", func() {
 					"rename app-name-new to app-name",
 				}))
 
-				expectedRoutes := []Route{
-					{Host: "host1", Domain: Domain{Name: "example.com"}},
-					{Host: "host2", Domain: Domain{Name: "example.com"}},
-					{Host: "host1", Domain: Domain{Name: "example.net"}},
-					{Host: "host2", Domain: Domain{Name: "example.net"}},
+				expectedRoutes := []plugin_models.GetApp_RouteSummary{
+					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
 				}
 
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 			})
-			
-			Context("when no routes are specified in the manifest", func(){
-				It("maps the app name as the only route", func(){
+
+			Context("when no routes are specified in the manifest", func() {
+				It("maps the app name as the only route", func() {
 					b := &BlueGreenDeployFake{liveApp: nil}
 					p := CfPlugin{
 						Deployer: b,
@@ -205,8 +206,8 @@ var _ = Describe("BGD Plugin", func() {
 
 					p.Deploy("example.com", repo, []string{"bgd", "app-name"})
 
-					Expect(b.mappedRoutes).To(Equal([]Route{
-						{Host: "app-name", Domain: Domain{Name: "example.com"}},
+					Expect(b.mappedRoutes).To(Equal([]plugin_models.GetApp_RouteSummary{
+						{Host: "app-name", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 					}))
 				})
 			})
@@ -340,80 +341,80 @@ var _ = Describe("BGD Plugin", func() {
 
 		Context("when listA and ListB are empty", func() {
 			It("returns an empty list", func() {
-				listA := []Route{}
-				listB := []Route{}
+				listA := []plugin_models.GetApp_RouteSummary{}
+				listB := []plugin_models.GetApp_RouteSummary{}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(BeEmpty())
 			})
 		})
 		Context("when listA is Empty", func() {
 			It("returns listB", func() {
-				listA := []Route{}
-				listB := []Route{{Host: "foo"}}
+				listA := []plugin_models.GetApp_RouteSummary{}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(Equal(listB))
 			})
 		})
 		Context("when listB is Empty", func() {
 			It("returns listA", func() {
-				listA := []Route{{Host: "foo"}}
-				listB := []Route{}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
+				listB := []plugin_models.GetApp_RouteSummary{}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
 			})
 		})
 		Context("when listB and listA contain the same routes", func() {
 			It("returns a list equal in contents to listB", func() {
-				listA := []Route{{Host: "foo"}}
-				listB := []Route{{Host: "foo"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
 			})
 		})
 		Context("when listB and listA contain different routes", func() {
 			It("returns a union of both routes", func() {
-				listA := []Route{{Host: "foo"}}
-				listB := []Route{{Host: "bar"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "bar"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(append(listA, listB...)))
 			})
 		})
 		Context("when listA contains some routes not in listB", func() {
 			It("returns a union of both routes", func() {
-				listA := []Route{{Host: "foo"}, {Host: "bar"}}
-				listB := []Route{{Host: "foo"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}, {Host: "bar"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listA))
 			})
 		})
 		Context("when listB contains some routes not in listA", func() {
 			It("returns a union of both routes", func() {
-				listA := []Route{{Host: "foo"}}
-				listB := []Route{{Host: "foo"}, {Host: "bar"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "foo"}, {Host: "bar"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(listB))
 			})
 		})
 		Context("when list A and List B contain both shared and non-shared routes", func() {
 			It("returns a union of both routes", func() {
-				listA := []Route{{Host: "shared"}, {Host: "listAOnly"}}
-				listB := []Route{{Host: "shared"}, {Host: "listBOnly"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "shared"}, {Host: "listAOnly"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "shared"}, {Host: "listBOnly"}}
 
-				expectedRoutes := []Route{{Host: "shared"}, {Host: "listAOnly"}, {Host: "listBOnly"}}
+				expectedRoutes := []plugin_models.GetApp_RouteSummary{{Host: "shared"}, {Host: "listAOnly"}, {Host: "listBOnly"}}
 
 				Expect(p.UnionRouteLists(listA, listB)).To(ConsistOf(expectedRoutes))
 			})
 		})
 		Context("when list A is nil", func() {
 			It("returns list B", func() {
-				listB := []Route{{Host: "foo"}}
+				listB := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
 
 				Expect(p.UnionRouteLists(nil, listB)).To(ConsistOf(listB))
 			})
 		})
 		Context("when list B is nil", func() {
 			It("returns list A", func() {
-				listA := []Route{{Host: "foo"}}
+				listA := []plugin_models.GetApp_RouteSummary{{Host: "foo"}}
 
 				Expect(p.UnionRouteLists(listA, nil)).To(ConsistOf(listA))
 			})
@@ -427,18 +428,17 @@ var _ = Describe("BGD Plugin", func() {
 })
 
 type BlueGreenDeployFake struct {
-	flow []string
-	AppLister
-	liveApp       *Application
+	flow          []string
+	liveApp       *plugin_models.GetAppModel
 	passSmokeTest bool
-	mappedRoutes  []Route
+	mappedRoutes  []plugin_models.GetApp_RouteSummary
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(appName string, route Route) {
+func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
 }
 
@@ -446,7 +446,7 @@ func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
 	p.flow = append(p.flow, "delete old apps")
 }
 
-func (p *BlueGreenDeployFake) LiveApp(string) (string, []Route) {
+func (p *BlueGreenDeployFake) LiveApp(string) (string, []plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, "get current live app")
 	if p.liveApp == nil {
 		return "", nil
@@ -467,11 +467,11 @@ func (p *BlueGreenDeployFake) RenameApp(app string, newName string) {
 	p.flow = append(p.flow, fmt.Sprintf("rename %s to %s", app, newName))
 }
 
-func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...Route) {
+func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.mappedRoutes = routes
 	p.flow = append(p.flow, fmt.Sprintf("mapped %d routes", len(routes)))
 }
 
-func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...Route) {
+func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
 }

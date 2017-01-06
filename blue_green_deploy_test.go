@@ -33,15 +33,15 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 	Describe("maps routes", func() {
 		var (
-			manifestApp Application
+			manifestApp plugin_models.GetAppModel
 		)
 
 		BeforeEach(func() {
-			manifestApp = Application{
+			manifestApp = plugin_models.GetAppModel{
 				Name: "new",
-				Routes: []Route{
-					{Host: "host", Domain: Domain{Name: "example.com"}},
-					{Host: "host", Domain: Domain{Name: "example.net"}},
+				Routes: []plugin_models.GetApp_RouteSummary{
+					{Host: "host", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					{Host: "host", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
 				},
 			}
 		})
@@ -60,15 +60,15 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 	Describe("remove routes from old app", func() {
 		var (
-			oldApp Application
+			oldApp plugin_models.GetAppModel
 		)
 
 		BeforeEach(func() {
-			oldApp = Application{
+			oldApp = plugin_models.GetAppModel{
 				Name: "old",
-				Routes: []Route{
-					{Host: "live", Domain: Domain{Name: "mybluemix.net"}},
-					{Host: "live", Domain: Domain{Name: "example.com"}},
+				Routes: []plugin_models.GetApp_RouteSummary{
+					{Host: "live", Domain: plugin_models.GetApp_DomainFields{Name: "mybluemix.net"}},
+					{Host: "live", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 				},
 			}
 		})
@@ -115,17 +115,16 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 	Describe("delete old apps", func() {
 		var (
-			apps []Application
+			apps []plugin_models.GetAppsModel
 		)
 
 		Context("with live and old apps", func() {
 			BeforeEach(func() {
-				apps = []Application{
+				apps = []plugin_models.GetAppsModel{
 					{Name: "app-name-old"},
 					{Name: "app-name"},
 				}
-				appLister := &fakeAppLister{Apps: apps}
-				p.AppLister = appLister
+				connection.GetAppsReturns(apps, nil)
 			})
 
 			It("only deletes the old apps", func() {
@@ -153,12 +152,11 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		Context("with live and failed apps", func() {
 			BeforeEach(func() {
-				apps = []Application{
+				apps = []plugin_models.GetAppsModel{
 					{Name: "app-name-failed"},
 					{Name: "app-name"},
 				}
-				appLister := &fakeAppLister{Apps: apps}
-				p.AppLister = appLister
+				connection.GetAppsReturns(apps, nil)
 			})
 
 			It("only deletes the failed apps", func() {
@@ -173,12 +171,11 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		Context("with live and new apps", func() {
 			BeforeEach(func() {
-				apps = []Application{
+				apps = []plugin_models.GetAppsModel{
 					{Name: "app-name-new"},
 					{Name: "app-name"},
 				}
-				appLister := &fakeAppLister{Apps: apps}
-				p.AppLister = appLister
+				connection.GetAppsReturns(apps, nil)
 			})
 
 			It("only deletes the new apps", func() {
@@ -193,11 +190,10 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		Context("when there is no old version deployed", func() {
 			BeforeEach(func() {
-				apps = []Application{
+				apps = []plugin_models.GetAppsModel{
 					{Name: "app-name"},
 				}
-				appLister := &fakeAppLister{Apps: apps}
-				p.AppLister = appLister
+				connection.GetAppsReturns(apps, nil)
 			})
 
 			It("succeeds", func() {
@@ -214,7 +210,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 	Describe("deleting apps", func() {
 		Context("when there is an old version deployed", func() {
-			apps := []Application{
+			apps := []plugin_models.GetAppsModel{
 				{Name: "app-name-old"},
 				{Name: "app-name-old"},
 			}
@@ -244,7 +240,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		Context("when there is no old version deployed", func() {
-			apps := []Application{}
+			apps := []plugin_models.GetAppsModel{}
 
 			It("succeeds", func() {
 				p.DeleteAppVersions(apps)
@@ -260,7 +256,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 	Describe("pushing a new app", func() {
 		newApp := "app-name-new"
-		newRoute := Route{Host: newApp, Domain: Domain{Name: "example.com"}}
+		newRoute := plugin_models.GetApp_RouteSummary{Host: newApp, Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}}
 
 		It("pushes an app with new appended to its name", func() {
 			p.PushNewApp(newApp, newRoute)
@@ -314,12 +310,11 @@ var _ = Describe("BlueGreenDeploy", func() {
 	})
 
 	Describe("live app", func() {
-		oldApp := Application{Name: "app-name-old"}
-		liveApp := Application{Name: "app-name"}
+		liveApp := plugin_models.GetAppModel{Name: "app-name"}
 
 		Context("with live and old apps", func() {
 			It("returns the live app", func() {
-				p.AppLister = &fakeAppLister{Apps: []Application{oldApp, liveApp}}
+				connection.GetAppReturns(liveApp, nil)
 
 				name, _ := p.LiveApp("app-name")
 				Expect(name).To(Equal(liveApp.Name))
@@ -328,7 +323,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 		Context("with no apps", func() {
 			It("returns an empty app name", func() {
-				p.AppLister = &fakeAppLister{Apps: []Application{}}
+				connection.GetAppReturns(plugin_models.GetAppModel{}, errors.New("an error for no apps"))
 
 				name, _ := p.LiveApp("app-name")
 				Expect(name).To(BeEmpty())
@@ -339,35 +334,19 @@ var _ = Describe("BlueGreenDeploy", func() {
 	Describe("app filter", func() {
 		Context("when there are 2 old versions and 1 non-old version", func() {
 			var (
-				appList    []Application
-				currentApp *Application
-				oldApps    []Application
+				appList []plugin_models.GetAppsModel
+				oldApps []plugin_models.GetAppsModel
 			)
 
 			BeforeEach(func() {
-				appList = []Application{
+				appList = []plugin_models.GetAppsModel{
 					{Name: "foo-old"},
 					{Name: "foo-old"},
 					{Name: "foo"},
 					{Name: "bar-foo-old"},
 					{Name: "foo-older"},
 				}
-				currentApp, oldApps = p.FilterApps("foo", appList)
-			})
-
-			Describe("current app", func() {
-				Context("when there is no current live app", func() {
-					It("returns an empty struct", func() {
-						app, _ := p.FilterApps("bar", appList)
-						Expect(app).To(BeNil())
-					})
-				})
-
-				Context("when there is a current live app", func() {
-					It("returns the current live app", func() {
-						Expect(*currentApp).To(Equal(appList[2]))
-					})
-				})
+				oldApps = p.GetOldApps("foo", appList)
 			})
 
 			Describe("old app list", func() {
@@ -447,12 +426,4 @@ func getAllCfCommands(connection *pluginfakes.FakeCliConnection) (commands []str
 		commands = append(commands, strings.Join(args, " "))
 	}
 	return
-}
-
-type fakeAppLister struct {
-	Apps []Application
-}
-
-func (l *fakeAppLister) AppsInCurrentSpace() ([]Application, error) {
-	return l.Apps, nil
 }
