@@ -425,6 +425,13 @@ var _ = Describe("BGD Plugin", func() {
 			})
 		})
 	})
+
+	Describe("FQDN", func() {
+		It("returns the fqdn of the route", func() {
+			route := plugin_models.GetApp_RouteSummary{Host: "testroute", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}}
+			Expect(FQDN(route)).To(Equal("testroute.example.com"))
+		})
+	})
 })
 
 type BlueGreenDeployFake struct {

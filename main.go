@@ -166,6 +166,9 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	return
 }
 
+func FQDN(r plugin_models.GetApp_RouteSummary) string {
+	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
+}
 func main() {
 
 	p := CfPlugin{
