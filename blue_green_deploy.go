@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"code.cloudfoundry.org/cli/cf/configuration/confighelpers"
-	"code.cloudfoundry.org/cli/cf/configuration/coreconfig"
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/configuration/confighelpers"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/configuration/coreconfig"
 )
 
 type ErrorHandler func(string, error)
