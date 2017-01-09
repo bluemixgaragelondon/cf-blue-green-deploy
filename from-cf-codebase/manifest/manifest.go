@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/utils/words/generator"
-	//"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 )
 
@@ -193,7 +192,6 @@ func mapToAppParams(basePath string, yamlMap generic.Map, defaultDomain string) 
 	}
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
-	fmt.Println("About to read routes")
 	appParams.Routes = parseRoutes(yamlMap, &errs)
 	// TODO how do those two interact?
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
@@ -504,9 +502,7 @@ func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) 
 }
 
 func parseRoutes(input generic.Map, errs *[]error) []plugin_models.GetApp_RouteSummary {
-	fmt.Println(input)
 	if !input.Has("routes") {
-		fmt.Println("there are no routes")
 		return nil
 	}
 

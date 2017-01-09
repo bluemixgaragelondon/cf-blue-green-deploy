@@ -91,8 +91,6 @@ var _ = Describe("Manifest reader", func() {
 			var hostNames []string
 			var domainNames []string
 
-			fmt.Println(manifestAppFinder.AppParams(""))
-
 			for _, route := range manifestAppFinder.AppParams("").Routes {
 				hostNames = append(hostNames, route.Host)
 				domainNames = append(domainNames, route.Domain.Name)
@@ -102,9 +100,6 @@ var _ = Describe("Manifest reader", func() {
 			domainNames = deDuplicate(domainNames)
 
 			It("Returns the correct app", func() {
-				fmt.Println("HOLLY OUTPUT IS NOW HERE")
-				fmt.Println(manifestAppFinder.AppParams(""))
-				fmt.Println("Holly outout was there")
 				Expect(manifestAppFinder.AppParams("").Name).To(Equal("foo"))
 				Expect(hostNames).To(ConsistOf("host1", "host2"))
 				Expect(domainNames).To(ConsistOf("example1.com", "example2.com"))

@@ -65,11 +65,7 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 		return nil
 	}
 
-	fmt.Println("printing manifest ")
-	fmt.Println(manifest)
 	apps, err := manifest.Applications(defaultDomain)
-	fmt.Println("app params about to print")
-	fmt.Println(apps)
 
 	if err != nil {
 		fmt.Println(err)
@@ -77,7 +73,6 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 	}
 
 	for index, app := range apps {
-		fmt.Println(IsHostEmpty(app))
 		if IsHostEmpty(app) {
 			continue
 		}
@@ -89,6 +84,5 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 		return &apps[index]
 	}
 
-	fmt.Println("aop params returning nul")
 	return nil
 }
