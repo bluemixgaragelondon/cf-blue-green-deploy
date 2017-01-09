@@ -466,7 +466,7 @@ func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
 	return p.passSmokeTest
 }
 
-func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp Application, newApp Application) {
+func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp plugin_models.GetAppModel, newApp plugin_models.GetAppModel) {
 	p.flow = append(p.flow, fmt.Sprintf("remap routes from %s to %s", liveApp.Name, newApp.Name))
 }
 

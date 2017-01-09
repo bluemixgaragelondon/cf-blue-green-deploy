@@ -9,8 +9,9 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/cf/formatters"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/utils/words/generator"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
+	//"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 )
 
@@ -27,22 +28,23 @@ func NewEmptyManifest() (m *Manifest) {
 	return &Manifest{Data: generic.NewMap()}
 }
 
-func (m Manifest) Applications() ([]models.AppParams, error) {
+func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
 	rawData, err := expandProperties(m.Data, generator.NewWordGenerator())
+
 	if err != nil {
-		return []models.AppParams{}, err
+		return []plugin_models.GetAppModel{}, err
 	}
 
 	data := generic.NewMap(rawData)
 	appMaps, err := m.getAppMaps(data)
 	if err != nil {
-		return []models.AppParams{}, err
+		return []plugin_models.GetAppModel{}, err
 	}
 
-	var apps []models.AppParams
+	var apps []plugin_models.GetAppModel
 	var mapToAppErrs []error
 	for _, appMap := range appMaps {
-		app, err := mapToAppParams(filepath.Dir(m.Path), appMap)
+		app, err := mapToAppParams(filepath.Dir(m.Path), appMap, defaultDomain)
 		if err != nil {
 			mapToAppErrs = append(mapToAppErrs, err)
 			continue
@@ -56,7 +58,7 @@ func (m Manifest) Applications() ([]models.AppParams, error) {
 		for i := range mapToAppErrs {
 			message = message + fmt.Sprintf("%s\n", mapToAppErrs[i].Error())
 		}
-		return []models.AppParams{}, errors.New(message)
+		return []plugin_models.GetAppModel{}, errors.New(message)
 	}
 
 	return apps, nil
@@ -166,16 +168,14 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 	return output, nil
 }
 
-func mapToAppParams(basePath string, yamlMap generic.Map) (models.AppParams, error) {
+func mapToAppParams(basePath string, yamlMap generic.Map, defaultDomain string) (plugin_models.GetAppModel, error) {
 	err := checkForNulls(yamlMap)
 	if err != nil {
-		return models.AppParams{}, err
+		return plugin_models.GetAppModel{}, err
 	}
 
-	var appParams models.AppParams
+	var appParams plugin_models.GetAppModel
 	var errs []error
-	appParams.BuildpackURL = stringValOrDefault(yamlMap, "buildpack", &errs)
-	appParams.DiskQuota = bytesVal(yamlMap, "disk_quota", &errs)
 
 	domainAry := sliceOrNil(yamlMap, "domains", &errs)
 	if domain := stringVal(yamlMap, "domain", &errs); domain != nil {
@@ -185,46 +185,27 @@ func mapToAppParams(basePath string, yamlMap generic.Map) (models.AppParams, err
 			domainAry = append(domainAry, *domain)
 		}
 	}
-	appParams.Domains = removeDuplicatedValue(domainAry)
+	mytempDomainsObject := removeDuplicatedValue(domainAry)
 
 	hostsArr := sliceOrNil(yamlMap, "hosts", &errs)
 	if host := stringVal(yamlMap, "host", &errs); host != nil {
 		hostsArr = append(hostsArr, *host)
 	}
-	appParams.Hosts = removeDuplicatedValue(hostsArr)
+	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
-	appParams.Name = stringVal(yamlMap, "name", &errs)
-	appParams.Path = stringVal(yamlMap, "path", &errs)
-	appParams.StackName = stringVal(yamlMap, "stack", &errs)
-	appParams.Command = stringValOrDefault(yamlMap, "command", &errs)
-	appParams.Memory = bytesVal(yamlMap, "memory", &errs)
-	appParams.InstanceCount = intVal(yamlMap, "instances", &errs)
-	appParams.HealthCheckTimeout = intVal(yamlMap, "timeout", &errs)
-	appParams.NoRoute = boolVal(yamlMap, "no-route", &errs)
-	appParams.NoHostname = boolOrNil(yamlMap, "no-hostname", &errs)
-	appParams.UseRandomRoute = boolVal(yamlMap, "random-route", &errs)
-	appParams.ServicesToBind = sliceOrNil(yamlMap, "services", &errs)
-	appParams.EnvironmentVars = envVarOrEmptyMap(yamlMap, &errs)
-	appParams.HealthCheckType = stringVal(yamlMap, "health-check-type", &errs)
-	appParams.AppPorts = intSliceVal(yamlMap, "app-ports", &errs)
+	fmt.Println("About to read routes")
 	appParams.Routes = parseRoutes(yamlMap, &errs)
+	// TODO how do those two interact?
+	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
 
-	if appParams.Path != nil {
-		path := *appParams.Path
-		if filepath.IsAbs(path) {
-			path = filepath.Clean(path)
-		} else {
-			path = filepath.Join(basePath, path)
-		}
-		appParams.Path = &path
-	}
+	appParams.Name = stringValNotPointer(yamlMap, "name", &errs)
 
 	if len(errs) > 0 {
 		message := ""
 		for _, err := range errs {
 			message = message + fmt.Sprintf("%s\n", err.Error())
 		}
-		return models.AppParams{}, errors.New(message)
+		return plugin_models.GetAppModel{}, errors.New(message)
 	}
 
 	return appParams, nil
@@ -283,6 +264,19 @@ func stringVal(yamlMap generic.Map, key string, errs *[]error) *string {
 		return nil
 	}
 	return &result
+}
+
+func stringValNotPointer(yamlMap generic.Map, key string, errs *[]error) string {
+	val := yamlMap.Get(key)
+	if val == nil {
+		return ""
+	}
+	result, ok := val.(string)
+	if !ok {
+		*errs = append(*errs, fmt.Errorf(T("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key})))
+		return ""
+	}
+	return result
 }
 
 func stringValOrDefault(yamlMap generic.Map, key string, errs *[]error) *string {
@@ -489,8 +483,30 @@ func validateEnvVars(input generic.Map) (errs []error) {
 	return
 }
 
-func parseRoutes(input generic.Map, errs *[]error) []models.ManifestRoute {
+func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) []plugin_models.GetApp_RouteSummary {
+
+	manifestRoutes := make([]plugin_models.GetApp_RouteSummary, 0)
+
+	for _, host := range Hosts {
+		if Domains == nil {
+			manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: defaultDomain}})
+			continue
+		}
+
+		for _, domain := range Domains {
+			manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: domain}})
+		}
+	}
+
+	// TODO is this ever merged with the existing routes?
+
+	return manifestRoutes
+}
+
+func parseRoutes(input generic.Map, errs *[]error) []plugin_models.GetApp_RouteSummary {
+	fmt.Println(input)
 	if !input.Has("routes") {
+		fmt.Println("there are no routes")
 		return nil
 	}
 
@@ -500,21 +516,21 @@ func parseRoutes(input generic.Map, errs *[]error) []models.ManifestRoute {
 		return nil
 	}
 
-	manifestRoutes := []models.ManifestRoute{}
+	manifestRoutes := []plugin_models.GetApp_RouteSummary{}
 	for _, genericRoute := range genericRoutes {
-		route, ok := genericRoute.(map[interface{}]interface{})
+		_, ok := genericRoute.(map[interface{}]interface{})
 		if !ok {
 			*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
 			continue
 		}
 
-		if routeVal, exist := route["route"]; exist {
-			manifestRoutes = append(manifestRoutes, models.ManifestRoute{
-				Route: routeVal.(string),
-			})
-		} else {
-			*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
-		}
+		//	if routeVal, exist := route["route"]; exist {
+		//		manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
+		// TODO!	Domain: plugin_models.GetApp_DomainFields(string),
+		//		})
+		//		} else {
+		//			*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
+		//		}
 	}
 
 	return manifestRoutes

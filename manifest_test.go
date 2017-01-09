@@ -3,6 +3,7 @@ package main_test
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
+	"fmt"
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
@@ -48,7 +49,15 @@ var _ = Describe("Manifest reader", func() {
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns params that contain the host", func() {
-				Expect(manifestAppFinder.AppParams().Hosts).To(ContainElement("foo"))
+
+				var hostNames []string
+
+				// TODO wrong place for arg
+				for _, route := range manifestAppFinder.AppParams("").Routes {
+					hostNames = append(hostNames, route.Host)
+				}
+
+				Expect(hostNames).To(ContainElement("foo"))
 			})
 		})
 
@@ -60,7 +69,7 @@ var _ = Describe("Manifest reader", func() {
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns nil", func() {
-				Expect(manifestAppFinder.AppParams()).To(BeNil())
+				Expect(manifestAppFinder.AppParams("")).To(BeNil())
 			})
 		})
 
@@ -79,10 +88,26 @@ var _ = Describe("Manifest reader", func() {
 			}
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
+			var hostNames []string
+			var domainNames []string
+
+			fmt.Println(manifestAppFinder.AppParams(""))
+
+			for _, route := range manifestAppFinder.AppParams("").Routes {
+				hostNames = append(hostNames, route.Host)
+				domainNames = append(domainNames, route.Domain.Name)
+			}
+
+			hostNames = deDuplicate(hostNames)
+			domainNames = deDuplicate(domainNames)
+
 			It("Returns the correct app", func() {
-				Expect(*manifestAppFinder.AppParams().Name).To(Equal("foo"))
-				Expect(manifestAppFinder.AppParams().Hosts).To(ConsistOf("host1", "host2"))
-				Expect(manifestAppFinder.AppParams().Domains).To(ConsistOf("example1.com", "example2.com"))
+				fmt.Println("HOLLY OUTPUT IS NOW HERE")
+				fmt.Println(manifestAppFinder.AppParams(""))
+				fmt.Println("Holly outout was there")
+				Expect(manifestAppFinder.AppParams("").Name).To(Equal("foo"))
+				Expect(hostNames).To(ConsistOf("host1", "host2"))
+				Expect(domainNames).To(ConsistOf("example1.com", "example2.com"))
 			})
 		})
 	})
@@ -92,7 +117,7 @@ var _ = Describe("Manifest reader", func() {
 		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 		It("Returns nil", func() {
-			Expect(manifestAppFinder.AppParams()).To(BeNil())
+			Expect(manifestAppFinder.AppParams("")).To(BeNil())
 		})
 	})
 
@@ -101,7 +126,7 @@ var _ = Describe("Manifest reader", func() {
 		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 		It("Returns nil", func() {
-			Expect(manifestAppFinder.AppParams()).To(BeNil())
+			Expect(manifestAppFinder.AppParams("")).To(BeNil())
 		})
 	})
 
@@ -174,6 +199,26 @@ var _ = Describe("Manifest reader", func() {
 		})
 	})
 })
+
+func deDuplicate(ary []string) []string {
+	if ary == nil {
+		return nil
+	}
+
+	m := make(map[string]bool)
+	for _, v := range ary {
+		m[v] = true
+	}
+
+	newAry := []string{}
+	for _, val := range ary {
+		if m[val] {
+			newAry = append(newAry, val)
+			m[val] = false
+		}
+	}
+	return newAry
+}
 
 type FakeRepo struct {
 	yaml string
