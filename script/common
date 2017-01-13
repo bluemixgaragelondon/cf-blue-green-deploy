@@ -58,10 +58,10 @@ platform_name() {
       echo "linux64"
       ;;
     "windows 386")
-      echo "windows32"
+      echo "win32"
       ;;
     "windows amd64")
-      echo "windows64"
+      echo "win64"
       ;;
   esac
 }
