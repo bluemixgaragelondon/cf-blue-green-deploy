@@ -3,11 +3,10 @@ package main_test
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
-	"fmt"
 
+	"fmt"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -91,10 +90,18 @@ var _ = Describe("Manifest reader", func() {
 			var hostNames []string
 			var domainNames []string
 
+			bob := manifestAppFinder.AppParams("")
+			fmt.Println("ROUTES IS")
+			fmt.Println(bob)
+			fmt.Println("got sroutes")
+			fmt.Println(bob.Routes)
+			fmt.Println("printed sroutes")
+
 			for _, route := range manifestAppFinder.AppParams("").Routes {
 				hostNames = append(hostNames, route.Host)
 				domainNames = append(domainNames, route.Domain.Name)
 			}
+			fmt.Println("did test append")
 
 			hostNames = deDuplicate(hostNames)
 			domainNames = deDuplicate(domainNames)
@@ -157,7 +164,9 @@ var _ = Describe("Manifest reader", func() {
           - host2`,
 				}
 				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+				fmt.Println("TEST SEES app finder is ", manifestAppFinder)
 				routes := manifestAppFinder.RoutesFromManifest("example.com")
+				fmt.Println("TEST SEES routes is ", routes)
 
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -223,7 +232,7 @@ type FakeRepo struct {
 
 func (r *FakeRepo) ReadManifest(path string) (*manifest.Manifest, error) {
 	r.path = path
-	yamlMap := generic.NewMap()
-	candiedyaml.Unmarshal([]byte(r.yaml), yamlMap)
+	yamlMap := make(map[string]interface{})
+	candiedyaml.Unmarshal([]byte(r.yaml), &yamlMap)
 	return &manifest.Manifest{Data: yamlMap}, r.err
 }

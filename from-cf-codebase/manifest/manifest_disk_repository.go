@@ -8,11 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-<<<<<<< HEAD
-=======
-	"code.cloudfoundry.org/cli/cf/errors"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
->>>>>>> copy generic package from CF code base
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,6 +24,7 @@ func NewDiskRepository() (repo Repository) {
 }
 
 func (repo DiskRepository) ReadManifest(inputPath string) (*Manifest, error) {
+
 	m := NewEmptyManifest()
 	manifestPath, err := repo.manifestPath(inputPath)
 
@@ -98,7 +94,7 @@ func parseManifest(file io.Reader) (yamlMap map[string]interface{}, err error) {
 	}
 
 	if !IsMappable(mmap) || len(mmap) == 0 {
-		err = errors.New("Invalid manifest. Expected a map")
+		err = errors.New(T("Invalid manifest. Expected a map"))
 		return
 	}
 

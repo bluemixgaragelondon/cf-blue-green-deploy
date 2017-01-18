@@ -11,12 +11,11 @@ import (
 	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/utils/words/generator"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/utils/generic"
 )
 
 type Manifest struct {
 	Path string
-	Data generic.Map
+	Data map[string]interface{}
 }
 
 func T(input string, rest ...interface{}) string {
@@ -24,22 +23,26 @@ func T(input string, rest ...interface{}) string {
 }
 
 func NewEmptyManifest() (m *Manifest) {
-	return &Manifest{Data: generic.NewMap()}
+	return &Manifest{Data: make(map[string]interface{})}
 }
 
 func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
+	fmt.Println("In Applications(), this is", m)
 	rawData, err := expandProperties(m.Data, generator.NewWordGenerator())
+	fmt.Println("rawdata is", rawData)
+	data := rawData.(map[string]interface{})
+	fmt.Println("now data is", data)
 
 	if err != nil {
+		fmt.Println("OOH BAD, ERROR")
+
 		return []plugin_models.GetAppModel{}, err
 	}
 
-	data := generic.NewMap(rawData)
 	appMaps, err := m.getAppMaps(data)
 	if err != nil {
 		return []plugin_models.GetAppModel{}, err
 	}
-
 	var apps []plugin_models.GetAppModel
 	var mapToAppErrs []error
 	for _, appMap := range appMaps {
@@ -53,6 +56,7 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 	}
 
 	if len(mapToAppErrs) > 0 {
+		fmt.Println("OOH BAD, ERROR")
 		message := ""
 		for i := range mapToAppErrs {
 			message = message + fmt.Sprintf("%s\n", mapToAppErrs[i].Error())
@@ -60,31 +64,51 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 		return []plugin_models.GetAppModel{}, errors.New(message)
 	}
 
+	fmt.Println("returning applications() ", apps)
 	return apps, nil
 }
 
-func (m Manifest) getAppMaps(data generic.Map) ([]generic.Map, error) {
-	globalProperties := data.Except([]interface{}{"applications"})
+// TODO we should have a test for this
+func cloneWithExclude(data map[string]interface{}, excludedKey string) map[string]interface{} {
+	otherMap := make(map[string]interface{})
+	for key, value := range data {
+		if excludedKey != key {
+			otherMap[key] = value
+		}
+	}
+	return otherMap
+}
 
-	var apps []generic.Map
+func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interface{}, error) {
+	fmt.Println("HELLO, data is", data)
+	globalProperties := cloneWithExclude(data, "applications")
+	fmt.Println("global properties is ", globalProperties)
+
+	var apps []map[string]interface{}
 	var errs []error
-	if data.Has("applications") {
-		appMaps, ok := data.Get("applications").([]interface{})
+	fmt.Println("HELLO, data is still ", data)
+	appMaps, ok := data["applications"].([]interface{})
+	if ok {
+		fmt.Println("app maps")
+		fmt.Println(appMaps)
+
 		if !ok {
-			return []generic.Map{}, errors.New(T("Expected applications to be a list"))
+			return []map[string]interface{}{}, errors.New(T("Expected applications to be a list"))
 		}
 
 		for _, appData := range appMaps {
-			if !generic.IsMappable(appData) {
+			if !IsMappable(appData) {
 				errs = append(errs, fmt.Errorf(T("Expected application to be a list of key/value pairs\nError occurred in manifest near:\n'{{.YmlSnippet}}'",
 					map[string]interface{}{"YmlSnippet": appData})))
 				continue
 			}
 
-			appMap := generic.DeepMerge(globalProperties, generic.NewMap(appData))
+			appMap := DeepMerge(globalProperties, Mappify(appData))
 			apps = append(apps, appMap)
+			fmt.Println(appData)
 		}
 	} else {
+		fmt.Println("HOLLY no applications, doing empty append")
 		apps = append(apps, globalProperties)
 	}
 
@@ -93,8 +117,10 @@ func (m Manifest) getAppMaps(data generic.Map) ([]generic.Map, error) {
 		for i := range errs {
 			message = message + fmt.Sprintf("%s\n", errs[i].Error())
 		}
-		return []generic.Map{}, errors.New(message)
+		return []map[string]interface{}{}, errors.New(message)
 	}
+	fmt.Println("HOLLY return")
+	fmt.Println(apps)
 
 	return apps, nil
 }
@@ -131,6 +157,8 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 		}
 		output = outputSlice
 	case map[interface{}]interface{}:
+		fmt.Println("EXPANDING INTERFACEKEY MAP")
+
 		outputMap := make(map[interface{}]interface{})
 		for key, value := range input {
 			itemOutput, itemErr := expandProperties(value, babbler)
@@ -141,16 +169,21 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 			outputMap[key] = itemOutput
 		}
 		output = outputMap
-	case generic.Map:
-		outputMap := generic.NewMap()
-		generic.Each(input, func(key, value interface{}) {
+	case map[string]interface{}:
+		fmt.Println("EXPANDING STRINGKEY MAP")
+		fmt.Println(input)
+		fmt.Println("that was the map")
+		outputMap := make(map[string]interface{})
+		for key, value := range input {
+			fmt.Println(key)
+			fmt.Println(value)
 			itemOutput, itemErr := expandProperties(value, babbler)
 			if itemErr != nil {
 				errs = append(errs, itemErr)
-				return
+				break
 			}
-			outputMap.Set(key, itemOutput)
-		})
+			outputMap[key] = itemOutput
+		}
 		output = outputMap
 	default:
 		output = input
@@ -164,10 +197,13 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 		return nil, errors.New(message)
 	}
 
+	fmt.Println("expand properties returning")
+	fmt.Println(output)
 	return output, nil
 }
 
-func mapToAppParams(basePath string, yamlMap generic.Map, defaultDomain string) (plugin_models.GetAppModel, error) {
+func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDomain string) (plugin_models.GetAppModel, error) {
+	fmt.Println("getting app params out of ", yamlMap)
 	err := checkForNulls(yamlMap)
 	if err != nil {
 		return plugin_models.GetAppModel{}, err
@@ -186,16 +222,21 @@ func mapToAppParams(basePath string, yamlMap generic.Map, defaultDomain string) 
 	}
 	mytempDomainsObject := removeDuplicatedValue(domainAry)
 
+	fmt.Println("goinmg to parse hosts out of ", yamlMap)
 	hostsArr := sliceOrNil(yamlMap, "hosts", &errs)
+	fmt.Println("hosts is", hostsArr)
 	if host := stringVal(yamlMap, "host", &errs); host != nil {
+		fmt.Println("host is", host)
 		hostsArr = append(hostsArr, *host)
 	}
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
 	appParams.Routes = parseRoutes(yamlMap, &errs)
+	fmt.Println("parsed as", appParams.Routes)
 	// TODO how do those two interact?
+	fmt.Println("will now merge in hosts and domains ", myTempHostsObject, mytempDomainsObject)
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
-
+	fmt.Println("from manifest as", appParams.Routes)
 	appParams.Name = stringValNotPointer(yamlMap, "name", &errs)
 
 	if len(errs) > 0 {
@@ -205,7 +246,8 @@ func mapToAppParams(basePath string, yamlMap generic.Map, defaultDomain string) 
 		}
 		return plugin_models.GetAppModel{}, errors.New(message)
 	}
-
+	fmt.Println("map to app params is")
+	fmt.Println(appParams)
 	return appParams, nil
 }
 
@@ -229,16 +271,16 @@ func removeDuplicatedValue(ary []string) []string {
 	return newAry
 }
 
-func checkForNulls(yamlMap generic.Map) error {
+func checkForNulls(yamlMap map[string]interface{}) error {
 	var errs []error
-	generic.Each(yamlMap, func(key interface{}, value interface{}) {
+	for key, value := range yamlMap {
 		if key == "command" || key == "buildpack" {
-			return
+			break
 		}
 		if value == nil {
 			errs = append(errs, fmt.Errorf(T("{{.PropertyName}} should not be null", map[string]interface{}{"PropertyName": key})))
 		}
-	})
+	}
 
 	if len(errs) > 0 {
 		message := ""
@@ -251,8 +293,8 @@ func checkForNulls(yamlMap generic.Map) error {
 	return nil
 }
 
-func stringVal(yamlMap generic.Map, key string, errs *[]error) *string {
-	val := yamlMap.Get(key)
+func stringVal(yamlMap map[string]interface{}, key string, errs *[]error) *string {
+	val := yamlMap[key]
 	if val == nil {
 		return nil
 	}
@@ -264,8 +306,8 @@ func stringVal(yamlMap generic.Map, key string, errs *[]error) *string {
 	return &result
 }
 
-func stringValNotPointer(yamlMap generic.Map, key string, errs *[]error) string {
-	val := yamlMap.Get(key)
+func stringValNotPointer(yamlMap map[string]interface{}, key string, errs *[]error) string {
+	val := yamlMap[key]
 	if val == nil {
 		return ""
 	}
@@ -277,12 +319,12 @@ func stringValNotPointer(yamlMap generic.Map, key string, errs *[]error) string 
 	return result
 }
 
-func stringValOrDefault(yamlMap generic.Map, key string, errs *[]error) *string {
-	if !yamlMap.Has(key) {
+func stringValOrDefault(yamlMap map[string]interface{}, key string, errs *[]error) *string {
+	if _, ok := yamlMap[key]; !ok {
 		return nil
 	}
 	empty := ""
-	switch val := yamlMap.Get(key).(type) {
+	switch val := yamlMap[key].(type) {
 	case string:
 		if val == "default" {
 			return &empty
@@ -296,8 +338,8 @@ func stringValOrDefault(yamlMap generic.Map, key string, errs *[]error) *string 
 	}
 }
 
-func bytesVal(yamlMap generic.Map, key string, errs *[]error) *int64 {
-	yamlVal := yamlMap.Get(key)
+func bytesVal(yamlMap map[string]interface{}, key string, errs *[]error) *int64 {
+	yamlVal := yamlMap[key]
 	if yamlVal == nil {
 		return nil
 	}
@@ -316,13 +358,13 @@ func bytesVal(yamlMap generic.Map, key string, errs *[]error) *int64 {
 	return &value
 }
 
-func intVal(yamlMap generic.Map, key string, errs *[]error) *int {
+func intVal(yamlMap map[string]interface{}, key string, errs *[]error) *int {
 	var (
 		intVal int
 		err    error
 	)
 
-	switch val := yamlMap.Get(key).(type) {
+	switch val := yamlMap[key].(type) {
 	case string:
 		intVal, err = strconv.Atoi(val)
 	case int:
@@ -348,8 +390,8 @@ func coerceToString(value interface{}) string {
 	return fmt.Sprintf("%v", value)
 }
 
-func boolVal(yamlMap generic.Map, key string, errs *[]error) bool {
-	switch val := yamlMap.Get(key).(type) {
+func boolVal(yamlMap map[string]interface{}, key string, errs *[]error) bool {
+	switch val := yamlMap[key].(type) {
 	case nil:
 		return false
 	case bool:
@@ -362,9 +404,9 @@ func boolVal(yamlMap generic.Map, key string, errs *[]error) bool {
 	}
 }
 
-func boolOrNil(yamlMap generic.Map, key string, errs *[]error) *bool {
+func boolOrNil(yamlMap map[string]interface{}, key string, errs *[]error) *bool {
 	result := false
-	switch val := yamlMap.Get(key).(type) {
+	switch val := yamlMap[key].(type) {
 	case nil:
 		return nil
 	case bool:
@@ -377,8 +419,8 @@ func boolOrNil(yamlMap generic.Map, key string, errs *[]error) *bool {
 		return &result
 	}
 }
-func sliceOrNil(yamlMap generic.Map, key string, errs *[]error) []string {
-	if !yamlMap.Has(key) {
+func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []string {
+	if _, ok := yamlMap[key]; !ok {
 		return nil
 	}
 
@@ -387,7 +429,7 @@ func sliceOrNil(yamlMap generic.Map, key string, errs *[]error) []string {
 
 	sliceErr := fmt.Errorf(T("Expected {{.PropertyName}} to be a list of strings.", map[string]interface{}{"PropertyName": key}))
 
-	switch input := yamlMap.Get(key).(type) {
+	switch input := yamlMap[key].(type) {
 	case []interface{}:
 		for _, value := range input {
 			stringValue, ok := value.(string)
@@ -409,14 +451,14 @@ func sliceOrNil(yamlMap generic.Map, key string, errs *[]error) []string {
 	return stringSlice
 }
 
-func intSliceVal(yamlMap generic.Map, key string, errs *[]error) *[]int {
-	if !yamlMap.Has(key) {
+func intSliceVal(yamlMap map[string]interface{}, key string, errs *[]error) *[]int {
+	if _, ok := yamlMap[key]; !ok {
 		return nil
 	}
 
 	err := fmt.Errorf(T("Expected {{.PropertyName}} to be a list of integers.", map[string]interface{}{"PropertyName": key}))
 
-	s, ok := yamlMap.Get(key).([]interface{})
+	s, ok := yamlMap[key].([]interface{})
 
 	if !ok {
 		*errs = append(*errs, err)
@@ -439,48 +481,6 @@ func intSliceVal(yamlMap generic.Map, key string, errs *[]error) *[]int {
 	return &intSlice
 }
 
-func envVarOrEmptyMap(yamlMap generic.Map, errs *[]error) *map[string]interface{} {
-	key := "env"
-	switch envVars := yamlMap.Get(key).(type) {
-	case nil:
-		aMap := make(map[string]interface{}, 0)
-		return &aMap
-	case map[string]interface{}:
-		yamlMap.Set(key, generic.NewMap(yamlMap.Get(key)))
-		return envVarOrEmptyMap(yamlMap, errs)
-	case map[interface{}]interface{}:
-		yamlMap.Set(key, generic.NewMap(yamlMap.Get(key)))
-		return envVarOrEmptyMap(yamlMap, errs)
-	case generic.Map:
-		merrs := validateEnvVars(envVars)
-		if merrs != nil {
-			*errs = append(*errs, merrs...)
-			return nil
-		}
-
-		result := make(map[string]interface{}, envVars.Count())
-		generic.Each(envVars, func(key, value interface{}) {
-			result[key.(string)] = value
-		})
-
-		return &result
-	default:
-		*errs = append(*errs, fmt.Errorf(T("Expected {{.Name}} to be a set of key => value, but it was a {{.Type}}.",
-			map[string]interface{}{"Name": key, "Type": envVars})))
-		return nil
-	}
-}
-
-func validateEnvVars(input generic.Map) (errs []error) {
-	generic.Each(input, func(key, value interface{}) {
-		if value == nil {
-			errs = append(errs, fmt.Errorf(T("env var '{{.PropertyName}}' should not be null",
-				map[string]interface{}{"PropertyName": key})))
-		}
-	})
-	return
-}
-
 func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) []plugin_models.GetApp_RouteSummary {
 
 	manifestRoutes := make([]plugin_models.GetApp_RouteSummary, 0)
@@ -501,12 +501,12 @@ func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) 
 	return manifestRoutes
 }
 
-func parseRoutes(input generic.Map, errs *[]error) []plugin_models.GetApp_RouteSummary {
-	if !input.Has("routes") {
+func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.GetApp_RouteSummary {
+	if _, ok := input["routes"]; !ok {
 		return nil
 	}
 
-	genericRoutes, ok := input.Get("routes").([]interface{})
+	genericRoutes, ok := input["routes"].([]interface{})
 	if !ok {
 		*errs = append(*errs, fmt.Errorf(T("'routes' should be a list")))
 		return nil
@@ -520,13 +520,13 @@ func parseRoutes(input generic.Map, errs *[]error) []plugin_models.GetApp_RouteS
 			continue
 		}
 
-		//	if routeVal, exist := route["route"]; exist {
-		//		manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
-		// TODO!	Domain: plugin_models.GetApp_DomainFields(string),
-		//		})
-		//		} else {
-		//			*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
-		//		}
+		// if routeVal, exist := route["route"]; exist {
+		// 	manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
+		// TODO		Domain: plugin_models.GetApp_DomainFields(string),
+		// 	})
+		// } else {
+		// 	*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
+		// }
 	}
 
 	return manifestRoutes

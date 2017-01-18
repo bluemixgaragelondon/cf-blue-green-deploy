@@ -15,7 +15,7 @@ type ManifestAppFinder struct {
 }
 
 // func (f *ManifestAppFinder) oldRoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
-// 	if appParams := f.AppParams(); appParams != nil {
+// 	if appParams := f.AppParams(defaultDomain); appParams != nil {
 
 // 		manifestRoutes := make([]plugin_models.GetApp_RouteSummary, 0)
 
@@ -37,6 +37,7 @@ type ManifestAppFinder struct {
 
 // TODO This function was interesting, and now is boring and should be eliminated?
 func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
+	fmt.Println("doing our mroutes from manifest")
 	if appParams := f.AppParams(defaultDomain); appParams != nil {
 		return appParams.Routes
 	}
@@ -62,10 +63,15 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 	}
 
 	if err != nil {
+		fmt.Println(err)
 		return nil
 	}
 
+	fmt.Println("read", manifest)
+
 	apps, err := manifest.Applications(defaultDomain)
+
+	fmt.Println("apps: ", apps)
 
 	if err != nil {
 		fmt.Println(err)
@@ -73,6 +79,7 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 	}
 
 	for index, app := range apps {
+		fmt.Println(index)
 		if IsHostEmpty(app) {
 			continue
 		}
@@ -83,6 +90,6 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 
 		return &apps[index]
 	}
-
+	fmt.Println("fallthrough")
 	return nil
 }
