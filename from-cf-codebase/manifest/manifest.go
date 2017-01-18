@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/utils/words/generator"
 )
@@ -336,26 +335,6 @@ func stringValOrDefault(yamlMap map[string]interface{}, key string, errs *[]erro
 		*errs = append(*errs, fmt.Errorf(T("{{.PropertyName}} must be a string or null value", map[string]interface{}{"PropertyName": key})))
 		return nil
 	}
-}
-
-func bytesVal(yamlMap map[string]interface{}, key string, errs *[]error) *int64 {
-	yamlVal := yamlMap[key]
-	if yamlVal == nil {
-		return nil
-	}
-
-	stringVal := coerceToString(yamlVal)
-	value, err := formatters.ToMegabytes(stringVal)
-	if err != nil {
-		*errs = append(*errs, fmt.Errorf(T("Invalid value for '{{.PropertyName}}': {{.StringVal}}\n{{.Error}}",
-			map[string]interface{}{
-				"PropertyName": key,
-				"Error":        err.Error(),
-				"StringVal":    stringVal,
-			})))
-		return nil
-	}
-	return &value
 }
 
 func intVal(yamlMap map[string]interface{}, key string, errs *[]error) *int {
