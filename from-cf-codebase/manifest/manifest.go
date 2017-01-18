@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cli/utils/words/generator"
+	"github.com/Pallinder/go-randomdata"
 )
 
 type Manifest struct {
@@ -27,7 +27,7 @@ func NewEmptyManifest() (m *Manifest) {
 
 func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
 	fmt.Println("In Applications(), this is", m)
-	rawData, err := expandProperties(m.Data, generator.NewWordGenerator())
+	rawData, err := expandProperties(m.Data)
 	fmt.Println("rawdata is", rawData)
 	data := rawData.(map[string]interface{})
 	fmt.Println("now data is", data)
@@ -126,7 +126,7 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 
 var propertyRegex = regexp.MustCompile(`\${[\w-]+}`)
 
-func expandProperties(input interface{}, babbler generator.WordGenerator) (interface{}, error) {
+func expandProperties(input interface{}) (interface{}, error) {
 	var errs []error
 	var output interface{}
 
@@ -135,7 +135,8 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 		match := propertyRegex.FindStringSubmatch(input)
 		if match != nil {
 			if match[0] == "${random-word}" {
-				output = strings.Replace(input, "${random-word}", strings.ToLower(babbler.Babble()), -1)
+				// TODO we need a test for a manifest with ${random-word}
+				output = strings.Replace(input, "${random-word}", strings.ToLower(randomdata.SillyName()), -1)
 			} else {
 				err := fmt.Errorf(T("Property '{{.PropertyName}}' found in manifest. This feature is no longer supported. Please remove it and try again.",
 					map[string]interface{}{"PropertyName": match[0]}))
@@ -147,7 +148,7 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 	case []interface{}:
 		outputSlice := make([]interface{}, len(input))
 		for index, item := range input {
-			itemOutput, itemErr := expandProperties(item, babbler)
+			itemOutput, itemErr := expandProperties(item)
 			if itemErr != nil {
 				errs = append(errs, itemErr)
 				break
@@ -160,7 +161,7 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 
 		outputMap := make(map[interface{}]interface{})
 		for key, value := range input {
-			itemOutput, itemErr := expandProperties(value, babbler)
+			itemOutput, itemErr := expandProperties(value)
 			if itemErr != nil {
 				errs = append(errs, itemErr)
 				break
@@ -176,7 +177,7 @@ func expandProperties(input interface{}, babbler generator.WordGenerator) (inter
 		for key, value := range input {
 			fmt.Println(key)
 			fmt.Println(value)
-			itemOutput, itemErr := expandProperties(value, babbler)
+			itemOutput, itemErr := expandProperties(value)
 			if itemErr != nil {
 				errs = append(errs, itemErr)
 				break
