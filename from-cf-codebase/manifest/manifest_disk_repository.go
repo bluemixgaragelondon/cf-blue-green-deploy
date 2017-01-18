@@ -62,6 +62,8 @@ func (repo DiskRepository) readAllYAMLFiles(path string) (mergedMap map[string]i
 		return
 	}
 
+	// TODO search for T() and eliminate
+
 	inheritedPath, ok := mapp["inherit"].(string)
 	if !ok {
 		err = errors.New("invalid inherit path in manifest")
@@ -94,7 +96,7 @@ func parseManifest(file io.Reader) (yamlMap map[string]interface{}, err error) {
 	}
 
 	if !IsMappable(mmap) || len(mmap) == 0 {
-		err = errors.New(T("Invalid manifest. Expected a map"))
+		err = errors.New("Invalid manifest. Expected a map")
 		return
 	}
 
