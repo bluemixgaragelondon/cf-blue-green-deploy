@@ -62,8 +62,6 @@ func (repo DiskRepository) readAllYAMLFiles(path string) (mergedMap map[string]i
 		return
 	}
 
-	// TODO search for T() and eliminate
-
 	inheritedPath, ok := mapp["inherit"].(string)
 	if !ok {
 		err = errors.New("invalid inherit path in manifest")

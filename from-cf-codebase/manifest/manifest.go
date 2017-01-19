@@ -16,10 +16,6 @@ type Manifest struct {
 	Data map[string]interface{}
 }
 
-func T(input string, rest ...interface{}) string {
-	return input
-}
-
 func NewEmptyManifest() (m *Manifest) {
 	return &Manifest{Data: make(map[string]interface{})}
 }
@@ -93,7 +89,7 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 		fmt.Println(appMaps)
 
 		if !ok {
-			return []map[string]interface{}{}, errors.New(T("Expected applications to be a list"))
+			return []map[string]interface{}{}, errors.New("Expected applications to be a list")
 		}
 
 		globalProperties := cloneWithExclude(data, "applications")
@@ -101,8 +97,8 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 
 		for _, appData := range appMaps {
 			if !IsMappable(appData) {
-				errs = append(errs, fmt.Errorf(T("Expected application to be a list of key/value pairs\nError occurred in manifest near:\n'{{.YmlSnippet}}'",
-					map[string]interface{}{"YmlSnippet": appData})))
+				errs = append(errs, fmt.Errorf("Expected application to be a list of key/value pairs\nError occurred in manifest near:\n'{{.YmlSnippet}}'",
+					map[string]interface{}{"YmlSnippet": appData}))
 				continue
 			}
 
@@ -142,8 +138,8 @@ func expandProperties(input interface{}) (interface{}, error) {
 				// TODO we need a test for a manifest with ${random-word}
 				output = strings.Replace(input, "${random-word}", strings.ToLower(randomdata.SillyName()), -1)
 			} else {
-				err := fmt.Errorf(T("Property '{{.PropertyName}}' found in manifest. This feature is no longer supported. Please remove it and try again.",
-					map[string]interface{}{"PropertyName": match[0]}))
+				err := fmt.Errorf("Property '{{.PropertyName}}' found in manifest. This feature is no longer supported. Please remove it and try again.",
+					map[string]interface{}{"PropertyName": match[0]})
 				errs = append(errs, err)
 			}
 		} else {
@@ -282,7 +278,7 @@ func checkForNulls(yamlMap map[string]interface{}) error {
 			break
 		}
 		if value == nil {
-			errs = append(errs, fmt.Errorf(T("{{.PropertyName}} should not be null", map[string]interface{}{"PropertyName": key})))
+			errs = append(errs, fmt.Errorf("{{.PropertyName}} should not be null", map[string]interface{}{"PropertyName": key}))
 		}
 	}
 
@@ -304,7 +300,7 @@ func stringVal(yamlMap map[string]interface{}, key string, errs *[]error) *strin
 	}
 	result, ok := val.(string)
 	if !ok {
-		*errs = append(*errs, fmt.Errorf(T("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key})))
+		*errs = append(*errs, fmt.Errorf("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key}))
 		return nil
 	}
 	return &result
@@ -317,7 +313,7 @@ func stringValNotPointer(yamlMap map[string]interface{}, key string, errs *[]err
 	}
 	result, ok := val.(string)
 	if !ok {
-		*errs = append(*errs, fmt.Errorf(T("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key})))
+		*errs = append(*errs, fmt.Errorf("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key}))
 		return ""
 	}
 	return result
@@ -331,7 +327,7 @@ func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []str
 	var err error
 	stringSlice := []string{}
 
-	sliceErr := fmt.Errorf(T("Expected {{.PropertyName}} to be a list of strings.", map[string]interface{}{"PropertyName": key}))
+	sliceErr := fmt.Errorf("Expected {{.PropertyName}} to be a list of strings.", map[string]interface{}{"PropertyName": key})
 
 	switch input := yamlMap[key].(type) {
 	case []interface{}:
@@ -382,7 +378,7 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 
 	genericRoutes, ok := input["routes"].([]interface{})
 	if !ok {
-		*errs = append(*errs, fmt.Errorf(T("'routes' should be a list")))
+		*errs = append(*errs, fmt.Errorf("'routes' should be a list"))
 		return nil
 	}
 
@@ -390,7 +386,7 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 	for _, genericRoute := range genericRoutes {
 		_, ok := genericRoute.(map[interface{}]interface{})
 		if !ok {
-			*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
+			*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property"))
 			continue
 		}
 
@@ -399,7 +395,7 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 		// TODO		Domain: plugin_models.GetApp_DomainFields(string),
 		// 	})
 		// } else {
-		// 	*errs = append(*errs, fmt.Errorf(T("each route in 'routes' must have a 'route' property")))
+		// 	*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property")))
 		// }
 	}
 
