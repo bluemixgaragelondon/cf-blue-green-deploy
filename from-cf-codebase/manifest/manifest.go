@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin/models"
@@ -324,86 +323,6 @@ func stringValNotPointer(yamlMap map[string]interface{}, key string, errs *[]err
 	return result
 }
 
-func stringValOrDefault(yamlMap map[string]interface{}, key string, errs *[]error) *string {
-	if _, ok := yamlMap[key]; !ok {
-		return nil
-	}
-	empty := ""
-	switch val := yamlMap[key].(type) {
-	case string:
-		if val == "default" {
-			return &empty
-		}
-		return &val
-	case nil:
-		return &empty
-	default:
-		*errs = append(*errs, fmt.Errorf(T("{{.PropertyName}} must be a string or null value", map[string]interface{}{"PropertyName": key})))
-		return nil
-	}
-}
-
-func intVal(yamlMap map[string]interface{}, key string, errs *[]error) *int {
-	var (
-		intVal int
-		err    error
-	)
-
-	switch val := yamlMap[key].(type) {
-	case string:
-		intVal, err = strconv.Atoi(val)
-	case int:
-		intVal = val
-	case int64:
-		intVal = int(val)
-	case nil:
-		return nil
-	default:
-		err = fmt.Errorf(T("Expected {{.PropertyName}} to be a number, but it was a {{.PropertyType}}.",
-			map[string]interface{}{"PropertyName": key, "PropertyType": val}))
-	}
-
-	if err != nil {
-		*errs = append(*errs, err)
-		return nil
-	}
-
-	return &intVal
-}
-
-func coerceToString(value interface{}) string {
-	return fmt.Sprintf("%v", value)
-}
-
-func boolVal(yamlMap map[string]interface{}, key string, errs *[]error) bool {
-	switch val := yamlMap[key].(type) {
-	case nil:
-		return false
-	case bool:
-		return val
-	case string:
-		return val == "true"
-	default:
-		*errs = append(*errs, fmt.Errorf(T("Expected {{.PropertyName}} to be a boolean.", map[string]interface{}{"PropertyName": key})))
-		return false
-	}
-}
-
-func boolOrNil(yamlMap map[string]interface{}, key string, errs *[]error) *bool {
-	result := false
-	switch val := yamlMap[key].(type) {
-	case nil:
-		return nil
-	case bool:
-		return &val
-	case string:
-		result = val == "true"
-		return &result
-	default:
-		*errs = append(*errs, fmt.Errorf(T("Expected {{.PropertyName}} to be a boolean.", map[string]interface{}{"PropertyName": key})))
-		return &result
-	}
-}
 func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []string {
 	if _, ok := yamlMap[key]; !ok {
 		return nil
@@ -434,36 +353,6 @@ func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []str
 	}
 
 	return stringSlice
-}
-
-func intSliceVal(yamlMap map[string]interface{}, key string, errs *[]error) *[]int {
-	if _, ok := yamlMap[key]; !ok {
-		return nil
-	}
-
-	err := fmt.Errorf(T("Expected {{.PropertyName}} to be a list of integers.", map[string]interface{}{"PropertyName": key}))
-
-	s, ok := yamlMap[key].([]interface{})
-
-	if !ok {
-		*errs = append(*errs, err)
-		return nil
-	}
-
-	var intSlice []int
-
-	for _, el := range s {
-		intValue, ok := el.(int)
-
-		if !ok {
-			*errs = append(*errs, err)
-			return nil
-		}
-
-		intSlice = append(intSlice, intValue)
-	}
-
-	return &intSlice
 }
 
 func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) []plugin_models.GetApp_RouteSummary {
