@@ -80,20 +80,25 @@ func cloneWithExclude(data map[string]interface{}, excludedKey string) map[strin
 
 func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interface{}, error) {
 	fmt.Println("HELLO, data is", data)
-	globalProperties := cloneWithExclude(data, "applications")
-	fmt.Println("global properties is ", globalProperties)
 
 	var apps []map[string]interface{}
 	var errs []error
 	fmt.Println("HELLO, data is still ", data)
-	appMaps, ok := data["applications"].([]interface{})
+	// Check for presence
+	unTypedAppMaps, ok := data["applications"]
 	if ok {
+		// Check for type
+		appMaps, ok := unTypedAppMaps.([]interface{})
+
 		fmt.Println("app maps")
 		fmt.Println(appMaps)
 
 		if !ok {
 			return []map[string]interface{}{}, errors.New(T("Expected applications to be a list"))
 		}
+
+		globalProperties := cloneWithExclude(data, "applications")
+		fmt.Println("global properties is ", globalProperties)
 
 		for _, appData := range appMaps {
 			if !IsMappable(appData) {
@@ -107,8 +112,8 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 			fmt.Println(appData)
 		}
 	} else {
-		fmt.Println("HOLLY no applications, doing empty append")
-		apps = append(apps, globalProperties)
+		// All properties in data are global, so just them in
+		apps = append(apps, data)
 	}
 
 	if len(errs) > 0 {
