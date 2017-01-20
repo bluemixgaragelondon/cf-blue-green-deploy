@@ -1,3 +1,4 @@
+// NOTICE: This is a derivative work of https://github.com/cloudfoundry/cli/blob/27a6d92bbcc298f73713983f0f798f3621ef8b1d/util/generic/merge_reduce.go
 package manifest
 
 import (

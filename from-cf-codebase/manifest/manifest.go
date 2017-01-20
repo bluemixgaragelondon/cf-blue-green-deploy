@@ -1,3 +1,4 @@
+// NOTICE: This is a derivative work of https://github.com/bluemixgaragelondon/cf-blue-green-deploy/blob/master/manifest.go.
 package manifest
 
 import (
