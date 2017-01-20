@@ -39,6 +39,22 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(Equal("manifest.yml"))
 		})
 	})
+
+	Context("When a global cf flag is set with an app name", func() {
+		args := NewArgs([]string{"cf", "-v", "blue-green-deploy", "app"})
+
+		It("sets the app name", func() {
+			Expect(args.AppName).To(Equal("app"))
+		})
+	})
+
+	Context("When the bgd abbreviation is used", func() {
+		args := NewArgs([]string{"cf", "bgd", "app"})
+
+		It("sets the app name", func() {
+			Expect(args.AppName).To(Equal("app"))
+		})
+	})
 })
 
 func bgdArgs(argString string) []string {
