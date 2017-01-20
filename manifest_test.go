@@ -3,11 +3,11 @@ package main_test
 import (
 	"errors"
 
+	"code.cloudfoundry.org/cli/cf/i18n"
+	"code.cloudfoundry.org/cli/cf/manifest"
+	"code.cloudfoundry.org/cli/utils/generic"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"github.com/cloudfoundry-incubator/candiedyaml"
-	"code.cloudfoundry.org/cli/cf/manifest"
-	"code.cloudfoundry.org/cli/cf/i18n"
-	"code.cloudfoundry.org/cli/utils/generic"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -151,6 +151,24 @@ var _ = Describe("Manifest reader", func() {
 				Expect(routes).To(ConsistOf(
 					Route{Host: "host1", Domain: Domain{Name: "example.com"}},
 					Route{Host: "host2", Domain: Domain{Name: "example.com"}},
+				))
+			})
+		})
+
+		PContext("when app has just routes, no hosts or domains", func() {
+			It("returns those routes", func() {
+				repo := FakeRepo{yaml: `---
+          name: foo
+          routes:
+          - route1.domain1
+          - route2.domain2`,
+				}
+				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+				routes := manifestAppFinder.RoutesFromManifest("example.com")
+
+				Expect(routes).To(ConsistOf(
+					Route{Host: "route1", Domain: Domain{Name: "domain1"}},
+					Route{Host: "route2", Domain: Domain{Name: "domain2"}},
 				))
 			})
 		})
