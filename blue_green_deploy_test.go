@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -284,8 +284,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("pushes with the specified manifest, if present in deployer", func() {
-			p.ManifestPath = "./manifest-tst.yml"
-			p.PushNewApp(newApp, newRoute)
+			manifestPath := "./manifest-tst.yml"
+			p.PushNewApp(newApp, newRoute, manifestPath)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-f ./manifest-tst.yml`))

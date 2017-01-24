@@ -17,7 +17,7 @@ type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string, Route)
+	PushNewApp(string, Route, string)
 	DeleteAllAppsExceptLiveApp(string)
 	LiveApp(string) (string, []Route)
 	RunSmokeTests(string, string) bool
@@ -31,7 +31,6 @@ type BlueGreenDeploy struct {
 	Out        io.Writer
 	ErrorFunc  ErrorHandler
 	AppLister
-	ManifestPath string
 }
 
 type AppLister interface {
@@ -59,10 +58,10 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 	p.DeleteAppVersions(oldAppVersions)
 }
 
-func (p *BlueGreenDeploy) PushNewApp(appName string, route Route) {
+func (p *BlueGreenDeploy) PushNewApp(appName string, route Route, manifestPath string) {
 	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
-	if p.ManifestPath != "" {
-		args = append(args, "-f", p.ManifestPath)
+	if manifestPath != "" {
+		args = append(args, "-f", manifestPath)
 	}
 	if _, err := p.Connection.CliCommand(args...); err != nil {
 		p.ErrorFunc("Could not push new version", err)
