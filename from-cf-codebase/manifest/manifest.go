@@ -22,15 +22,10 @@ func NewEmptyManifest() (m *Manifest) {
 }
 
 func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
-	fmt.Println("In Applications(), this is", m)
 	rawData, err := expandProperties(m.Data)
-	fmt.Println("rawdata is", rawData)
 	data := rawData.(map[string]interface{})
-	fmt.Println("now data is", data)
 
 	if err != nil {
-		fmt.Println("OOH BAD, ERROR")
-
 		return []plugin_models.GetAppModel{}, err
 	}
 
@@ -51,7 +46,6 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 	}
 
 	if len(mapToAppErrs) > 0 {
-		fmt.Println("OOH BAD, ERROR")
 		message := ""
 		for i := range mapToAppErrs {
 			message = message + fmt.Sprintf("%s\n", mapToAppErrs[i].Error())
@@ -59,7 +53,6 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 		return []plugin_models.GetAppModel{}, errors.New(message)
 	}
 
-	fmt.Println("returning applications() ", apps)
 	return apps, nil
 }
 
@@ -75,19 +68,14 @@ func cloneWithExclude(data map[string]interface{}, excludedKey string) map[strin
 }
 
 func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interface{}, error) {
-	fmt.Println("HELLO, data is", data)
 
 	var apps []map[string]interface{}
 	var errs []error
-	fmt.Println("HELLO, data is still ", data)
 	// Check for presence
 	unTypedAppMaps, ok := data["applications"]
 	if ok {
 		// Check for type
 		appMaps, ok := unTypedAppMaps.([]interface{})
-
-		fmt.Println("app maps")
-		fmt.Println(appMaps)
 
 		if !ok {
 			return []map[string]interface{}{}, errors.New("Expected applications to be a list")
@@ -95,7 +83,6 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 
 		// TODO - we have no test coverage for cases where there is an "applications" clause
 		globalProperties := cloneWithExclude(data, "applications")
-		fmt.Println("global properties is ", globalProperties)
 
 		for _, appData := range appMaps {
 			if !IsMappable(appData) {
@@ -106,7 +93,6 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 
 			appMap := DeepMerge(globalProperties, Mappify(appData))
 			apps = append(apps, appMap)
-			fmt.Println(appData)
 		}
 	} else {
 		// All properties in data are global, so just them in
@@ -120,8 +106,6 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 		}
 		return []map[string]interface{}{}, errors.New(message)
 	}
-	fmt.Println("HOLLY return")
-	fmt.Println(apps)
 
 	return apps, nil
 }
@@ -159,7 +143,6 @@ func expandProperties(input interface{}) (interface{}, error) {
 		}
 		output = outputSlice
 	case map[interface{}]interface{}:
-		fmt.Println("EXPANDING INTERFACEKEY MAP")
 
 		outputMap := make(map[interface{}]interface{})
 		for key, value := range input {
@@ -172,13 +155,10 @@ func expandProperties(input interface{}) (interface{}, error) {
 		}
 		output = outputMap
 	case map[string]interface{}:
-		fmt.Println("EXPANDING STRINGKEY MAP")
-		fmt.Println(input)
-		fmt.Println("that was the map")
+
 		outputMap := make(map[string]interface{})
 		for key, value := range input {
-			fmt.Println(key)
-			fmt.Println(value)
+
 			itemOutput, itemErr := expandProperties(value)
 			if itemErr != nil {
 				errs = append(errs, itemErr)
@@ -199,13 +179,10 @@ func expandProperties(input interface{}) (interface{}, error) {
 		return nil, errors.New(message)
 	}
 
-	fmt.Println("expand properties returning")
-	fmt.Println(output)
 	return output, nil
 }
 
 func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDomain string) (plugin_models.GetAppModel, error) {
-	fmt.Println("getting app params out of ", yamlMap)
 	err := checkForNulls(yamlMap)
 	if err != nil {
 		return plugin_models.GetAppModel{}, err
@@ -224,21 +201,15 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	}
 	mytempDomainsObject := removeDuplicatedValue(domainAry)
 
-	fmt.Println("goinmg to parse hosts out of ", yamlMap)
 	hostsArr := sliceOrNil(yamlMap, "hosts", &errs)
-	fmt.Println("hosts is", hostsArr)
 	if host := stringVal(yamlMap, "host", &errs); host != nil {
-		fmt.Println("host is", host)
 		hostsArr = append(hostsArr, *host)
 	}
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
 	appParams.Routes = parseRoutes(yamlMap, &errs)
-	fmt.Println("parsed as", appParams.Routes)
 	// TODO how do those two interact?
-	fmt.Println("will now merge in hosts and domains ", myTempHostsObject, mytempDomainsObject)
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
-	fmt.Println("from manifest as", appParams.Routes)
 	appParams.Name = stringValNotPointer(yamlMap, "name", &errs)
 
 	if len(errs) > 0 {
@@ -248,8 +219,7 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 		}
 		return plugin_models.GetAppModel{}, errors.New(message)
 	}
-	fmt.Println("map to app params is")
-	fmt.Println(appParams)
+
 	return appParams, nil
 }
 

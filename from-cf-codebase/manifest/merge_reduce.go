@@ -87,12 +87,10 @@ func arrayMappify(data []interface{}) map[string]interface{} {
 
 func Mappify(data interface{}) map[string]interface{} {
 
-	fmt.Println("trying to convert to map with Mappify")
-	fmt.Println(reflect.TypeOf(data))
-	fmt.Println(data)
 	switch data.(type) {
 	case nil:
 		return make(map[string]interface{})
+		// TODO fix this commented code
 	// case map[string]string:
 	// 	stringToInterfaceMap := make(map[string]interface{})
 
@@ -103,14 +101,10 @@ func Mappify(data interface{}) map[string]interface{} {
 	// case map[string]interface{}:
 	// 	return data.(map[string]interface{})
 	case map[interface{}]interface{}:
-		fmt.Println("is interface to interface")
 		stringToInterfaceMap := make(map[string]interface{})
 
 		for key, val := range data.(map[interface{}]interface{}) {
-			fmt.Println("kay")
-			fmt.Println(key)
 			stringedKey := fmt.Sprintf("%v", key)
-			fmt.Println(stringedKey)
 			stringToInterfaceMap[stringedKey] = val
 		}
 		return stringToInterfaceMap
