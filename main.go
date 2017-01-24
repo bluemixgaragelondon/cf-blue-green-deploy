@@ -48,7 +48,7 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 }
 
 func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args []string) bool {
-	appName := args[1]
+	appName := p.Args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
