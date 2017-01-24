@@ -72,11 +72,10 @@ func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetApp
 }
 
 func (p *BlueGreenDeploy) LiveApp(appName string) (string, []plugin_models.GetApp_RouteSummary) {
-	liveApp, err := p.Connection.GetApp(appName)
-	if err != nil {
-		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
-	}
 
+	// Don't worry about error handling since earlier calls would have flushed out any errors
+	// except for ones that the app doesn't exist (which isn't an error condition for us)
+	liveApp, _ := p.Connection.GetApp(appName)
 	return liveApp.Name, liveApp.Routes
 }
 
