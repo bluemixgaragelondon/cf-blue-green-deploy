@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -281,6 +281,21 @@ var _ = Describe("BlueGreenDeploy", func() {
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-d example.com`))
+		})
+
+		It("pushes with the specified manifest, if present in deployer", func() {
+			manifestPath := "./manifest-tst.yml"
+			p.PushNewApp(newApp, newRoute, manifestPath)
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(MatchRegexp(`-f ./manifest-tst.yml`))
+		})
+
+		It("pushes without a manifest arg, if no manifest in deployer", func() {
+			p.PushNewApp(newApp, newRoute)
+
+			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
+				To(Not(MatchRegexp(`-f `)))
 		})
 
 		Context("when the push fails", func() {

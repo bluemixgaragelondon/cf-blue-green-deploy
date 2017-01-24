@@ -36,6 +36,11 @@ cf blue-green-deploy app_name
 cf blue-green-deploy app_name --smoke-test <path to test script>
 ```
 
+* Deploy with specific manifest file
+```
+cf blue-green-deploy app_name -f <path to manifest>
+```
+
 * You can also use the shorter alias
 ```
 cf bgd app_name

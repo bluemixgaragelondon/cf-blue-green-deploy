@@ -18,6 +18,7 @@ var PluginVersion string
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
+	Args       Args
 }
 
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
@@ -47,17 +48,17 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 }
 
 func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args []string) bool {
-	appName := args[1]
+	appName := p.Args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
 	tempRoute := Route{Host: newAppName, Domain: Domain{Name: defaultCfDomain}}
-	p.Deployer.PushNewApp(newAppName, tempRoute)
+	p.Deployer.PushNewApp(newAppName, tempRoute, p.Args.ManifestPath)
 
 	promoteNewApp := true
-	smokeTestScript := ExtractIntegrationTestScript(args)
+	smokeTestScript := p.Args.SmokeTestPath
 	if smokeTestScript != "" {
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, tempRoute.FQDN())
 	}
@@ -130,9 +131,10 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT]",
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
 					Options: map[string]string{
 						"smoke-test": "The test script to run.",
+						"f":          "Path to manifest",
 					},
 				},
 			},
@@ -165,13 +167,6 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	return
 }
 
-func ExtractIntegrationTestScript(args []string) string {
-	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
-	script := f.String("smoke-test", "", "")
-	f.Parse(args[2:])
-	return *script
-}
-
 func main() {
 	// T needs to point to a translate func, otherwise cf internals blow up
 	i18n.T, _ = go_i18n.Tfunc("")
@@ -185,6 +180,8 @@ func main() {
 			Out: os.Stdout,
 		},
 	}
+
+	p.Args = NewArgs(os.Args)
 
 	plugin.Start(&p)
 }
