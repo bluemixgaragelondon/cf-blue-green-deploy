@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 
@@ -17,13 +16,14 @@ var PluginVersion string
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
-	Args       Args
 }
 
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if len(args) > 0 && args[0] == "CLI-MESSAGE-UNINSTALL" {
 		return
 	}
+
+	argsStruct := NewArgs(args)
 
 	p.Connection = cliConnection
 
@@ -35,29 +35,29 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	p.Deployer.Setup(cliConnection)
 
-	if len(args) < 2 {
+	if argsStruct.AppName == "" {
 		fmt.Println("App name must be provided")
 		os.Exit(1)
 	}
 
-	if !p.Deploy(defaultCfDomain, manifest.DiskRepository{}, args) {
+	if !p.Deploy(defaultCfDomain, manifest.DiskRepository{}, argsStruct) {
 		fmt.Println("Smoke tests failed")
 		os.Exit(1)
 	}
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args []string) bool {
-	appName := p.Args.AppName
+func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args Args) bool {
+	appName := args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
 	newAppName := appName + "-new"
 	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}}
-	p.Deployer.PushNewApp(newAppName, tempRoute, p.Args.ManifestPath)
+	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath)
 
 	promoteNewApp := true
-	smokeTestScript := p.Args.SmokeTestPath
+	smokeTestScript := args.SmokeTestPath
 	if smokeTestScript != "" {
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, FQDN(tempRoute))
 	}
@@ -169,6 +169,7 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 func FQDN(r plugin_models.GetApp_RouteSummary) string {
 	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
 }
+
 func main() {
 
 	p := CfPlugin{
@@ -180,8 +181,6 @@ func main() {
 			Out: os.Stdout,
 		},
 	}
-
-	p.Args = NewArgs(os.Args)
 
 	plugin.Start(&p)
 }

@@ -12,25 +12,46 @@ type Args struct {
 
 func NewArgs(osArgs []string) Args {
 	args := Args{}
+	args.AppName = extractAppName(osArgs)
 
 	// Only use FlagSet so that we can pass string slice to Parse
-	f := flag.NewFlagSet("", flag.ExitOnError)
+	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
 
 	f.StringVar(&args.SmokeTestPath, "smoke-test", "", "")
 	f.StringVar(&args.ManifestPath, "f", "", "")
 
 	f.Parse(extractBgdArgs(osArgs))
 
-	args.AppName = f.Arg(0)
-
 	return args
 }
 
-func extractBgdArgs(osArgs []string) []string {
+func indexOfAppName(osArgs []string) int {
+	index := 0
 	for i, arg := range osArgs {
 		if arg == "blue-green-deploy" || arg == "bgd" {
-			return osArgs[i+1:]
+			index = i + 1
+			break
 		}
+	}
+	if len(osArgs) > index {
+		return index
+	}
+	return -1
+}
+
+func extractAppName(osArgs []string) string {
+	// Assume an app name will be passed
+	index := indexOfAppName(osArgs)
+	if index >= 0 {
+		return osArgs[index]
+	}
+	return ""
+}
+
+func extractBgdArgs(osArgs []string) []string {
+	index := indexOfAppName(osArgs)
+	if index >= 0 && len(osArgs) > index+1 {
+		return osArgs[index+1:]
 	}
 
 	return []string{}

@@ -8,11 +8,27 @@ import (
 )
 
 var _ = Describe("Args", func() {
+	Context("With an appname only", func() {
+		args := NewArgs(bgdArgs("appname"))
+
+		It("sets the app name", func() {
+			Expect(args.AppName).To(Equal("appname"))
+		})
+
+		It("does not set the smoke test file", func() {
+			Expect(args.SmokeTestPath).To(BeZero())
+		})
+
+		It("does not set a manifest", func() {
+			Expect(args.ManifestPath).To(BeZero())
+		})
+	})
+
 	Context("With a smoke test and an appname", func() {
-		args := NewArgs(bgdArgs("--smoke-test foo appname"))
+		args := NewArgs(bgdArgs("appname --smoke-test script/smoke-test"))
 
 		It("sets the smoke test file", func() {
-			Expect(args.SmokeTestPath).To(Equal("foo"))
+			Expect(args.SmokeTestPath).To(Equal("script/smoke-test"))
 		})
 
 		It("sets the app name", func() {
@@ -24,18 +40,18 @@ var _ = Describe("Args", func() {
 		})
 	})
 
-	Context("With a smoke test and a manifest", func() {
-		args := NewArgs(bgdArgs("--smoke-test smokey -f manifest.yml"))
+	Context("With an appname smoke test and a manifest", func() {
+		args := NewArgs(bgdArgs("appname --smoke-test smokey -f manifest.yml"))
 
 		It("sets the smoke test file", func() {
 			Expect(args.SmokeTestPath).To(Equal("smokey"))
 		})
 
 		It("sets the app name", func() {
-			Expect(args.AppName).To(BeZero())
+			Expect(args.AppName).To(Equal("appname"))
 		})
 
-		It("does not set a manifest", func() {
+		It("sets a manifest", func() {
 			Expect(args.ManifestPath).To(Equal("manifest.yml"))
 		})
 	})

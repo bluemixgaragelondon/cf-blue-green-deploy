@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
@@ -259,21 +260,21 @@ var _ = Describe("BlueGreenDeploy", func() {
 		newRoute := plugin_models.GetApp_RouteSummary{Host: newApp, Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}}
 
 		It("pushes an app with new appended to its name", func() {
-			p.PushNewApp(newApp, newRoute)
+			p.PushNewApp(newApp, newRoute, "")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`^push app-name-new`))
 		})
 
 		It("uses the generated name for the route", func() {
-			p.PushNewApp(newApp, newRoute)
+			p.PushNewApp(newApp, newRoute, "")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-n app-name-new`))
 		})
 
 		It("pushes with the default cf domain", func() {
-			p.PushNewApp(newApp, newRoute)
+			p.PushNewApp(newApp, newRoute, "")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-d example.com`))
@@ -288,7 +289,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		It("pushes without a manifest arg, if no manifest in deployer", func() {
-			p.PushNewApp(newApp, newRoute)
+			p.PushNewApp(newApp, newRoute, "")
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(Not(MatchRegexp(`-f `)))
@@ -302,7 +303,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 
 			It("returns an error", func() {
-				p.PushNewApp(newApp, newRoute)
+				p.PushNewApp(newApp, newRoute, "")
 
 				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to push app"))
 			})

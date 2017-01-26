@@ -176,8 +176,8 @@ var _ = Describe("Manifest reader", func() {
 				routes := manifestAppFinder.RoutesFromManifest("example.com")
 
 				Expect(routes).To(ConsistOf(
-					Route{Host: "route1", Domain: Domain{Name: "domain1"}},
-					Route{Host: "route2", Domain: Domain{Name: "domain2"}},
+					plugin_models.GetApp_RouteSummary{Host: "route1", Domain: plugin_models.GetApp_DomainFields{Name: "domain1"}},
+					plugin_models.GetApp_RouteSummary{Host: "route2", Domain: plugin_models.GetApp_DomainFields{Name: "domain2"}},
 				))
 			})
 		})
