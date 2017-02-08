@@ -77,7 +77,10 @@ func (repo DiskRepository) readAllYAMLFiles(path string) (mergedMap map[string]i
 		return
 	}
 
-	mergedMap = DeepMerge(inheritedMap, mapp)
+	mergedMap, err = DeepMerge(inheritedMap, mapp)
+	if err != nil {
+		return
+	}
 	return
 }
 

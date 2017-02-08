@@ -6,32 +6,44 @@ import (
 	"reflect"
 )
 
-func DeepMerge(maps ...map[string]interface{}) map[string]interface{} {
+func DeepMerge(maps ...map[string]interface{}) (map[string]interface{}, error) {
 	mergedmap := make(map[string]interface{})
 	return Reduce(maps, mergedmap, mergeReducer)
 }
 
-func mergeReducer(key string, val interface{}, reduced map[string]interface{}) map[string]interface{} {
+func mergeReducer(key string, val interface{}, reduced map[string]interface{}) (map[string]interface{}, error) {
 
 	switch {
 
 	case containsKey(reduced, key) == false:
 		reduced[key] = val
-		return reduced
+		return reduced, nil
 
 	case IsMappable(val):
-		maps := []map[string]interface{}{Mappify(reduced[key].(interface{})), Mappify(val)}
-		mergedmap := Reduce(maps, make(map[string]interface{}), mergeReducer)
+		mVal, err := Mappify(val)
+		if err != nil {
+			return nil, err
+		}
+		mReduced, err := Mappify(reduced[key].(interface{}))
+		if err != nil {
+			return nil, err
+		}
+
+		maps := []map[string]interface{}{mReduced, mVal}
+		mergedmap, err := Reduce(maps, make(map[string]interface{}), mergeReducer)
+		if err != nil {
+			return nil, err
+		}
 		reduced[key] = mergedmap
-		return reduced
+		return reduced, nil
 
 	case IsSliceable(val):
 		reduced[key] = append(reduced[key].([]interface{}), val.([]interface{})...)
-		return reduced
+		return reduced, nil
 
 	default:
 		reduced[key] = val
-		return reduced
+		return reduced, nil
 	}
 }
 
@@ -85,21 +97,20 @@ func arrayMappify(data []interface{}) map[string]interface{} {
 	panic("Mappify called with unexpected argument")
 }
 
-func Mappify(data interface{}) map[string]interface{} {
+func Mappify(data interface{}) (map[string]interface{}, error) {
 
 	switch data.(type) {
 	case nil:
-		return make(map[string]interface{})
-		// TODO fix this commented code
-	// case map[string]string:
-	// 	stringToInterfaceMap := make(map[string]interface{})
+		return make(map[string]interface{}), nil
+	case map[string]string:
+		stringToInterfaceMap := make(map[string]interface{})
 
-	// 	for key, val := range data.(map[string]string) {
-	// 		stringToInterfaceMap[key] = val
-	// 	}
-	// 	return stringToInterfaceMap
-	// case map[string]interface{}:
-	// 	return data.(map[string]interface{})
+		for key, val := range data.(map[string]string) {
+			stringToInterfaceMap[key] = val
+		}
+		return stringToInterfaceMap, nil
+	case map[string]interface{}:
+		return data.(map[string]interface{}), nil
 	case map[interface{}]interface{}:
 		stringToInterfaceMap := make(map[string]interface{})
 
@@ -107,19 +118,23 @@ func Mappify(data interface{}) map[string]interface{} {
 			stringedKey := fmt.Sprintf("%v", key)
 			stringToInterfaceMap[stringedKey] = val
 		}
-		return stringToInterfaceMap
+		return stringToInterfaceMap, nil
 
 	}
-	panic("Mappify called with unexpected argument")
+	return nil, fmt.Errorf("Mappify called with unexpected argument of type %T, expected map", data)
 }
 
-type Reducer func(key string, val interface{}, reducedVal map[string]interface{}) map[string]interface{}
+type Reducer func(key string, val interface{}, reducedVal map[string]interface{}) (map[string]interface{}, error)
 
-func Reduce(collections []map[string]interface{}, resultVal map[string]interface{}, cb Reducer) map[string]interface{} {
+func Reduce(collections []map[string]interface{}, resultVal map[string]interface{}, cb Reducer) (map[string]interface{}, error) {
+	var err error
 	for _, collection := range collections {
 		for key := range collection {
-			resultVal = cb(key, collection[key], resultVal)
+			resultVal, err = cb(key, collection[key], resultVal)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
-	return resultVal
+	return resultVal, nil
 }

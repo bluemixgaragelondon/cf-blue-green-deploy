@@ -84,13 +84,18 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 		globalProperties := cloneWithExclude(data, "applications")
 
 		for _, appData := range appMaps {
-			if !IsMappable(appData) {
-				errs = append(errs, fmt.Errorf("Expected application to be a list of key/value pairs\nError occurred in manifest near:\n'{{.YmlSnippet}}'",
-					map[string]interface{}{"YmlSnippet": appData}))
+			appDataAsMap, err := Mappify(appData)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Expected application to be a list of key/value pairs\nError occurred in manifest near:\n'{{.YmlSnippet}}'. Error was %v",
+					map[string]interface{}{"YmlSnippet": appData}, err))
 				continue
 			}
 
-			appMap := DeepMerge(globalProperties, Mappify(appData))
+			appMap, err := DeepMerge(globalProperties, appDataAsMap)
+			if err != nil {
+				return nil, err
+			}
+
 			apps = append(apps, appMap)
 		}
 	} else {
