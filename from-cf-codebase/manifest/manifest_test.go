@@ -6,22 +6,110 @@ import (
 )
 
 var _ = Describe("Manifest", func() {
-	Context("For a kind of normal manifest", func() {
+
+	Context("For a manifest with no applications section", func() {
+
 		input := map[string]interface{}{
-			"applications": []interface{}{"fred"},
+			"host": "bob",
+		}
+
+		m := NewEmptyManifest()
+		appMaps, err := m.getAppMaps(input)
+
+		Context("the AppMaps function", func() {
+			It("does not error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should return one entry", func() {
+				Expect(len(appMaps)).To(Equal(1))
+			})
+
+			It("should return global properties", func() {
+				Expect(appMaps).To(Equal([]map[string]interface{}{input}))
+			})
+		})
+	})
+
+	Context("For a manifest with an applications section", func() {
+		applicationsContents := []interface{}{map[string]string{
+			"fred": "hello",
+		}}
+		input := map[string]interface{}{
+			"applications": applicationsContents,
 			"host":         "bob",
 		}
 
 		m := NewEmptyManifest()
+		appMaps, err := m.getAppMaps(input)
 
 		Context("the AppMaps function", func() {
+			It("does not error", func() {
+				Expect(err).To(BeNil())
+			})
 
 			It("should not alter what gets passed in", func() {
 
-				Expect(input["applications"]).To(Equal([]interface{}{"fred"}))
+				Expect(input["applications"]).To(Equal(applicationsContents))
 				// Make sure this doesn't change what's passed in
-				m.getAppMaps(input)
-				Expect(input["applications"]).To(Equal([]interface{}{"fred"}))
+				Expect(input["applications"]).To(Equal(applicationsContents))
+
+			})
+
+			It("should return one entry", func() {
+				Expect(len(appMaps)).To(Equal(1))
+			})
+
+			It("should merge global properties with application-level properties", func() {
+
+				Expect(appMaps[0]["host"]).To(Equal("bob"))
+				Expect(appMaps[0]["fred"]).To(Equal("hello"))
+
+			})
+		})
+	})
+
+	Context("For a manifest with two applications in the applications section", func() {
+		applicationsContents := []interface{}{map[string]string{
+			"fred": "hello",
+		},
+			map[string]string{
+				"george": "goodbye",
+			}}
+		input := map[string]interface{}{
+			"applications": applicationsContents,
+			"host":         "bob",
+		}
+
+		m := NewEmptyManifest()
+		appMaps, err := m.getAppMaps(input)
+
+		Context("the AppMaps function", func() {
+			It("does not error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should not alter what gets passed in", func() {
+
+				Expect(input["applications"]).To(Equal(applicationsContents))
+				// Make sure this doesn't change what's passed in
+				Expect(input["applications"]).To(Equal(applicationsContents))
+
+			})
+
+			It("should return two entry", func() {
+				Expect(len(appMaps)).To(Equal(2))
+			})
+
+			It("should merge global properties with application-level properties", func() {
+
+				Expect(appMaps[0]["host"]).To(Equal("bob"))
+				Expect(appMaps[0]["fred"]).To(Equal("hello"))
+				Expect(appMaps[0]["george"]).To(BeNil())
+
+				Expect(appMaps[1]["host"]).To(Equal("bob"))
+				Expect(appMaps[1]["george"]).To(Equal("goodbye"))
+				Expect(appMaps[1]["fred"]).To(BeNil())
 
 			})
 		})
