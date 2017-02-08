@@ -4,4 +4,4 @@ coverage/*.html
 blue-green-deploy.*
 artefacts/
 Godeps/_workspace
-junit.xml
+test-results/
