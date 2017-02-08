@@ -9,14 +9,15 @@ import (
 type ManifestReader func(manifest.Repository, string) *plugin_models.GetAppModel
 
 type ManifestAppFinder struct {
-	Repo         manifest.Repository
-	ManifestPath string
-	AppName      string
+	Repo          manifest.Repository
+	ManifestPath  string
+	AppName       string
+	DefaultDomain string
 }
 
 // TODO This function was interesting, and now is boring and should be eliminated?
-func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
-	if appParams := f.AppParams(defaultDomain); appParams != nil {
+func (f *ManifestAppFinder) RoutesFromManifest() []plugin_models.GetApp_RouteSummary {
+	if appParams := f.AppParams(); appParams != nil {
 		return appParams.Routes
 	}
 	return nil
@@ -31,7 +32,7 @@ func IsHostEmpty(app plugin_models.GetAppModel) bool {
 	return true
 }
 
-func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAppModel {
+func (f *ManifestAppFinder) AppParams() *plugin_models.GetAppModel {
 	var manifest *manifest.Manifest
 	var err error
 	if f.ManifestPath == "" {
@@ -45,7 +46,7 @@ func (f *ManifestAppFinder) AppParams(defaultDomain string) *plugin_models.GetAp
 		return nil
 	}
 
-	apps, err := manifest.Applications(defaultDomain)
+	apps, err := manifest.Applications(f.DefaultDomain)
 
 	if err != nil {
 		fmt.Println(err)

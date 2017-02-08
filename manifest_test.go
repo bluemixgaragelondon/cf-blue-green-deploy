@@ -18,9 +18,14 @@ var _ = Describe("Manifest reader", func() {
 			repo := FakeRepo{yaml: `---
         host: foo`,
 			}
-			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo, ManifestPath: "manifest-tst.yml"}
+			manifestAppFinder := ManifestAppFinder{
+				AppName:       "foo",
+				Repo:          &repo,
+				ManifestPath:  "manifest-tst.yml",
+				DefaultDomain: "example.com",
+			}
 
-			manifestAppFinder.RoutesFromManifest("example.com")
+			manifestAppFinder.RoutesFromManifest()
 
 			Expect(repo.path).To(Equal("manifest-tst.yml"))
 		})
@@ -31,9 +36,13 @@ var _ = Describe("Manifest reader", func() {
 			repo := FakeRepo{yaml: `---
         host: foo`,
 			}
-			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+			manifestAppFinder := ManifestAppFinder{
+				AppName:       "foo",
+				Repo:          &repo,
+				DefaultDomain: "example.com",
+			}
 
-			manifestAppFinder.RoutesFromManifest("example.com")
+			manifestAppFinder.RoutesFromManifest()
 
 			Expect(repo.path).To(Equal("./"))
 		})
@@ -50,8 +59,7 @@ var _ = Describe("Manifest reader", func() {
 
 				var hostNames []string
 
-				// TODO wrong place for arg
-				for _, route := range manifestAppFinder.AppParams("").Routes {
+				for _, route := range manifestAppFinder.AppParams().Routes {
 					hostNames = append(hostNames, route.Host)
 				}
 
@@ -67,7 +75,7 @@ var _ = Describe("Manifest reader", func() {
 			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 			It("Returns nil", func() {
-				Expect(manifestAppFinder.AppParams("")).To(BeNil())
+				Expect(manifestAppFinder.AppParams()).To(BeNil())
 			})
 		})
 
@@ -89,7 +97,7 @@ var _ = Describe("Manifest reader", func() {
 			var hostNames []string
 			var domainNames []string
 
-			for _, route := range manifestAppFinder.AppParams("").Routes {
+			for _, route := range manifestAppFinder.AppParams().Routes {
 				hostNames = append(hostNames, route.Host)
 				domainNames = append(domainNames, route.Domain.Name)
 			}
@@ -98,7 +106,7 @@ var _ = Describe("Manifest reader", func() {
 			domainNames = deDuplicate(domainNames)
 
 			It("Returns the correct app", func() {
-				Expect(manifestAppFinder.AppParams("").Name).To(Equal("foo"))
+				Expect(manifestAppFinder.AppParams().Name).To(Equal("foo"))
 				Expect(hostNames).To(ConsistOf("host1", "host2"))
 				Expect(domainNames).To(ConsistOf("example1.com", "example2.com"))
 			})
@@ -110,7 +118,7 @@ var _ = Describe("Manifest reader", func() {
 		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 		It("Returns nil", func() {
-			Expect(manifestAppFinder.AppParams("")).To(BeNil())
+			Expect(manifestAppFinder.AppParams()).To(BeNil())
 		})
 	})
 
@@ -119,7 +127,7 @@ var _ = Describe("Manifest reader", func() {
 		manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
 
 		It("Returns nil", func() {
-			Expect(manifestAppFinder.AppParams("")).To(BeNil())
+			Expect(manifestAppFinder.AppParams()).To(BeNil())
 		})
 	})
 
@@ -134,9 +142,13 @@ var _ = Describe("Manifest reader", func() {
           - example.com
           - example.net`,
 			}
-			manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+			manifestAppFinder := ManifestAppFinder{
+				AppName:       "foo",
+				Repo:          &repo,
+				DefaultDomain: "example.com",
+			}
 
-			routes := manifestAppFinder.RoutesFromManifest("example.com")
+			routes := manifestAppFinder.RoutesFromManifest()
 
 			Expect(routes).To(ConsistOf(
 				plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -154,8 +166,12 @@ var _ = Describe("Manifest reader", func() {
           - host1
           - host2`,
 				}
-				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
-				routes := manifestAppFinder.RoutesFromManifest("example.com")
+				manifestAppFinder := ManifestAppFinder{
+					AppName:       "foo",
+					Repo:          &repo,
+					DefaultDomain: "example.com",
+				}
+				routes := manifestAppFinder.RoutesFromManifest()
 
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -172,8 +188,12 @@ var _ = Describe("Manifest reader", func() {
           - route1.domain1
           - route2.domain2`,
 				}
-				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
-				routes := manifestAppFinder.RoutesFromManifest("example.com")
+				manifestAppFinder := ManifestAppFinder{
+					AppName:       "foo",
+					Repo:          &repo,
+					DefaultDomain: "example.com",
+				}
+				routes := manifestAppFinder.RoutesFromManifest()
 
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "route1", Domain: plugin_models.GetApp_DomainFields{Name: "domain1"}},
@@ -185,9 +205,13 @@ var _ = Describe("Manifest reader", func() {
 		Context("when no matching application", func() {
 			It("returns nil", func() {
 				repo := FakeRepo{yaml: ``}
-				manifestAppFinder := ManifestAppFinder{AppName: "foo", Repo: &repo}
+				manifestAppFinder := ManifestAppFinder{
+					AppName:       "foo",
+					Repo:          &repo,
+					DefaultDomain: "example.com",
+				}
 
-				Expect(manifestAppFinder.RoutesFromManifest("example.com")).To(BeNil())
+				Expect(manifestAppFinder.RoutesFromManifest()).To(BeNil())
 			})
 		})
 	})
