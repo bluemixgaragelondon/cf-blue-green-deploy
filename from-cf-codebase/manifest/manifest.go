@@ -56,7 +56,6 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 	return apps, nil
 }
 
-// TODO we should have a test for this
 func cloneWithExclude(data map[string]interface{}, excludedKey string) map[string]interface{} {
 	otherMap := make(map[string]interface{})
 	for key, value := range data {
