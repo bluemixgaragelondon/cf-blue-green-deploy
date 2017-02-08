@@ -99,7 +99,7 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 			apps = append(apps, appMap)
 		}
 	} else {
-		// All properties in data are global, so just them in
+		// All properties in data are global, so just throw them in
 		apps = append(apps, data)
 	}
 

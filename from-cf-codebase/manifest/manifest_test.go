@@ -5,26 +5,56 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var _ = Describe("Manifest", func() {
+	Context("For a kind of normal manifest", func() {
+		input := map[string]interface{}{
+			"applications": []interface{}{"fred"},
+			"host":         "bob",
+		}
+
+		m := NewEmptyManifest()
+
+		Context("the AppMaps function", func() {
+
+			It("should not alter what gets passed in", func() {
+
+				Expect(input["applications"]).To(Equal([]interface{}{"fred"}))
+				// Make sure this doesn't change what's passed in
+				m.getAppMaps(input)
+				Expect(input["applications"]).To(Equal([]interface{}{"fred"}))
+
+			})
+		})
+	})
+
+})
+
 var _ = Describe("CloneWithExclude", func() {
 
 	Context("When the map contains some values and excludeKey exists", func() {
+
+		input := map[string]interface{}{
+			"one":   1,
+			"two":   2138,
+			"three": 1908,
+		}
+
+		excludeKey := "two"
+
+		actual := cloneWithExclude(input, excludeKey)
+
 		It("should return a new map without the excludeKey", func() {
-			input := map[string]interface{}{
-				"one":   1,
-				"two":   2138,
-				"three": 1908,
-			}
 
 			expected := map[string]interface{}{
 				"one":   1,
 				"three": 1908,
 			}
 
-			excludeKey := "two"
-
-			actual := cloneWithExclude(input, excludeKey)
-
 			Expect(actual).To(Equal(expected))
+		})
+
+		It("should not alter the original map", func() {
+			Expect(input["two"]).To(Equal(2138))
 		})
 	})
 
