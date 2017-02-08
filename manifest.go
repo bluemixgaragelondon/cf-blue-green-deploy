@@ -14,27 +14,6 @@ type ManifestAppFinder struct {
 	AppName      string
 }
 
-// func (f *ManifestAppFinder) oldRoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
-// 	if appParams := f.AppParams(defaultDomain); appParams != nil {
-
-// 		manifestRoutes := make([]plugin_models.GetApp_RouteSummary, 0)
-
-// 		for _, host := range appParams.Hosts {
-// 			if appParams.Domains == nil {
-// 				manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: defaultDomain}})
-// 				continue
-// 			}
-
-// 			for _, domain := range appParams.Domains {
-// 				manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{Host: host, Domain: plugin_models.GetApp_DomainFields{Name: domain}})
-// 			}
-// 		}
-
-// 		return manifestRoutes
-// 	}
-// 	return nil
-// }
-
 // TODO This function was interesting, and now is boring and should be eliminated?
 func (f *ManifestAppFinder) RoutesFromManifest(defaultDomain string) []plugin_models.GetApp_RouteSummary {
 	if appParams := f.AppParams(defaultDomain); appParams != nil {
