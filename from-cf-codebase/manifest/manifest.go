@@ -80,7 +80,6 @@ func (m Manifest) getAppMaps(data map[string]interface{}) ([]map[string]interfac
 			return []map[string]interface{}{}, errors.New("Expected applications to be a list")
 		}
 
-		// TODO - we have no test coverage for cases where there is an "applications" clause
 		globalProperties := cloneWithExclude(data, "applications")
 
 		for _, appData := range appMaps {
