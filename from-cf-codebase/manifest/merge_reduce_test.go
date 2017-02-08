@@ -1,7 +1,6 @@
-package main_test
+package manifest
 
 import (
-	. "github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
