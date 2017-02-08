@@ -39,9 +39,11 @@ install_plugin() {
 push_example_apps() {
   pushd acceptance/app
     login_to_bluemix
-    cf push cf-blue-green-deploy-test-app-old
-    cf push cf-blue-green-deploy-test-app
-    cf map-route cf-blue-green-deploy-test-app eu-gb.mybluemix.net -n "$CF_SPACE"
+    local app_name="$1"
+    local app_host_name="$2"
+    cf push "${app_name}-old"
+    cf push "$app_name"
+    cf map-route "$app_name" eu-gb.mybluemix.net -n "$app_host_name"
   popd
 }
 

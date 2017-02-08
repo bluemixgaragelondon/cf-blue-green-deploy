@@ -14,8 +14,9 @@ main() {
 
   if [ -z "$TURBO" ]
   then
-
-    push_example_apps
+    TEST_ACCEPTANCE_APP_HOSTNAME="${TEST_ACCEPTANCE_APP_HOSTNAME:?Must be defined in .env}"
+    TEST_ACCEPTANCE_APP_NAME="${TEST_ACCEPTANCE_APP_NAME:=$TEST_ACCEPTANCE_APP_HOSTNAME}"
+    push_example_apps "$TEST_ACCEPTANCE_APP_NAME" "$TEST_ACCEPTANCE_APP_HOSTNAME"
   fi
 
   pushd acceptance/app >/dev/null
@@ -37,7 +38,7 @@ assert_plugin_output_includes_successful_smoke_test_output() {
   local smoke_test_script="script/smoke_test"
   local smoke_test_output="Hello world from my Go program!"
 
-  cf bgd cf-blue-green-deploy-test-app --smoke-test "$smoke_test_script" | tee "$TEST_ACCEPTANCE_LOG"
+  cf bgd "$ACCEPTANCE_HOSTNAME" --smoke-test "$smoke_test_script" | tee "$TEST_ACCEPTANCE_LOG"
 
   if ! grep "$smoke_test_output" "$TEST_ACCEPTANCE_LOG"
   then
@@ -53,7 +54,7 @@ assert_plugin_fails_if_smoke_test_script_fails() {
   local expected_output_last_line="Smoke tests failed"
 
 	set -o pipefail
-  cf bgd cf-blue-green-deploy-test-app-FORCE-SMOKE-TEST-FAILURE --smoke-test $smoke_test_script | tee "$TEST_ACCEPTANCE_LOG"
+  cf bgd "${ACCEPTANCE_HOSTNAME}-FORCE-SMOKE-TEST-FAILURE" --smoke-test $smoke_test_script | tee "$TEST_ACCEPTANCE_LOG"
 	local cf_bgd_exit_code=$?
 
   if [ $cf_bgd_exit_code != 1 ]
