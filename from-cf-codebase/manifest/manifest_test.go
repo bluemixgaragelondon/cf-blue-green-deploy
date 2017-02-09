@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	//	"code.cloudfoundry.org/cli/plugin/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -11,12 +12,16 @@ var _ = Describe("Manifest", func() {
 
 		input := map[string]interface{}{
 			"host": "bob",
+			"routes": []interface{}{
+				map[interface{}]interface{}{"route": "example.com"},
+				map[interface{}]interface{}{"route": "www.example.com/foo"},
+				map[interface{}]interface{}{"route": "tcp-example.com:1234"},
+			},
 		}
-
 		m := NewEmptyManifest()
-		appMaps, err := m.getAppMaps(input)
 
-		Context("the AppMaps function", func() {
+		Context("the getAppMaps function", func() {
+			appMaps, err := m.getAppMaps(input)
 			It("does not error", func() {
 				Expect(err).To(BeNil())
 			})
@@ -27,6 +32,24 @@ var _ = Describe("Manifest", func() {
 
 			It("should return global properties", func() {
 				Expect(appMaps).To(Equal([]map[string]interface{}{input}))
+			})
+		})
+
+		Context("the parseRoutes function", func() {
+			errs := []error{}
+			routeStuff := parseRoutes(input, &errs)
+
+			It("does not error", func() {
+				Expect(len(errs)).To(Equal(0))
+			})
+
+			It("should return three routes", func() {
+				Expect(len(routeStuff)).To(Equal(3))
+			})
+
+			It("should return global properties", func() {
+				// We're only testing for domain because of limitations in the route struct
+				Expect(routeStuff[0].Domain.Name).To(Equal("example.com"))
 			})
 		})
 	})

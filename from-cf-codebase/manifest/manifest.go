@@ -211,7 +211,7 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
 	appParams.Routes = parseRoutes(yamlMap, &errs)
-	// TODO how do those two interact?
+	// TODO issue #20 - we should do a merge or something other than throwing away the routes from the manifest
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
 	appParams.Name = stringValNotPointer(yamlMap, "name", &errs)
 
@@ -341,7 +341,7 @@ func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) 
 		}
 	}
 
-	// TODO is this ever merged with the existing routes?
+	// TODO issue #20 - at the moment this value isn't ever merged with the existing routes
 
 	return manifestRoutes
 }
@@ -359,19 +359,23 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 
 	manifestRoutes := []plugin_models.GetApp_RouteSummary{}
 	for _, genericRoute := range genericRoutes {
-		_, ok := genericRoute.(map[interface{}]interface{})
+		route, ok := genericRoute.(map[interface{}]interface{})
 		if !ok {
 			*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property"))
 			continue
 		}
 
-		// if routeVal, exist := route["route"]; exist {
-		// 	manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
-		// TODO		Domain: plugin_models.GetApp_DomainFields(string),
-		// 	})
-		// } else {
-		// 	*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property")))
-		// }
+		if routeVal, exist := route["route"]; exist {
+			manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
+				// HTTP routes include a domain, an optional hostname, and an optional context path
+				// The GetApp_RouteSummary doesn't have a field for the context path
+				// As a pragmatic workaround, we'll just treat routes and domains as interchangeable in this model, and not bother trying to parse out a host, which is optional anyway
+				// We have raised an issue on this against cf here : https://github.com/cloudfoundry/cli/issues/1066
+				Domain: plugin_models.GetApp_DomainFields{Name: routeVal.(string)},
+			})
+		} else {
+			*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property"))
+		}
 	}
 
 	return manifestRoutes
