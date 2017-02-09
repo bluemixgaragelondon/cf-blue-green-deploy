@@ -62,3 +62,23 @@ script/build
 
 This will download dependencies, run the tests, and build binaries in the
 _artefacts_ folder.
+
+## How to run tests
+
+```
+script/test
+```
+
+This will run the unit tests. To run the acceptance tests (which need a Cloud Foundry instance), use
+
+```
+script/test_acceptance
+```
+
+You almost certainly want to install the plugin before running the acceptance tests (to make sure the latest version of the plugin is being tested). On OS X, the command would be
+```
+script/build; cf -f install-plugin artefacts/blue-green-deploy.osx; script/test_acceptance
+```
+
+See [instructions for releasing a project](https://github.com/bluemixgaragelondon/cf-blue-green-deploy/blob/master/release.md)
+for instructions on how to setup the acceptance tests.

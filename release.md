@@ -23,3 +23,35 @@ You need to update the following in `repo-index.yml` under `cf-blue-green-deploy
    * updated
    * url - this should be `https://github.com/bluemixgaragelondon/new_plugin/releases/download/vX.X.X/blue-green-deploy.PLATFORM`
    * sum - generate this using `shasum *` in the _artefacts_ directory
+
+# Running the acceptance tests
+
+You can run the acceptance tests on any cloud foundry installation by following these steps:
+
+1. Edit `.env`:
+
+   * Update the `CF_URL="api.eu-gb.bluemix.net"` to match your cloud foundry api url.
+
+   * replace the values of `CF_USERNAME` and `CF_ORG` with your username and organization name (for a personal bluemix account this is typically your email address).
+
+   * set the value of `CF_SPACE` to the name of a space in your org where the test should run. If it does not exist it will be created.
+
+   *  set the value of `TEST_ACCEPTANCE_APP_NAME` and `TEST_ACCEPTANCE_APP_HOSTNAME` to any unique values that are valid for the test app domain (eg. eu-gb.mybluemix.net).
+
+1. Source `.env` to your shell.
+
+1. Edit `acceptance/app/manifest.yml`. It governs the example app that is pushed during the acceptance test.
+
+   * Either remove the `hosts:` section, or provide at least one unique hostname.
+
+   * Provide at least one domain. In the `domains:` section, use any domain that is available to your cloud foundry org/space, eg. `eu-gb.mybluemix.net`.
+
+   * The remaining fields can be left unchanged.
+
+1. Make sure that the version of `blue-green-deploy` that should be tested is currently installed.
+
+1. Set the `CF_PASSWORD` variable in your shell. On an interactive shell, run `read -s CF_PASSWORD` and type in your password followed by return. Avoid using `export` with this field, as any sub-shell could then read your password.
+
+1. To run the acceptance tests: `CF_PASSWORD=$CF_PASSWORD script/test_acceptance`.
+
+1. If the tests passed, there should be a message similar to `ACCEPTANCE TESTS PASSED!` printed when the test has finished. The exit value is 0 for a successful test.
