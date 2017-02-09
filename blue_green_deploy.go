@@ -45,6 +45,7 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 	}
 	oldAppVersions := p.GetOldApps(appName, appsInSpace)
 	p.DeleteAppVersions(oldAppVersions)
+
 }
 
 func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary, manifestPath string) {
@@ -64,6 +65,11 @@ func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetApp
 			continue
 		}
 
+		// TODO (Rufus) - perhaps a change in the regex is needed.
+		// - e.g. `^%s-(old|failed|new)$` (making the capture group not optional). This would mean that the live app, if that is the version
+		// with no prefix, is not matched but others are. Equally, if the live app is the one without a suffix, perhaps it would be sufficient
+		// to check for the existence of a hyphen, in which case we could use something like strings.Count for hyphen instead of the regex.
+		// Then we would not need the if statement below.
 		if strings.HasSuffix(app.Name, "-old") || strings.HasSuffix(app.Name, "-failed") || strings.HasSuffix(app.Name, "-new") {
 			oldApps = append(oldApps, app)
 		}
