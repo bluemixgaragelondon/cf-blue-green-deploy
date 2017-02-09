@@ -77,7 +77,7 @@ script/test_acceptance
 
 You almost certainly want to install the plugin before running the acceptance tests (to make sure the latest version of the plugin is being tested). On OS X, the command would be
 ```
-script/build; cf install-plugin -f artefacts/blue-green-deploy.osx; script/test_acceptance
+script/build ; script/install ; script/test_acceptance
 ```
 
 See [instructions for releasing a project](https://github.com/bluemixgaragelondon/cf-blue-green-deploy/blob/master/release.md)
