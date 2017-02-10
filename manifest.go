@@ -15,14 +15,6 @@ type ManifestAppFinder struct {
 	DefaultDomain string
 }
 
-// TODO This function was interesting, and now is boring and should be eliminated?
-func (f *ManifestAppFinder) RoutesFromManifest() []plugin_models.GetApp_RouteSummary {
-	if appParams := f.AppParams(); appParams != nil {
-		return appParams.Routes
-	}
-	return nil
-}
-
 func IsHostEmpty(app plugin_models.GetAppModel) bool {
 	for _, route := range app.Routes {
 		if route.Host != "" {

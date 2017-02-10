@@ -25,7 +25,7 @@ var _ = Describe("Manifest reader", func() {
 				DefaultDomain: "example.com",
 			}
 
-			manifestAppFinder.RoutesFromManifest()
+			manifestAppFinder.AppParams()
 
 			Expect(repo.path).To(Equal("manifest-tst.yml"))
 		})
@@ -42,7 +42,7 @@ var _ = Describe("Manifest reader", func() {
 				DefaultDomain: "example.com",
 			}
 
-			manifestAppFinder.RoutesFromManifest()
+			manifestAppFinder.AppParams()
 
 			Expect(repo.path).To(Equal("./"))
 		})
@@ -148,8 +148,12 @@ var _ = Describe("Manifest reader", func() {
 				DefaultDomain: "example.com",
 			}
 
-			routes := manifestAppFinder.RoutesFromManifest()
+			params := manifestAppFinder.AppParams()
 
+			Expect(params).ToNot(BeNil())
+			Expect(params.Routes).ToNot(BeNil())
+
+			routes := params.Routes
 			Expect(routes).To(ConsistOf(
 				plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 				plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
@@ -171,8 +175,11 @@ var _ = Describe("Manifest reader", func() {
 					Repo:          &repo,
 					DefaultDomain: "example.com",
 				}
-				routes := manifestAppFinder.RoutesFromManifest()
+				params := manifestAppFinder.AppParams()
+				Expect(params).ToNot(BeNil())
+				Expect(params.Routes).ToNot(BeNil())
 
+				routes := params.Routes
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
 					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -193,7 +200,7 @@ var _ = Describe("Manifest reader", func() {
 					Repo:          &repo,
 					DefaultDomain: "example.com",
 				}
-				routes := manifestAppFinder.RoutesFromManifest()
+				routes := manifestAppFinder.AppParams()
 
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "route1", Domain: plugin_models.GetApp_DomainFields{Name: "domain1"}},
@@ -211,7 +218,7 @@ var _ = Describe("Manifest reader", func() {
 					DefaultDomain: "example.com",
 				}
 
-				Expect(manifestAppFinder.RoutesFromManifest()).To(BeNil())
+				Expect(manifestAppFinder.AppParams()).To(BeNil())
 			})
 		})
 	})
