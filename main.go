@@ -138,6 +138,8 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "bgd",
 				HelpText: "Zero-downtime deploys with smoke tests",
 				UsageDetails: plugin.Usage{
+					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
+					// Perhaps we could name the smoke test in the manifest?
 					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
 					Options: map[string]string{
 						"smoke-test": "The test script to run.",
