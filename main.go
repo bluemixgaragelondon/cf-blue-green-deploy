@@ -180,6 +180,8 @@ func FQDN(r plugin_models.GetApp_RouteSummary) string {
 
 func main() {
 
+	log.SetFlags(0)
+
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
