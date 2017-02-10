@@ -25,6 +25,11 @@ main() {
     assert_plugin_fails_if_smoke_test_script_fails
   popd >/dev/null
 
+ pushd acceptance/app-with-strangely-named-manifest >/dev/null
+    assert_plugin_runs_cleanly_if_manifest_is_specified
+    ignore_any_failures
+  popd >/dev/null
+
   printf "\nACCEPTANCE TESTS PASSED!"
 }
 
@@ -69,5 +74,18 @@ assert_plugin_fails_if_smoke_test_script_fails() {
     exit 1
   fi
 }
+
+assert_plugin_runs_cleanly_if_manifest_is_specified() {
+  TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
+
+  cf bgd "$TEST_ACCEPTANCE_APP_NAME" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
+
+  if [ $? -ne 0 ]
+  then
+    printf "\n\nExpected return code to be 0."
+    exit 1
+  fi
+}
+
 
 main
