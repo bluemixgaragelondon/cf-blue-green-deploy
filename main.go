@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"code.cloudfoundry.org/cli/plugin"
@@ -29,23 +30,17 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	defaultCfDomain, err := p.DefaultCfDomain()
 	if err != nil {
-		// TODO issue #11 - replace occurrences of the pattern below with
-		// the single log.Fatalf("error: %v", err) line which does the same thing
-		// and does not discard the error which is sometimes generated (e.g. above).
-		fmt.Println("Failed to get default shared domain")
-		os.Exit(1)
+		log.Fatalf("Failed to get default shared domain: %v", err)
 	}
 
 	p.Deployer.Setup(cliConnection)
 
 	if argsStruct.AppName == "" {
-		fmt.Println("App name must be provided")
-		os.Exit(1)
+		log.Fatal("App name was empty, must be provided.")
 	}
 
 	if !p.Deploy(defaultCfDomain, manifest.DiskRepository{}, argsStruct) {
-		fmt.Println("Smoke tests failed")
-		os.Exit(1)
+		log.Fatal("Smoke tests failed")
 	}
 }
 
@@ -188,8 +183,7 @@ func main() {
 	p := CfPlugin{
 		Deployer: &BlueGreenDeploy{
 			ErrorFunc: func(message string, err error) {
-				fmt.Printf("%v - %v\n", message, err)
-				os.Exit(1)
+				log.Fatalf("%v - %v", message, err)
 			},
 			Out: os.Stdout,
 		},
