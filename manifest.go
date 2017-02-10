@@ -3,7 +3,7 @@ package main
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 )
 
 type ManifestReader func(manifest.Repository, string) *plugin_models.GetAppModel

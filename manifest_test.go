@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

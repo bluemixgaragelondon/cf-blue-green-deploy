@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/from-cf-codebase/manifest"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 	"strings"
 )
 
