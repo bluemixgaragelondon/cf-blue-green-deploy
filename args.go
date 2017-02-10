@@ -40,7 +40,7 @@ func indexOfAppName(osArgs []string) int {
 }
 
 func extractAppName(osArgs []string) string {
-	// Assume an app name will be passed
+	// Assume an app name will be passed - issue #27
 	index := indexOfAppName(osArgs)
 	if index >= 0 {
 		return osArgs[index]

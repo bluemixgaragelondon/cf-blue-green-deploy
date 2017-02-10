@@ -112,6 +112,7 @@ func (repo DiskRepository) manifestPath(userSpecifiedPath string) (string, error
 		return "", err
 	}
 
+	// If we've been given a directory, check inside it for manifest.yml/manifest.yaml files.
 	if fileInfo.IsDir() {
 		manifestPaths := []string{
 			filepath.Join(userSpecifiedPath, "manifest.yml"),
@@ -125,5 +126,7 @@ func (repo DiskRepository) manifestPath(userSpecifiedPath string) (string, error
 		}
 		return "", err
 	}
+	// If we didn't get a directory, assume we've been passed the file we want, so
+	// just give that back.
 	return userSpecifiedPath, nil
 }
