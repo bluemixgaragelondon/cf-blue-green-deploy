@@ -213,7 +213,9 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	appParams.Routes = parseRoutes(yamlMap, &errs)
 	// TODO issue #20 - we should do a merge or something other than throwing away the routes from the manifest
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
-	appParams.Name = stringValNotPointer(yamlMap, "name", &errs)
+	if name := stringVal(yamlMap, "name", &errs); name != nil {
+		appParams.Name = *name
+	}
 
 	if len(errs) > 0 {
 		message := ""
@@ -279,19 +281,6 @@ func stringVal(yamlMap map[string]interface{}, key string, errs *[]error) *strin
 		return nil
 	}
 	return &result
-}
-
-func stringValNotPointer(yamlMap map[string]interface{}, key string, errs *[]error) string {
-	val := yamlMap[key]
-	if val == nil {
-		return ""
-	}
-	result, ok := val.(string)
-	if !ok {
-		*errs = append(*errs, fmt.Errorf("{{.PropertyName}} must be a string value", map[string]interface{}{"PropertyName": key}))
-		return ""
-	}
-	return result
 }
 
 func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []string {
