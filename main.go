@@ -91,7 +91,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args
 
 func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.Repository, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
-	f := ManifestAppFinder{AppName: appName, Repo: repo, DefaultDomain: defaultCfDomain}
+	f := manifest.ManifestAppFinder{AppName: appName, Repo: repo, DefaultDomain: defaultCfDomain}
 
 	if appParams := f.AppParams(); appParams != nil && appParams.Routes != nil {
 		newAppRoutes = appParams.Routes

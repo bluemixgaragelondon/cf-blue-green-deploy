@@ -1,12 +1,9 @@
-package main_test
+package manifest
 
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
 
-	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -242,17 +239,4 @@ func deDuplicate(ary []string) []string {
 		}
 	}
 	return newAry
-}
-
-type FakeRepo struct {
-	yaml string
-	err  error
-	path string
-}
-
-func (r *FakeRepo) ReadManifest(path string) (*manifest.Manifest, error) {
-	r.path = path
-	yamlMap := make(map[string]interface{})
-	candiedyaml.Unmarshal([]byte(r.yaml), &yamlMap)
-	return &manifest.Manifest{Data: yamlMap}, r.err
 }

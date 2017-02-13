@@ -2,7 +2,10 @@
 package manifest
 
 import (
+	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
+	"fmt"
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,6 +21,29 @@ type Repository interface {
 }
 
 type DiskRepository struct{}
+
+type FakeRepo struct {
+	err  error
+	path string
+	yaml string
+}
+
+func NewEmptyFakeRepo() *FakeRepo {
+	return &FakeRepo{}
+}
+
+func NewFakeRepo(yaml string) *FakeRepo {
+	return &FakeRepo{
+		yaml: yaml,
+	}
+}
+
+func (r *FakeRepo) ReadManifest(path string) (*Manifest, error) {
+	r.path = path
+	yamlMap := make(map[string]interface{})
+	candiedyaml.Unmarshal([]byte(r.yaml), &yamlMap)
+	return &Manifest{Data: yamlMap}, r.err
+}
 
 func NewDiskRepository() (repo Repository) {
 	return DiskRepository{}
@@ -129,4 +155,48 @@ func (repo DiskRepository) manifestPath(userSpecifiedPath string) (string, error
 	// If we didn't get a directory, assume we've been passed the file we want, so
 	// just give that back.
 	return userSpecifiedPath, nil
+}
+
+type ManifestReader func(Repository, string) *plugin_models.GetAppModel
+
+type ManifestAppFinder struct {
+	Repo          Repository
+	ManifestPath  string
+	AppName       string
+	DefaultDomain string
+}
+
+func (f *ManifestAppFinder) AppParams() *plugin_models.GetAppModel {
+	var manifest *Manifest
+	var err error
+	if f.ManifestPath == "" {
+		manifest, err = f.Repo.ReadManifest("./")
+	} else {
+		manifest, err = f.Repo.ReadManifest(f.ManifestPath)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	apps, err := manifest.Applications(f.DefaultDomain)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	for index, app := range apps {
+		if IsHostEmpty(app) {
+			continue
+		}
+
+		if app.Name != "" && app.Name != f.AppName {
+			continue
+		}
+
+		return &apps[index]
+	}
+	return nil
 }

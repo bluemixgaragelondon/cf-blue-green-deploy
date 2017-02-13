@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -22,7 +23,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -52,7 +53,7 @@ var _ = Describe("BGD Plugin", func() {
 						Deployer: b,
 					}
 
-					p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name"}))
 
 					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
 				})
@@ -72,13 +73,13 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &FakeRepo{yaml: `---
+					repo := manifest.NewFakeRepo(`---
           name: app-name
           hosts:
            - man1
           domains:
            - example.com
-        `}
+        `)
 
 					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
 
@@ -100,7 +101,7 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &FakeRepo{yaml: `---
+					repo := manifest.NewFakeRepo(`---
           name: app-name
           hosts:
            - man1
@@ -108,7 +109,7 @@ var _ = Describe("BGD Plugin", func() {
            - host2
           domains:
            - example.com
-        `}
+        `)
 
 					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
 
@@ -127,7 +128,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -146,7 +147,7 @@ var _ = Describe("BGD Plugin", func() {
 				p := CfPlugin{
 					Deployer: b,
 				}
-				repo := &FakeRepo{yaml: `---
+				repo := manifest.NewFakeRepo(`---
           name: app-name
           hosts:
            - host1
@@ -154,7 +155,7 @@ var _ = Describe("BGD Plugin", func() {
           domains:
            - example.com
            - example.net
-        `}
+        `)
 
 				p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
 
@@ -183,11 +184,11 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &FakeRepo{yaml: `---
+					repo := manifest.NewFakeRepo(`---
 						name: app-name
 						hosts:
 							- host1
-					`}
+					`)
 
 					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
 
@@ -213,7 +214,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -227,7 +228,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(true))
 				})
@@ -247,7 +248,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -260,7 +261,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", &FakeRepo{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy("example.com", manifest.NewEmptyFakeRepo(), NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(false))
 				})
