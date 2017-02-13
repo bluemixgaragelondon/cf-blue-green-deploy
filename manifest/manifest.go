@@ -380,3 +380,12 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 
 	return manifestRoutes
 }
+
+func IsHostEmpty(app plugin_models.GetAppModel) bool {
+	for _, route := range app.Routes {
+		if route.Host != "" {
+			return false
+		}
+	}
+	return true
+}

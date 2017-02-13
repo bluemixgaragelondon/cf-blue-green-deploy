@@ -3,29 +3,20 @@ package main
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
-	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
+	man "github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 )
 
-type ManifestReader func(manifest.Repository, string) *plugin_models.GetAppModel
+type ManifestReader func(man.Repository, string) *plugin_models.GetAppModel
 
 type ManifestAppFinder struct {
-	Repo          manifest.Repository
+	Repo          man.Repository
 	ManifestPath  string
 	AppName       string
 	DefaultDomain string
 }
 
-func IsHostEmpty(app plugin_models.GetAppModel) bool {
-	for _, route := range app.Routes {
-		if route.Host != "" {
-			return false
-		}
-	}
-	return true
-}
-
 func (f *ManifestAppFinder) AppParams() *plugin_models.GetAppModel {
-	var manifest *manifest.Manifest
+	var manifest *man.Manifest
 	var err error
 	if f.ManifestPath == "" {
 		manifest, err = f.Repo.ReadManifest("./")
@@ -46,7 +37,7 @@ func (f *ManifestAppFinder) AppParams() *plugin_models.GetAppModel {
 	}
 
 	for index, app := range apps {
-		if IsHostEmpty(app) {
+		if man.IsHostEmpty(app) {
 			continue
 		}
 
