@@ -1,6 +1,8 @@
 package manifest
 
 import (
+	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -211,4 +213,164 @@ var _ = Describe("CloneWithExclude", func() {
 			Expect(actual).To(Equal(input))
 		})
 	})
+
+	Context("when the manifest contains a different app name", func() {
+		manifest := manifestFromYamlString(`---
+	      name: bar
+	      host: foo`)
+
+		It("Returns nil", func() {
+			Expect(manifest.GetAppParams("appname", "domain")).To(BeNil())
+		})
+
+		Context("when the manifest contain a host but no app name", func() {
+			manifest := manifestFromYamlString(`---
+host: foo`)
+
+			It("Returns params that contain the host", func() {
+
+				var hostNames []string
+
+				for _, route := range manifest.GetAppParams("foo", "something.com").Routes {
+					hostNames = append(hostNames, route.Host)
+				}
+
+				Expect(hostNames).To(ContainElement("foo"))
+			})
+		})
+
+		Describe("Route Lister", func() {
+			It("returns a list of Routes from the manifest", func() {
+				manifest := manifestFromYamlString(`---
+name: foo
+hosts:
+ - host1
+ - host2
+domains:
+ - example.com
+ - example.net`)
+
+				params := manifest.GetAppParams("foo", "example.com")
+
+				Expect(params).ToNot(BeNil())
+				Expect(params.Routes).ToNot(BeNil())
+
+				routes := params.Routes
+				Expect(routes).To(ConsistOf(
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+				))
+			})
+
+			Context("when app has just hosts, no domains", func() {
+				It("returns Application", func() {
+					manifest := manifestFromYamlString(`---
+name: foo
+hosts:
+ - host1
+ - host2`)
+
+					params := manifest.GetAppParams("foo", "example.com")
+					Expect(params).ToNot(BeNil())
+					Expect(params.Routes).ToNot(BeNil())
+
+					routes := params.Routes
+					Expect(routes).To(ConsistOf(
+						plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+					))
+				})
+			})
+
+			PContext("when app has just routes, no hosts or domains", func() {
+				It("returns those routes", func() {
+					manifest := manifestFromYamlString(`---
+name: foo
+routes:
+ - route1.domain1
+ - route2.domain2`)
+
+					params := manifest.GetAppParams("foo", "example.com")
+
+					Expect(params).To(ConsistOf(
+						plugin_models.GetApp_RouteSummary{Host: "route1", Domain: plugin_models.GetApp_DomainFields{Name: "domain1"}},
+						plugin_models.GetApp_RouteSummary{Host: "route2", Domain: plugin_models.GetApp_DomainFields{Name: "domain2"}},
+					))
+				})
+			})
+
+			Context("when no matching application", func() {
+				It("returns nil", func() {
+					manifest := manifestFromYamlString(``)
+
+					Expect(manifest.GetAppParams("foo", "example.com")).To(BeNil())
+				})
+			})
+		})
+
+	})
+
+	Context("when the manifest contains multiple apps with 1 matching", func() {
+		manifest := manifestFromYamlString(`---
+applications:
+ - name: bar
+   host: barhost
+ - name: foo
+   hosts:
+    - host1
+    - host2
+   domains:
+    - example1.com
+    - example2.com`)
+		It("Returns the correct app", func() {
+
+			var hostNames []string
+			var domainNames []string
+
+			appParams := manifest.GetAppParams("foo", "")
+			Expect(appParams).ToNot(BeNil())
+
+			routes := appParams.Routes
+			Expect(routes).ToNot(BeNil())
+			for _, route := range routes {
+				hostNames = append(hostNames, route.Host)
+				domainNames = append(domainNames, route.Domain.Name)
+			}
+
+			hostNames = deDuplicate(hostNames)
+			domainNames = deDuplicate(domainNames)
+
+			Expect(manifest.GetAppParams("foo", "").Name).To(Equal("foo"))
+			Expect(hostNames).To(ConsistOf("host1", "host2"))
+			Expect(domainNames).To(ConsistOf("example1.com", "example2.com"))
+		})
+	})
 })
+
+func deDuplicate(ary []string) []string {
+	if ary == nil {
+		return nil
+	}
+
+	m := make(map[string]bool)
+	for _, v := range ary {
+		m[v] = true
+	}
+
+	newAry := []string{}
+	for _, val := range ary {
+		if m[val] {
+			newAry = append(newAry, val)
+			m[val] = false
+		}
+	}
+	return newAry
+}
+
+func manifestFromYamlString(yamlString string) *Manifest {
+	yamlMap := make(map[string]interface{})
+	candiedyaml.Unmarshal([]byte(yamlString), &yamlMap)
+	return &Manifest{Data: yamlMap}
+}

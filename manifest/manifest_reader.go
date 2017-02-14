@@ -2,7 +2,6 @@
 package manifest
 
 import (
-	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
 	"fmt"
 	"io"
@@ -13,22 +12,34 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate counterfeiter . Repository
-
-type Repository interface {
-	ReadManifest(string) (*Manifest, error)
+type ManifestReader interface {
+	Read() *Manifest
 }
 
-type DiskRepository struct{}
-
-func NewDiskRepository() (repo Repository) {
-	return DiskRepository{}
+type FileManifestReader struct {
+	ManifestPath string
 }
 
-func (repo DiskRepository) ReadManifest(inputPath string) (*Manifest, error) {
+func (manifestReader FileManifestReader) Read() *Manifest {
+	var manifest *Manifest
+	var err error
+	if path := manifestReader.ManifestPath; path == "" {
+		manifest, err = manifestReader.readManifest("./")
+	} else {
+		manifest, err = manifestReader.readManifest(path)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return manifest
+}
+
+func (manifestReader *FileManifestReader) readManifest(inputPath string) (*Manifest, error) {
 
 	m := &Manifest{}
-	manifestPath, err := repo.manifestPath(inputPath)
+	manifestPath, err := manifestReader.interpetManifestPath(inputPath)
 
 	if err != nil {
 		return m, errors.New("Error finding manifest")
@@ -36,7 +47,7 @@ func (repo DiskRepository) ReadManifest(inputPath string) (*Manifest, error) {
 
 	m.Path = manifestPath
 
-	mapp, err := repo.readAllYAMLFiles(manifestPath)
+	mapp, err := manifestReader.readAllYAMLFiles(manifestPath)
 
 	if err != nil {
 		return m, err
@@ -47,8 +58,9 @@ func (repo DiskRepository) ReadManifest(inputPath string) (*Manifest, error) {
 	return m, nil
 }
 
-func (repo DiskRepository) readAllYAMLFiles(path string) (mergedMap map[string]interface{}, err error) {
+func (manifestReader *FileManifestReader) readAllYAMLFiles(path string) (mergedMap map[string]interface{}, err error) {
 	file, err := os.Open(filepath.Clean(path))
+
 	if err != nil {
 		return
 	}
@@ -74,7 +86,7 @@ func (repo DiskRepository) readAllYAMLFiles(path string) (mergedMap map[string]i
 		inheritedPath = filepath.Join(filepath.Dir(path), inheritedPath)
 	}
 
-	inheritedMap, err := repo.readAllYAMLFiles(inheritedPath)
+	inheritedMap, err := manifestReader.readAllYAMLFiles(inheritedPath)
 	if err != nil {
 		return
 	}
@@ -92,23 +104,22 @@ func parseManifest(file io.Reader) (yamlMap map[string]interface{}, err error) {
 		return
 	}
 
-	mmap := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(manifest, &mmap)
+	yamlMap = make(map[string]interface{})
+	err = yaml.Unmarshal(manifest, &yamlMap)
+
 	if err != nil {
 		return
 	}
 
-	if !IsMappable(mmap) || len(mmap) == 0 {
+	if !IsMappable(yamlMap) || len(yamlMap) == 0 {
 		err = errors.New("Invalid manifest. Expected a map")
 		return
 	}
 
-	yamlMap = make(map[string]interface{})
-
 	return
 }
 
-func (repo DiskRepository) manifestPath(userSpecifiedPath string) (string, error) {
+func (manifestReader *FileManifestReader) interpetManifestPath(userSpecifiedPath string) (string, error) {
 	fileInfo, err := os.Stat(userSpecifiedPath)
 	if err != nil {
 		return "", err
@@ -131,48 +142,4 @@ func (repo DiskRepository) manifestPath(userSpecifiedPath string) (string, error
 	// If we didn't get a directory, assume we've been passed the file we want, so
 	// just give that back.
 	return userSpecifiedPath, nil
-}
-
-type ManifestReader func(Repository, string) *plugin_models.GetAppModel
-
-type ManifestAppFinder struct {
-	Repo          Repository
-	ManifestPath  string
-	AppName       string
-	DefaultDomain string
-}
-
-func (f *ManifestAppFinder) AppParams() *plugin_models.GetAppModel {
-	var manifest *Manifest
-	var err error
-	if f.ManifestPath == "" {
-		manifest, err = f.Repo.ReadManifest("./")
-	} else {
-		manifest, err = f.Repo.ReadManifest(f.ManifestPath)
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	apps, err := manifest.Applications(f.DefaultDomain)
-
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	for index, app := range apps {
-		if IsHostEmpty(app) {
-			continue
-		}
-
-		if app.Name != "" && app.Name != f.AppName {
-			continue
-		}
-
-		return &apps[index]
-	}
-	return nil
 }

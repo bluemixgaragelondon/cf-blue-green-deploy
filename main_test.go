@@ -23,7 +23,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -53,7 +53,7 @@ var _ = Describe("BGD Plugin", func() {
 						Deployer: b,
 					}
 
-					p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
 				})
@@ -73,7 +73,7 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &fakes.FakeRepository{Yaml: `---
+					repo := &fakes.FakeManifestReader{Yaml: `---
           name: app-name
           hosts:
            - man1
@@ -101,7 +101,7 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &fakes.FakeRepository{Yaml: `---
+					repo := &fakes.FakeManifestReader{Yaml: `---
           name: app-name
           hosts:
            - man1
@@ -128,7 +128,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -147,7 +147,7 @@ var _ = Describe("BGD Plugin", func() {
 				p := CfPlugin{
 					Deployer: b,
 				}
-				repo := &fakes.FakeRepository{Yaml: `---
+				repo := &fakes.FakeManifestReader{Yaml: `---
           name: app-name
           hosts:
            - host1
@@ -184,7 +184,7 @@ var _ = Describe("BGD Plugin", func() {
 					p := CfPlugin{
 						Deployer: b,
 					}
-					repo := &fakes.FakeRepository{Yaml: `---
+					repo := &fakes.FakeManifestReader{Yaml: `---
 						name: app-name
 						hosts:
 							- host1
@@ -214,7 +214,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -228,7 +228,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(true))
 				})
@@ -248,7 +248,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -261,7 +261,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", &fakes.FakeRepository{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(false))
 				})

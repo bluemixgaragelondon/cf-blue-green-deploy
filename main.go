@@ -39,12 +39,12 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("App name was empty, must be provided.")
 	}
 
-	if !p.Deploy(defaultCfDomain, manifest.DiskRepository{}, argsStruct) {
+	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, argsStruct) {
 		log.Fatal("Smoke tests failed")
 	}
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args Args) bool {
+func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) bool {
 	appName := args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
@@ -64,7 +64,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args
 	}
 
 	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
-	newAppRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, repo, liveAppRoutes)
+	newAppRoutes := p.GetNewAppRoutes(args.AppName, defaultCfDomain, manifestReader, liveAppRoutes)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
@@ -89,12 +89,15 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, repo manifest.Repository, args
 	}
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, repo manifest.Repository, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
-	f := manifest.ManifestAppFinder{AppName: appName, Repo: repo, DefaultDomain: defaultCfDomain}
 
-	if appParams := f.AppParams(); appParams != nil && appParams.Routes != nil {
-		newAppRoutes = appParams.Routes
+	manifest := manifestReader.Read()
+
+	if manifest != nil {
+		if appParams := manifest.GetAppParams(appName, defaultCfDomain); appParams != nil && appParams.Routes != nil {
+			newAppRoutes = appParams.Routes
+		}
 	}
 
 	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)

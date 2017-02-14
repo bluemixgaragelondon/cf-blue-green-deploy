@@ -366,6 +366,29 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 	return manifestRoutes
 }
 
+func (manifest *Manifest) GetAppParams(appName, defaultDomain string) *plugin_models.GetAppModel {
+	var err error
+	apps, err := manifest.Applications(defaultDomain)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	for index, app := range apps {
+		if IsHostEmpty(app) {
+			continue
+		}
+
+		if app.Name != "" && app.Name != appName {
+			continue
+		}
+
+		return &apps[index]
+	}
+	return nil
+}
+
 func IsHostEmpty(app plugin_models.GetAppModel) bool {
 	for _, route := range app.Routes {
 		if route.Host != "" {
