@@ -376,7 +376,7 @@ func (manifest *Manifest) GetAppParams(appName, defaultDomain string) *plugin_mo
 	}
 
 	for index, app := range apps {
-		if IsHostEmpty(app) {
+		if isHostEmpty(app) {
 			continue
 		}
 
@@ -389,7 +389,7 @@ func (manifest *Manifest) GetAppParams(appName, defaultDomain string) *plugin_mo
 	return nil
 }
 
-func IsHostEmpty(app plugin_models.GetAppModel) bool {
+func isHostEmpty(app plugin_models.GetAppModel) bool {
 	for _, route := range app.Routes {
 		if route.Host != "" {
 			return false
