@@ -5,7 +5,6 @@ import (
 	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,36 +21,13 @@ type Repository interface {
 
 type DiskRepository struct{}
 
-type FakeRepo struct {
-	err  error
-	path string
-	yaml string
-}
-
-func NewEmptyFakeRepo() *FakeRepo {
-	return &FakeRepo{}
-}
-
-func NewFakeRepo(yaml string) *FakeRepo {
-	return &FakeRepo{
-		yaml: yaml,
-	}
-}
-
-func (r *FakeRepo) ReadManifest(path string) (*Manifest, error) {
-	r.path = path
-	yamlMap := make(map[string]interface{})
-	candiedyaml.Unmarshal([]byte(r.yaml), &yamlMap)
-	return &Manifest{Data: yamlMap}, r.err
-}
-
 func NewDiskRepository() (repo Repository) {
 	return DiskRepository{}
 }
 
 func (repo DiskRepository) ReadManifest(inputPath string) (*Manifest, error) {
 
-	m := NewEmptyManifest()
+	m := &Manifest{}
 	manifestPath, err := repo.manifestPath(inputPath)
 
 	if err != nil {

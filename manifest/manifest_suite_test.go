@@ -1,4 +1,4 @@
-package manifest
+package manifest_test
 
 import (
 	. "github.com/onsi/ginkgo"

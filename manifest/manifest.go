@@ -17,10 +17,6 @@ type Manifest struct {
 	Data map[string]interface{}
 }
 
-func NewEmptyManifest() (m *Manifest) {
-	return &Manifest{Data: make(map[string]interface{})}
-}
-
 func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
 	rawData, err := expandProperties(m.Data)
 	data := rawData.(map[string]interface{})

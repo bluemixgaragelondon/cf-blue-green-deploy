@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	//	"code.cloudfoundry.org/cli/plugin/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -18,7 +17,7 @@ var _ = Describe("Manifest", func() {
 				map[interface{}]interface{}{"route": "tcp-example.com:1234"},
 			},
 		}
-		m := NewEmptyManifest()
+		m := &Manifest{}
 
 		Context("the getAppMaps function", func() {
 			appMaps, err := m.getAppMaps(input)
@@ -63,7 +62,7 @@ var _ = Describe("Manifest", func() {
 			"host":         "bob",
 		}
 
-		m := NewEmptyManifest()
+		m := &Manifest{}
 		appMaps, err := m.getAppMaps(input)
 
 		Context("the AppMaps function", func() {
@@ -104,7 +103,7 @@ var _ = Describe("Manifest", func() {
 			"host":         "bob",
 		}
 
-		m := NewEmptyManifest()
+		m := &Manifest{}
 		appMaps, err := m.getAppMaps(input)
 
 		Context("the AppMaps function", func() {
