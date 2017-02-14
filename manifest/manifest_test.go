@@ -229,13 +229,10 @@ host: foo`)
 
 			It("Returns params that contain the host", func() {
 
-				var hostNames []string
-
-				for _, route := range manifest.GetAppParams("foo", "something.com").Routes {
-					hostNames = append(hostNames, route.Host)
-				}
-
-				Expect(hostNames).To(ContainElement("foo"))
+				routes := manifest.GetAppParams("foo", "something.com").Routes
+				Expect(routes).To(ConsistOf(
+					plugin_models.GetApp_RouteSummary{Host: "foo", Domain: plugin_models.GetApp_DomainFields{Name: "something.com"}},
+				))
 			})
 		})
 
