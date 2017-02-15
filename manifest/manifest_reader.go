@@ -2,7 +2,6 @@
 package manifest
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,14 +12,14 @@ import (
 )
 
 type ManifestReader interface {
-	Read() *Manifest
+	Read() (*Manifest, error)
 }
 
 type FileManifestReader struct {
 	ManifestPath string
 }
 
-func (manifestReader FileManifestReader) Read() *Manifest {
+func (manifestReader FileManifestReader) Read() (*Manifest, error) {
 	var manifest *Manifest
 	var err error
 	if path := manifestReader.ManifestPath; path == "" {
@@ -30,10 +29,9 @@ func (manifestReader FileManifestReader) Read() *Manifest {
 	}
 
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
-	return manifest
+	return manifest, nil
 }
 
 func (manifestReader *FileManifestReader) readManifest(inputPath string) (*Manifest, error) {
@@ -42,7 +40,7 @@ func (manifestReader *FileManifestReader) readManifest(inputPath string) (*Manif
 	manifestPath, err := manifestReader.interpetManifestPath(inputPath)
 
 	if err != nil {
-		return m, errors.New("Error finding manifest")
+		return m, fmt.Errorf("Error finding manifest: %v", err)
 	}
 
 	m.Path = manifestPath
@@ -78,7 +76,7 @@ func (manifestReader *FileManifestReader) readAllYAMLFiles(path string) (mergedM
 
 	inheritedPath, ok := mapp["inherit"].(string)
 	if !ok {
-		err = errors.New("invalid inherit path in manifest")
+		err = fmt.Errorf("invalid inherit path in manifest")
 		return
 	}
 
@@ -112,7 +110,7 @@ func parseManifest(file io.Reader) (yamlMap map[string]interface{}, err error) {
 	}
 
 	if !IsMappable(yamlMap) || len(yamlMap) == 0 {
-		err = errors.New("Invalid manifest. Expected a map")
+		err = fmt.Errorf("Invalid manifest. Expected a map")
 		return
 	}
 
