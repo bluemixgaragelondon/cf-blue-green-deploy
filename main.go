@@ -92,7 +92,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 
-	// Ignoring the error is no worse than we were doing before
+	// TODO: Ignoring the error is no worse than we were doing before
 	manifest, _ := manifestReader.Read()
 
 	if manifest != nil {
