@@ -255,44 +255,131 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
+	Describe("getting the scale parameters", func() {
+		Context("for a running app", func() {
+			appName := "existing app"
+			var instanceCount int = 3
+			var memory int64 = 9001
+			var diskQuota int64 = 100
+			BeforeEach(func() {
+				appModel := plugin_models.GetAppModel{
+					InstanceCount: instanceCount,
+					Memory:        memory,
+					DiskQuota:     diskQuota,
+				}
+				connection.GetAppReturns(appModel, nil)
+			})
+			It("reads the app data and returns the scale parameters", func() {
+				scaleParameters, _ := p.GetScaleParameters(appName)
+				Expect(scaleParameters.InstanceCount).To(Equal(instanceCount))
+				Expect(scaleParameters.Memory).To(Equal(memory))
+				Expect(scaleParameters.DiskQuota).To(Equal(diskQuota))
+			})
+		})
+		Context("for an app that does not exist", func() {
+			appName := "invalid app"
+			BeforeEach(func() {
+				appModel := plugin_models.GetAppModel{}
+				connection.GetAppReturns(appModel, errors.New("App was not found"))
+			})
+			It("returns an empty struct and an error value", func() {
+				scaleParameters, error := p.GetScaleParameters(appName)
+				Expect(error).ToNot(Equal(nil))
+				Expect(scaleParameters.InstanceCount).To(Equal(0))
+				Expect(scaleParameters.Memory).To(Equal(int64(0)))
+				Expect(scaleParameters.DiskQuota).To(Equal(int64(0)))
+			})
+		})
+	})
+
 	Describe("pushing a new app", func() {
 		newApp := "app-name-new"
 		newRoute := plugin_models.GetApp_RouteSummary{Host: newApp, Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}}
+		scaleParameters := ScaleParameters{}
 
 		It("pushes an app with new appended to its name", func() {
-			p.PushNewApp(newApp, newRoute, "")
+			p.PushNewApp(newApp, newRoute, "", scaleParameters)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`^push app-name-new`))
 		})
 
 		It("uses the generated name for the route", func() {
-			p.PushNewApp(newApp, newRoute, "")
+			p.PushNewApp(newApp, newRoute, "", scaleParameters)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-n app-name-new`))
 		})
 
 		It("pushes with the default cf domain", func() {
-			p.PushNewApp(newApp, newRoute, "")
+			p.PushNewApp(newApp, newRoute, "", scaleParameters)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-d example.com`))
 		})
 
-		It("pushes with the specified manifest, if present in deployer", func() {
+		It("pushes with the specified manifest, if present", func() {
 			manifestPath := "./manifest-tst.yml"
-			p.PushNewApp(newApp, newRoute, manifestPath)
+			p.PushNewApp(newApp, newRoute, manifestPath, scaleParameters)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(MatchRegexp(`-f ./manifest-tst.yml`))
 		})
 
 		It("pushes without a manifest arg, if no manifest in deployer", func() {
-			p.PushNewApp(newApp, newRoute, "")
+			p.PushNewApp(newApp, newRoute, "", scaleParameters)
 
 			Expect(strings.Join(connection.CliCommandArgsForCall(0), " ")).
 				To(Not(MatchRegexp(`-f `)))
+		})
+
+		It("pushes using the scale values of the old app", func() {
+			liveAppModel := plugin_models.GetAppModel{
+				Memory:        int64(32),
+				DiskQuota:     int64(700),
+				InstanceCount: 27,
+			}
+			connection.GetAppReturns(liveAppModel, nil)
+
+			p.PushNewApp(newApp, newRoute, "", ScaleParameters{})
+
+			commandString := strings.Join(connection.CliCommandArgsForCall(0), " ")
+			Expect(commandString).To(MatchRegexp(`-m 32M`))
+			Expect(commandString).To(MatchRegexp(`-k 700M`))
+			Expect(commandString).To(MatchRegexp(`-i 27`))
+		})
+
+		It("uses the manifest memory field if there is a live app running", func() {
+			liveAppModel := plugin_models.GetAppModel{
+				Memory:        int64(16),
+				DiskQuota:     int64(500),
+				InstanceCount: 6,
+			}
+			connection.GetAppReturns(liveAppModel, nil)
+			manifestScaleParameters := ScaleParameters{
+				Memory: int64(32),
+			}
+			p.PushNewApp(newApp, newRoute, "", manifestScaleParameters)
+			commandString := strings.Join(connection.CliCommandArgsForCall(0), " ")
+			Expect(commandString).To(MatchRegexp(`-m 32M`))
+			Expect(commandString).To(MatchRegexp(`-k 500M`))
+			Expect(commandString).To(MatchRegexp(`-i 6`))
+		})
+
+		Context("when some scale parameter values are zero", func() {
+			It("pushes using only the defined parameters", func() {
+				scaleParameters = ScaleParameters{
+					InstanceCount: 0,
+					Memory:        32,
+					DiskQuota:     0,
+				}
+				p.PushNewApp(newApp, newRoute, "", scaleParameters)
+
+				commandString := strings.Join(connection.CliCommandArgsForCall(0), " ")
+				Expect(commandString).To(MatchRegexp(`-m`))
+				Expect(commandString).ToNot(MatchRegexp(`-k`))
+				Expect(commandString).ToNot(MatchRegexp(`-i`))
+			})
 		})
 
 		Context("when the push fails", func() {
@@ -303,7 +390,7 @@ var _ = Describe("BlueGreenDeploy", func() {
 			})
 
 			It("returns an error", func() {
-				p.PushNewApp(newApp, newRoute, "")
+				p.PushNewApp(newApp, newRoute, "", scaleParameters)
 
 				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to push app"))
 			})

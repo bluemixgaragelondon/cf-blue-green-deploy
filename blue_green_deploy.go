@@ -15,8 +15,9 @@ type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string, plugin_models.GetApp_RouteSummary, string)
+	PushNewApp(string, plugin_models.GetApp_RouteSummary, string, ScaleParameters)
 	DeleteAllAppsExceptLiveApp(string)
+	GetScaleParameters(string) (ScaleParameters, error)
 	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
 	RunSmokeTests(string, string) bool
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
@@ -28,6 +29,12 @@ type BlueGreenDeploy struct {
 	Connection plugin.CliConnection
 	Out        io.Writer
 	ErrorFunc  ErrorHandler
+}
+
+type ScaleParameters struct {
+	InstanceCount int
+	Memory        int64
+	DiskQuota     int64
 }
 
 func (p *BlueGreenDeploy) DeleteAppVersions(apps []plugin_models.GetAppsModel) {
@@ -48,8 +55,60 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 
 }
 
-func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary, manifestPath string) {
+func (p *BlueGreenDeploy) GetScaleParameters(appName string) (ScaleParameters, error) {
+	appModel, err := p.Connection.GetApp(appName)
+	if err != nil {
+		return ScaleParameters{}, fmt.Errorf("Could not get scale parameters")
+	}
+	scaleParameters := ScaleParameters{
+		InstanceCount: appModel.InstanceCount,
+		Memory:        appModel.Memory,
+		DiskQuota:     appModel.DiskQuota,
+	}
+	return scaleParameters, nil
+}
+
+func mergeScaleParameters(liveScale, manifestScale ScaleParameters) ScaleParameters {
+	scaleParameters := liveScale
+	if manifestScale.Memory != 0 {
+		scaleParameters.Memory = manifestScale.Memory
+	}
+	if manifestScale.InstanceCount != 0 {
+		scaleParameters.InstanceCount = manifestScale.InstanceCount
+	}
+	if manifestScale.DiskQuota != 0 {
+		scaleParameters.DiskQuota = manifestScale.DiskQuota
+	}
+	return scaleParameters
+}
+
+func appendScaleArguments(args []string, scaleParameters ScaleParameters) []string {
+	if scaleParameters.InstanceCount != 0 {
+		instanceCount := fmt.Sprintf("%d", scaleParameters.InstanceCount)
+		args = append(args, "-i", instanceCount)
+	}
+	if scaleParameters.Memory != 0 {
+		memory := fmt.Sprintf("%dM", scaleParameters.Memory)
+		args = append(args, "-m", memory)
+	}
+	if scaleParameters.DiskQuota != 0 {
+		diskQuota := fmt.Sprintf("%dM", scaleParameters.DiskQuota)
+		args = append(args, "-k", diskQuota)
+	}
+	return args
+}
+
+func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
+	manifestPath string, scaleParameters ScaleParameters) {
 	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
+
+	// Remove -new suffix of appname to get live app name
+	newAppSuffix := "-new"
+	liveAppName := appName[:len(appName)-len(newAppSuffix)]
+	liveScaleParameters, _ := p.GetScaleParameters(liveAppName)
+	scaleParameters = mergeScaleParameters(liveScaleParameters, scaleParameters)
+
+	args = appendScaleArguments(args, scaleParameters)
 	if manifestPath != "" {
 		args = append(args, "-f", manifestPath)
 	}
