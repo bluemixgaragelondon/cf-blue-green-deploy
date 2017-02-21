@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 
+	"strings"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
-	"strings"
 )
 
 var PluginVersion string
@@ -92,8 +93,11 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 
-	// TODO: Ignoring the error is no worse than we were doing before
-	manifest, _ := manifestReader.Read()
+	manifest, err := manifestReader.Read()
+	if err != nil {
+		// This error should be handled properly
+		fmt.Println(err)
+	}
 
 	if manifest != nil {
 		if appParams := manifest.GetAppParams(appName, defaultCfDomain); appParams != nil && appParams.Routes != nil {
