@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"strings"
-
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
@@ -119,7 +117,12 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 
 func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
 	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
-	if manifest := manifestReader.Read(); manifest != nil {
+	manifest, err := manifestReader.Read()
+	if err != nil {
+		// TODO: Handle this error nicely
+		fmt.Println(err)
+	}
+	if manifest != nil {
 		manifestScaleParameters := manifest.GetAppParams(appName, defaultCfDomain)
 		if manifestScaleParameters != nil {
 			scaleParameters = ScaleParameters{

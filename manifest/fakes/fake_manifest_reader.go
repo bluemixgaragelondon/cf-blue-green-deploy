@@ -1,7 +1,6 @@
 package fakes
 
 import (
-	"fmt"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 )
@@ -11,14 +10,13 @@ type FakeManifestReader struct {
 	Err  error
 }
 
-func (manifestReader *FakeManifestReader) Read() *manifest.Manifest {
+func (manifestReader *FakeManifestReader) Read() (*manifest.Manifest, error) {
 	yamlMap := make(map[string]interface{})
 	candiedyaml.Unmarshal([]byte(manifestReader.Yaml), &yamlMap)
 
 	if manifestReader.Err != nil {
-		fmt.Println(manifestReader.Err)
-		return nil
+		return nil, manifestReader.Err
 	} else {
-		return &manifest.Manifest{Data: yamlMap}
+		return &manifest.Manifest{Data: yamlMap}, nil
 	}
 }
