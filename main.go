@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
-	"strings"
 )
 
 var PluginVersion string
@@ -50,12 +50,15 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
+	manifestScaleParameters := p.GetScaleFromManifest(appName, defaultCfDomain, manifestReader)
+
 	newAppName := appName + "-new"
 
 	// Add route so that we can run the smoke tests
 	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}}
+
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
-	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath)
+	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath, manifestScaleParameters)
 
 	promoteNewApp := true
 	smokeTestScript := args.SmokeTestPath
@@ -106,6 +109,21 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 		uniqueRoutes = append(uniqueRoutes, plugin_models.GetApp_RouteSummary{Host: appName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}})
 	}
 	return uniqueRoutes
+}
+
+func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
+	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
+	if manifest := manifestReader.Read(); manifest != nil {
+		manifestScaleParameters := manifest.GetAppParams(appName, defaultCfDomain)
+		if manifestScaleParameters != nil {
+			scaleParameters = ScaleParameters{
+				Memory:        manifestScaleParameters.Memory,
+				InstanceCount: manifestScaleParameters.InstanceCount,
+				DiskQuota:     manifestScaleParameters.DiskQuota,
+			}
+		}
+	}
+	return
 }
 
 func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, listB []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
