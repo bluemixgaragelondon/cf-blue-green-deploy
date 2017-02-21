@@ -178,6 +178,37 @@ var _ = Describe("BGD Plugin", func() {
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 			})
 
+			Context("when scale parameters are defined", func() {
+				It("Uses the scale values", func() {
+					b := &BlueGreenDeployFake{liveApp: nil}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &fakes.FakeManifestReader{Yaml: `---
+            name: app-name
+            memory: 16M
+            disk_quota: 500M
+            instances: 3
+            hosts:
+            - host1
+            `}
+					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					Expect(b.flow).To(Equal([]string{
+						"delete old apps",
+						"get current live app",
+						"push app-name-new",
+						"unmap 1 routes from app-name-new",
+						"mapped 1 routes",
+						"rename app-name-new to app-name",
+					}))
+					scaleParameters := ScaleParameters{
+						Memory:        int64(16),
+						DiskQuota:     int64(500),
+						InstanceCount: 3,
+					}
+					Expect(*b.usedScale).To(Equal(scaleParameters))
+				})
+			})
 			Context("when no routes are specified in the manifest", func() {
 				It("maps the app name as the only route", func() {
 					b := &BlueGreenDeployFake{liveApp: nil}
@@ -268,6 +299,32 @@ var _ = Describe("BGD Plugin", func() {
 			})
 		})
 
+		Describe("GetScaleFromManifest", func() {
+			p := CfPlugin{}
+			Context("when the manifest is valid", func() {
+				It("returns the scale parameters", func() {
+					fakeManifestReader := &fakes.FakeManifestReader{Yaml: `---
+            name: app-name
+            memory: 16M
+            disk_quota: 500M
+            hosts:
+            - man1
+            `,
+					}
+					actualScale := p.GetScaleFromManifest("app-name", "example.com", fakeManifestReader)
+					expectedScale := ScaleParameters{Memory: int64(16), DiskQuota: int64(500)}
+					Expect(actualScale).To(Equal(expectedScale))
+				})
+			})
+			Context("the manifest is invalid", func() {
+				It("returns an empty manifest", func() {
+					failingFakeManifestReader := &fakes.FakeManifestReader{Err: errors.New("")}
+					actualScale := p.GetScaleFromManifest("app-name", "example.com", failingFakeManifestReader)
+					expectedScale := ScaleParameters{}
+					Expect(actualScale).To(Equal(expectedScale))
+				})
+			})
+		})
 		Describe("DefaultCfDomain", func() {
 			connection := &pluginfakes.FakeCliConnection{}
 			p := CfPlugin{Connection: connection}
@@ -425,13 +482,21 @@ type BlueGreenDeployFake struct {
 	liveApp       *plugin_models.GetAppModel
 	passSmokeTest bool
 	mappedRoutes  []plugin_models.GetApp_RouteSummary
+	scale         *ScaleParameters
+	usedScale     *ScaleParameters
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary, manifestPath string) {
+func (p *BlueGreenDeployFake) GetScaleParameters(appName string) (ScaleParameters, error) {
+	return ScaleParameters{}, nil
+}
+
+func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
+	manifestPath string, scaleParameters ScaleParameters) {
+	p.usedScale = &scaleParameters
 	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
 }
 

@@ -8,6 +8,25 @@ import (
 )
 
 var _ = Describe("Manifest", func() {
+	Context("For a manifest", func() {
+		It("parses known manifest keys", func() {
+			m := &Manifest{
+				Path: "./manifest.yml",
+				Data: map[string]interface{}{
+					"disk_quota": "512M",
+					"memory":     "256M",
+					"instances":  1,
+				},
+			}
+			apps, err := m.Applications("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(apps)).To(Equal(1))
+
+			Expect(apps[0].DiskQuota).To(Equal(int64(512)))
+			Expect(apps[0].Memory).To(Equal(int64(256)))
+			Expect(apps[0].InstanceCount).To(Equal(1))
+		})
+	})
 
 	Context("For a manifest with no applications section", func() {
 

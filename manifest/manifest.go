@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/Pallinder/go-randomdata"
 )
@@ -190,6 +192,10 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	var appParams plugin_models.GetAppModel
 	var errs []error
 
+	if diskQuota := bytesVal(yamlMap, "disk_quota", &errs); diskQuota != nil {
+		appParams.DiskQuota = *diskQuota
+	}
+
 	domainAry := sliceOrNil(yamlMap, "domains", &errs)
 	if domain := stringVal(yamlMap, "domain", &errs); domain != nil {
 		if domainAry == nil {
@@ -211,6 +217,14 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
 	if name := stringVal(yamlMap, "name", &errs); name != nil {
 		appParams.Name = *name
+	}
+
+	if memory := bytesVal(yamlMap, "memory", &errs); memory != nil {
+		appParams.Memory = *memory
+	}
+
+	if instanceCount := intVal(yamlMap, "instances", &errs); instanceCount != nil {
+		appParams.InstanceCount = *instanceCount
 	}
 
 	if len(errs) > 0 {
@@ -277,6 +291,58 @@ func stringVal(yamlMap map[string]interface{}, key string, errs *[]error) *strin
 		return nil
 	}
 	return &result
+}
+
+func bytesVal(yamlMap map[string]interface{}, key string, errs *[]error) *int64 {
+	yamlVal := yamlMap[key]
+	if yamlVal == nil {
+		return nil
+	}
+
+	stringVal := coerceToString(yamlVal)
+	value, err := formatters.ToMegabytes(stringVal)
+	if err != nil {
+		*errs = append(*errs, fmt.Errorf("Invalid value for '{{.PropertyName}}': {{.StringVal}}\n{{.Error}}",
+			map[string]interface{}{
+				"PropertyName": key,
+				"Error":        err.Error(),
+				"StringVal":    stringVal,
+			}))
+		return nil
+	}
+	return &value
+}
+
+func intVal(yamlMap map[string]interface{}, key string, errs *[]error) *int {
+	var (
+		intVal int
+		err    error
+	)
+
+	switch val := yamlMap[key].(type) {
+	case string:
+		intVal, err = strconv.Atoi(val)
+	case int:
+		intVal = val
+	case int64:
+		intVal = int(val)
+	case nil:
+		return nil
+	default:
+		err = fmt.Errorf("Expected {{.PropertyName}} to be a number, but it was a {{.PropertyType}}.",
+			map[string]interface{}{"PropertyName": key, "PropertyType": val})
+	}
+
+	if err != nil {
+		*errs = append(*errs, err)
+		return nil
+	}
+
+	return &intVal
+}
+
+func coerceToString(value interface{}) string {
+	return fmt.Sprintf("%v", value)
 }
 
 func sliceOrNil(yamlMap map[string]interface{}, key string, errs *[]error) []string {
