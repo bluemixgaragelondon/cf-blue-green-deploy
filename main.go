@@ -14,11 +14,31 @@ import (
 
 var PluginVersion string
 
+func main() {
+
+	log.SetFlags(0)
+
+	p := CfPlugin{
+		Deployer: &BlueGreenDeploy{
+			ErrorFunc: func(message string, err error) {
+				log.Fatalf("%v - %v", message, err)
+			},
+			Out: os.Stdout,
+		},
+	}
+
+	// TODO issue #24 - (Rufus) - not sure if I'm using the plugin correctly, but if I build (go build) and run without arguments
+	// I expected to see available arguments but instead the code panics.
+	plugin.Start(&p)
+}
+
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
 }
 
+// Run is called after some processing done by the plugin library during plugin.Start
+// Run must be defined so that CfPlugin satisfies the cf cli plugin interface
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if len(args) > 0 && args[0] == "CLI-MESSAGE-UNINSTALL" {
 		return
@@ -41,6 +61,37 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, argsStruct) {
 		log.Fatal("Smoke tests failed")
+	}
+}
+
+// GetMetadata must be defined so that CfPlugin satisfies the cf cli plugin interface
+func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
+	var major, minor, build int
+	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
+
+	return plugin.PluginMetadata{
+		Name: "blue-green-deploy",
+		Version: plugin.VersionType{
+			Major: major,
+			Minor: minor,
+			Build: build,
+		},
+		Commands: []plugin.Command{
+			{
+				Name:     "blue-green-deploy",
+				Alias:    "bgd",
+				HelpText: "Zero-downtime deploys with smoke tests",
+				UsageDetails: plugin.Usage{
+					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
+					// Perhaps we could name the smoke test in the manifest?
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
+					Options: map[string]string{
+						"smoke-test": "The test script to run.",
+						"f":          "Path to manifest",
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -151,36 +202,6 @@ func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, li
 	return uniqueRoutes
 }
 
-func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
-	var major, minor, build int
-	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
-
-	return plugin.PluginMetadata{
-		Name: "blue-green-deploy",
-		Version: plugin.VersionType{
-			Major: major,
-			Minor: minor,
-			Build: build,
-		},
-		Commands: []plugin.Command{
-			{
-				Name:     "blue-green-deploy",
-				Alias:    "bgd",
-				HelpText: "Zero-downtime deploys with smoke tests",
-				UsageDetails: plugin.Usage{
-					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
-					// Perhaps we could name the smoke test in the manifest?
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
-					Options: map[string]string{
-						"smoke-test": "The test script to run.",
-						"f":          "Path to manifest",
-					},
-				},
-			},
-		},
-	}
-}
-
 func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	var res []string
 	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
@@ -208,22 +229,4 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 
 func FQDN(r plugin_models.GetApp_RouteSummary) string {
 	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
-}
-
-func main() {
-
-	log.SetFlags(0)
-
-	p := CfPlugin{
-		Deployer: &BlueGreenDeploy{
-			ErrorFunc: func(message string, err error) {
-				log.Fatalf("%v - %v", message, err)
-			},
-			Out: os.Stdout,
-		},
-	}
-
-	// TODO issue #24 - (Rufus) - not sure if I'm using the plugin correctly, but if I build (go build) and run without arguments
-	// I expected to see available arguments but instead the code panics.
-	plugin.Start(&p)
 }
