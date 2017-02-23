@@ -9,6 +9,7 @@ import (
 
 func main() {
 
+	// Remove timestamps on flags output by logger
 	log.SetFlags(0)
 
 	p := CfPlugin{
@@ -20,7 +21,5 @@ func main() {
 		},
 	}
 
-	// TODO issue #24 - (Rufus) - not sure if I'm using the plugin correctly, but if I build (go build) and run without arguments
-	// I expected to see available arguments but instead the code panics.
 	plugin.Start(&p)
 }
