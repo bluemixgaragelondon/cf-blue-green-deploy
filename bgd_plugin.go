@@ -17,6 +17,21 @@ var PluginVersion string
 type CfPlugin struct {
 	Connection plugin.CliConnection
 	Deployer   BlueGreenDeployer
+	DeploymentInfo
+}
+
+type DeploymentInfo struct {
+	DefaultCfDomain string
+	LiveApp         *App
+	StagingApp      *App
+	NewApp          *App
+}
+
+// Embed the GetAppModel struct so we can define
+// our own functions on this struct as well as
+// running custom ones.
+type App struct {
+	plugin_models.GetAppModel
 }
 
 // GetMetadata must be defined so that CfPlugin satisfies the cf cli plugin interface
@@ -73,8 +88,8 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("App name was empty, must be provided.")
 	}
 
-	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, *argsStruct) {
-		log.Fatal("Smoke tests failed")
+	if err := p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, *argsStruct); err != nil {
+		log.Fatal("Deploy failed: %v", err)
 	}
 }
 
@@ -109,11 +124,11 @@ func (p *CfPlugin) DefaultCfDomain() (string, error) {
 	return response.Resources[0].Entity.Name, nil
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) bool {
+func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) error {
 	appName := args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
-	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
+	p.LiveApp = p.Deployer.LiveApp(appName)
 
 	manifestScaleParameters := p.GetScaleFromManifest(appName, defaultCfDomain, manifestReader)
 
@@ -125,36 +140,36 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
 	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath, manifestScaleParameters)
 
-	promoteNewApp := true
-	smokeTestScript := args.SmokeTestPath
-	if smokeTestScript != "" {
-		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, FQDN(tempRoute))
+	// If we have a smoke test, run it
+	if args.SmokeTestPath != "" {
+		if err := p.Deployer.RunSmokeTests(args.SmokeTestPath, FQDN(tempRoute)); err != nil {
+			// If smoke test errors, return error
+			p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
+			p.Deployer.RenameApp(newAppName, appName+"-failed")
+			return err
+		}
 	}
 
 	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
-	newAppRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, manifestReader, liveAppRoutes)
+	newAppRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, manifestReader, p.LiveApp)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
-	if promoteNewApp {
-		// If there is a live app, we want to disassociate the routes with the old version of the app
-		// and instead update the routes to use the new version.
-		if liveAppName != "" {
-			p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
-			p.Deployer.RenameApp(liveAppName, appName+"-old")
-			p.Deployer.RenameApp(newAppName, appName)
-			p.Deployer.UnmapRoutesFromApp(appName+"-old", liveAppRoutes...)
-		} else {
-			// If there is no live app, we only need to add our new routes.
-			p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
-			p.Deployer.RenameApp(newAppName, appName)
-		}
-		return true
+	// If there is a live app, we want to disassociate the routes with the old version of the app
+	// and instead update the routes to use the new version.
+	if p.LiveApp != nil {
+		p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
+		p.Deployer.RenameApp(p.LiveApp.Name, appName+"-old")
+		p.Deployer.RenameApp(newAppName, appName)
+		p.Deployer.UnmapRoutesFromApp(appName+"-old", p.LiveApp.Routes...)
 	} else {
-		// We don't want to promote. Instead mark it as failed.
-		p.Deployer.RenameApp(newAppName, appName+"-failed")
-		return false
+		// If there is no live app, we only need to add our new routes.
+		p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
+		p.Deployer.RenameApp(newAppName, appName)
 	}
+
+	return nil
+
 }
 
 func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
@@ -181,8 +196,9 @@ func FQDN(r plugin_models.GetApp_RouteSummary) string {
 	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
-	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
+func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveApp *App) []plugin_models.GetApp_RouteSummary {
+	var uniqueRoutes []plugin_models.GetApp_RouteSummary
+	var routesFromManifest []plugin_models.GetApp_RouteSummary
 
 	manifest, err := manifestReader.Read()
 	if err != nil {
@@ -192,16 +208,21 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 
 	if manifest != nil {
 		if appParams := manifest.GetAppParams(appName, defaultCfDomain); appParams != nil && appParams.Routes != nil {
-			newAppRoutes = appParams.Routes
+			routesFromManifest = appParams.Routes
 		}
 	}
 
-	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
+	if liveApp != nil && len(liveApp.Routes) != 0 {
+		uniqueRoutes = p.UnionRouteLists(routesFromManifest, liveApp.Routes)
+	} else {
+		uniqueRoutes = routesFromManifest
+	}
 
 	if len(uniqueRoutes) == 0 {
 		uniqueRoutes = append(uniqueRoutes, plugin_models.GetApp_RouteSummary{Host: appName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}})
 	}
 	return uniqueRoutes
+
 }
 
 func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, listB []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {

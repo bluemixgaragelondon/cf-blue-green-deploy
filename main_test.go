@@ -238,7 +238,7 @@ var _ = Describe("BGD Plugin", func() {
 				)
 
 				BeforeEach(func() {
-					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					b = &BlueGreenDeployFake{liveApp: nil, smokeTestError: nil}
 					p = CfPlugin{
 						Deployer: b,
 					}
@@ -259,9 +259,9 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
+					err := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
-					Expect(result).To(Equal(true))
+					Expect(err).To(BeNil())
 				})
 			})
 
@@ -272,7 +272,7 @@ var _ = Describe("BGD Plugin", func() {
 				)
 
 				BeforeEach(func() {
-					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: false}
+					b = &BlueGreenDeployFake{liveApp: nil, smokeTestError: fmt.Errorf("Smoke test fail")}
 					p = CfPlugin{
 						Deployer: b,
 					}
@@ -292,9 +292,9 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
+					err := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
-					Expect(result).To(Equal(false))
+					Expect(err).ToNot(BeNil())
 				})
 			})
 		})
@@ -478,12 +478,12 @@ var _ = Describe("BGD Plugin", func() {
 })
 
 type BlueGreenDeployFake struct {
-	flow          []string
-	liveApp       *plugin_models.GetAppModel
-	passSmokeTest bool
-	mappedRoutes  []plugin_models.GetApp_RouteSummary
-	scale         *ScaleParameters
-	usedScale     *ScaleParameters
+	flow           []string
+	liveApp        *plugin_models.GetAppModel
+	smokeTestError error
+	mappedRoutes   []plugin_models.GetApp_RouteSummary
+	scale          *ScaleParameters
+	usedScale      *ScaleParameters
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
@@ -504,17 +504,17 @@ func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
 	p.flow = append(p.flow, "delete old apps")
 }
 
-func (p *BlueGreenDeployFake) LiveApp(string) (string, []plugin_models.GetApp_RouteSummary) {
+func (p *BlueGreenDeployFake) LiveApp(string) *App {
 	p.flow = append(p.flow, "get current live app")
 	if p.liveApp == nil {
-		return "", nil
+		return nil
 	} else {
-		return p.liveApp.Name, p.liveApp.Routes
+		return &App{*p.liveApp}
 	}
 }
-func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
+func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) error {
 	p.flow = append(p.flow, fmt.Sprintf("%s %s", script, fqdn))
-	return p.passSmokeTest
+	return p.smokeTestError
 }
 
 func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp plugin_models.GetAppModel, newApp plugin_models.GetAppModel) {
