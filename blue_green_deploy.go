@@ -18,8 +18,8 @@ type BlueGreenDeployer interface {
 	PushNewApp(string, plugin_models.GetApp_RouteSummary, string, ScaleParameters)
 	DeleteAllAppsExceptLiveApp(string)
 	GetScaleParameters(string) (ScaleParameters, error)
-	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
-	RunSmokeTests(string, string) bool
+	LiveApp(string) *App
+	RunSmokeTests(string, string) error
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
 	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
@@ -140,26 +140,30 @@ func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetApp
 	return
 }
 
-func (p *BlueGreenDeploy) LiveApp(appName string) (string, []plugin_models.GetApp_RouteSummary) {
+func (p *BlueGreenDeploy) LiveApp(appName string) *App {
 
 	// Don't worry about error handling since earlier calls would have flushed out any errors
 	// except for ones that the app doesn't exist (which isn't an error condition for us)
+
+	// TODO: We should capture the specific error for app not existing and handle all other errors
+
 	liveApp, _ := p.Connection.GetApp(appName)
-	return liveApp.Name, liveApp.Routes
+	return &App{liveApp}
 }
 
-func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
+func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) error {
 	out, err := exec.Command(script, appFQDN).CombinedOutput()
 	fmt.Fprintln(p.Out, string(out))
 
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
-			return false
+			return err
 		} else {
 			p.ErrorFunc("Smoke tests failed", err)
+			return err
 		}
 	}
-	return true
+	return nil
 }
 
 func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {

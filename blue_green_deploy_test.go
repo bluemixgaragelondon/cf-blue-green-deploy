@@ -404,8 +404,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns the live app", func() {
 				connection.GetAppReturns(liveApp, nil)
 
-				name, _ := p.LiveApp("app-name")
-				Expect(name).To(Equal(liveApp.Name))
+				app := p.LiveApp("app-name")
+				Expect(app.Name).To(Equal(liveApp.Name))
 			})
 		})
 
@@ -413,8 +413,8 @@ var _ = Describe("BlueGreenDeploy", func() {
 			It("returns an empty app name", func() {
 				connection.GetAppReturns(plugin_models.GetAppModel{}, errors.New("an error for no apps"))
 
-				name, _ := p.LiveApp("app-name")
-				Expect(name).To(BeEmpty())
+				app := p.LiveApp("app-name")
+				Expect(app.Name).To(BeEmpty())
 			})
 		})
 	})
@@ -489,14 +489,14 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 
 		Context("when script fails", func() {
-			var passSmokeTest bool
+			var err error
 
 			BeforeEach(func() {
-				passSmokeTest = p.RunSmokeTests("test/support/smoke-test-script", "FORCE-SMOKE-TEST-FAILURE")
+				err = p.RunSmokeTests("test/support/smoke-test-script", "FORCE-SMOKE-TEST-FAILURE")
 			})
 
-			It("returns false", func() {
-				Expect(passSmokeTest).To(Equal(false))
+			It("returns error", func() {
+				Expect(err).ToNot(BeNil())
 			})
 
 			It("doesn't fail", func() {
