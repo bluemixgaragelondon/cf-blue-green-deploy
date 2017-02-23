@@ -19,6 +19,37 @@ type CfPlugin struct {
 	Deployer   BlueGreenDeployer
 }
 
+// GetMetadata must be defined so that CfPlugin satisfies the cf cli plugin interface
+func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
+	var major, minor, build int
+	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
+
+	return plugin.PluginMetadata{
+		Name: "blue-green-deploy",
+		Version: plugin.VersionType{
+			Major: major,
+			Minor: minor,
+			Build: build,
+		},
+		Commands: []plugin.Command{
+			{
+				Name:     "blue-green-deploy",
+				Alias:    "bgd",
+				HelpText: "Zero-downtime deploys with smoke tests",
+				UsageDetails: plugin.Usage{
+					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
+					// Perhaps we could name the smoke test in the manifest?
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
+					Options: map[string]string{
+						"smoke-test": "The test script to run.",
+						"f":          "Path to manifest",
+					},
+				},
+			},
+		},
+	}
+}
+
 // Run is called after some processing done by the plugin library during plugin.Start
 // Run must be defined so that CfPlugin satisfies the cf cli plugin interface
 func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
@@ -49,35 +80,37 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 }
 
-// GetMetadata must be defined so that CfPlugin satisfies the cf cli plugin interface
-func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
-	var major, minor, build int
-	fmt.Sscanf(PluginVersion, "%d.%d.%d", &major, &minor, &build)
-
-	return plugin.PluginMetadata{
-		Name: "blue-green-deploy",
-		Version: plugin.VersionType{
-			Major: major,
-			Minor: minor,
-			Build: build,
-		},
-		Commands: []plugin.Command{
-			{
-				Name:     "blue-green-deploy",
-				Alias:    "bgd",
-				HelpText: "Zero-downtime deploys with smoke tests",
-				UsageDetails: plugin.Usage{
-					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
-					// Perhaps we could name the smoke test in the manifest?
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
-					Options: map[string]string{
-						"smoke-test": "The test script to run.",
-						"f":          "Path to manifest",
-					},
-				},
-			},
-		},
+// DefaultCfDomain gets the default CF domain.
+// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+// shows that there is technically not a default shared domain,
+// by default pushes go to the first shared domain created in the system.
+// As long as the first created is the same as the first listed in our query
+// below, our function is valid.
+func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
+	var res []string
+	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
+		return
 	}
+
+	response := struct {
+		Resources []struct {
+			Entity struct {
+				Name string
+			}
+		}
+	}{}
+
+	var json_string string
+	json_string = strings.Join(res, "\n")
+
+	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
+		return
+	}
+
+	// https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+	// This documentation shows there is technically
+	domain = response.Resources[0].Entity.Name
+	return
 }
 
 func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) bool {
@@ -128,6 +161,30 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	}
 }
 
+func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
+	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
+	manifest, err := manifestReader.Read()
+	if err != nil {
+		// TODO: Handle this error nicely
+		fmt.Println(err)
+	}
+	if manifest != nil {
+		manifestScaleParameters := manifest.GetAppParams(appName, defaultCfDomain)
+		if manifestScaleParameters != nil {
+			scaleParameters = ScaleParameters{
+				Memory:        manifestScaleParameters.Memory,
+				InstanceCount: manifestScaleParameters.InstanceCount,
+				DiskQuota:     manifestScaleParameters.DiskQuota,
+			}
+		}
+	}
+	return
+}
+
+func FQDN(r plugin_models.GetApp_RouteSummary) string {
+	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
+}
+
 func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 
@@ -151,26 +208,6 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 	return uniqueRoutes
 }
 
-func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
-	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
-	manifest, err := manifestReader.Read()
-	if err != nil {
-		// TODO: Handle this error nicely
-		fmt.Println(err)
-	}
-	if manifest != nil {
-		manifestScaleParameters := manifest.GetAppParams(appName, defaultCfDomain)
-		if manifestScaleParameters != nil {
-			scaleParameters = ScaleParameters{
-				Memory:        manifestScaleParameters.Memory,
-				InstanceCount: manifestScaleParameters.InstanceCount,
-				DiskQuota:     manifestScaleParameters.DiskQuota,
-			}
-		}
-	}
-	return
-}
-
 func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, listB []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	duplicateList := append(listA, listB...)
 
@@ -185,41 +222,4 @@ func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, li
 		uniqueRoutes = append(uniqueRoutes, route)
 	}
 	return uniqueRoutes
-}
-
-// DefaultCfDomain gets the default CF domain.
-// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
-// shows that there is technically not a default shared domain,
-// by default pushes go to the first shared domain created in the system.
-// As long as the first created is the same as the first listed in our query
-// below, our function is valid.
-func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
-	var res []string
-	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
-		return
-	}
-
-	response := struct {
-		Resources []struct {
-			Entity struct {
-				Name string
-			}
-		}
-	}{}
-
-	var json_string string
-	json_string = strings.Join(res, "\n")
-
-	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
-		return
-	}
-
-	// https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
-	// This documentation shows there is technically
-	domain = response.Resources[0].Entity.Name
-	return
-}
-
-func FQDN(r plugin_models.GetApp_RouteSummary) string {
-	return fmt.Sprintf("%v.%v", r.Host, r.Domain.Name)
 }
