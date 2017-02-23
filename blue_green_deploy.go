@@ -37,6 +37,10 @@ type ScaleParameters struct {
 	DiskQuota     int64
 }
 
+func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
+	p.Connection = connection
+}
+
 func (p *BlueGreenDeploy) DeleteAppVersions(apps []plugin_models.GetAppsModel) {
 	for _, app := range apps {
 		if _, err := p.Connection.CliCommand("delete", app.Name, "-f", "-r"); err != nil {
@@ -142,10 +146,6 @@ func (p *BlueGreenDeploy) LiveApp(appName string) (string, []plugin_models.GetAp
 	// except for ones that the app doesn't exist (which isn't an error condition for us)
 	liveApp, _ := p.Connection.GetApp(appName)
 	return liveApp.Name, liveApp.Routes
-}
-
-func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
-	p.Connection = connection
 }
 
 func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {

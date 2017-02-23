@@ -62,8 +62,6 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal(err)
 	}
 
-	p.Connection = cliConnection
-
 	defaultCfDomain, err := p.DefaultCfDomain()
 	if err != nil {
 		log.Fatalf("Failed to get default shared domain: %v", err)
@@ -88,6 +86,8 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 // below, our function is valid.
 func (p *CfPlugin) DefaultCfDomain() (string, error) {
 	var res []string
+	var err error
+
 	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
 		return "", err
 	}
@@ -132,7 +132,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	}
 
 	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
-	newAppRoutes := p.GetNewAppRoutes(args.AppName, defaultCfDomain, manifestReader, liveAppRoutes)
+	newAppRoutes := p.GetNewAppRoutes(appName, defaultCfDomain, manifestReader, liveAppRoutes)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
