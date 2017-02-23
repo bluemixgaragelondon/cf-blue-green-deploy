@@ -187,6 +187,12 @@ func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, li
 	return uniqueRoutes
 }
 
+// DefaultCfDomain gets the default CF domain.
+// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+// shows that there is technically not a default shared domain,
+// by default pushes go to the first shared domain created in the system.
+// As long as the first created is the same as the first listed in our query
+// below, our function is valid.
 func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	var res []string
 	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
@@ -208,6 +214,8 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 		return
 	}
 
+	// https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+	// This documentation shows there is technically
 	domain = response.Resources[0].Entity.Name
 	return
 }
