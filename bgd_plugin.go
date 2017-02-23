@@ -86,10 +86,10 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 // by default pushes go to the first shared domain created in the system.
 // As long as the first created is the same as the first listed in our query
 // below, our function is valid.
-func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
+func (p *CfPlugin) DefaultCfDomain() (string, error) {
 	var res []string
 	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
-		return
+		return "", err
 	}
 
 	response := struct {
@@ -104,13 +104,9 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 	json_string = strings.Join(res, "\n")
 
 	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
-		return
+		return "", err
 	}
-
-	// https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
-	// This documentation shows there is technically
-	domain = response.Resources[0].Entity.Name
-	return
+	return response.Resources[0].Entity.Name, nil
 }
 
 func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) bool {
