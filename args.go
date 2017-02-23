@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 )
 
 type Args struct {
@@ -10,49 +11,36 @@ type Args struct {
 	AppName       string
 }
 
-func NewArgs(osArgs []string) Args {
+// NewArgs is called on arguments passed back cf cli core
+// cf cli strips the "cf" and the plugin name (blue-green-deploy or bgd)
+// for you.
+// We currently pick up smoke test, manifest path, and app name
+func NewArgs(argsFromCF []string) (*Args, error) {
 	args := Args{}
-	args.AppName = extractAppName(osArgs)
 
-	// Only use FlagSet so that we can pass string slice to Parse
+	// Assumption: The first argument to the app is the app name
+	// issue #27
+	// Hypothetically, we could get app name from manifest if manifest only describes
+	// one app
+
+	if len(argsFromCF) == 0 {
+		return nil, fmt.Errorf("No arguments passed to blue-green-deploy")
+	}
+
+	// The cf docs say
+	//  'Name: You can use any series of alpha-numeric characters, without spaces, as the name of your app.'
+	// , therefore just take the first argument as the name, same as cf push does.
+	args.AppName = argsFromCF[0]
+
+	// Grab the other args using flags library
+
+	// Using FlagSet instead of flag so that we can pass string slice to Parse
 	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
-
 	f.StringVar(&args.SmokeTestPath, "smoke-test", "", "")
 	f.StringVar(&args.ManifestPath, "f", "", "")
 
-	f.Parse(extractBgdArgs(osArgs))
+	// Parse all args but the first which we decided was the app name
+	f.Parse(argsFromCF[1:])
 
-	return args
-}
-
-func indexOfAppName(osArgs []string) int {
-	index := 0
-	for i, arg := range osArgs {
-		if arg == "blue-green-deploy" || arg == "bgd" {
-			index = i + 1
-			break
-		}
-	}
-	if len(osArgs) > index {
-		return index
-	}
-	return -1
-}
-
-func extractAppName(osArgs []string) string {
-	// Assume an app name will be passed - issue #27
-	index := indexOfAppName(osArgs)
-	if index >= 0 {
-		return osArgs[index]
-	}
-	return ""
-}
-
-func extractBgdArgs(osArgs []string) []string {
-	index := indexOfAppName(osArgs)
-	if index >= 0 && len(osArgs) > index+1 {
-		return osArgs[index+1:]
-	}
-
-	return []string{}
+	return &args, nil
 }

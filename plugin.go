@@ -26,7 +26,10 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		return
 	}
 
-	argsStruct := NewArgs(args)
+	argsStruct, err := NewArgs(args)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	p.Connection = cliConnection
 
@@ -41,7 +44,7 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("App name was empty, must be provided.")
 	}
 
-	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, argsStruct) {
+	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, *argsStruct) {
 		log.Fatal("Smoke tests failed")
 	}
 }
