@@ -40,7 +40,9 @@ func NewArgs(argsFromCF []string) (*Args, error) {
 	f.StringVar(&args.ManifestPath, "f", "", "")
 
 	// Parse all args but the first which we decided was the app name
-	f.Parse(argsFromCF[1:])
+	if err := f.Parse(argsFromCF[1:]); err != nil {
+		return nil, err
+	}
 
 	return &args, nil
 }
