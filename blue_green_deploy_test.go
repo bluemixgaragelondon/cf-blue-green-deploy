@@ -274,10 +274,10 @@ var _ = Describe("BlueGreenDeploy", func() {
 				connection.GetAppReturns(appModel, nil)
 			})
 			It("reads the app data and returns the scale parameters", func() {
-				scaleParameters, _ := p.GetScaleParameters(appName)
-				Expect(scaleParameters.InstanceCount).To(Equal(instanceCount))
-				Expect(scaleParameters.Memory).To(Equal(memory))
-				Expect(scaleParameters.DiskQuota).To(Equal(diskQuota))
+				app := p.LiveApp(appName)
+				Expect(app.InstanceCount).To(Equal(instanceCount))
+				Expect(app.Memory).To(Equal(memory))
+				Expect(app.DiskQuota).To(Equal(diskQuota))
 			})
 		})
 		Context("for an app that does not exist", func() {
@@ -286,12 +286,12 @@ var _ = Describe("BlueGreenDeploy", func() {
 				appModel := plugin_models.GetAppModel{}
 				connection.GetAppReturns(appModel, errors.New("App was not found"))
 			})
-			It("returns an empty struct and an error value", func() {
-				scaleParameters, error := p.GetScaleParameters(appName)
-				Expect(error).ToNot(Equal(nil))
-				Expect(scaleParameters.InstanceCount).To(Equal(0))
-				Expect(scaleParameters.Memory).To(Equal(int64(0)))
-				Expect(scaleParameters.DiskQuota).To(Equal(int64(0)))
+			It("returns an empty struct", func() {
+				app := p.LiveApp(appName)
+
+				Expect(app.InstanceCount).To(Equal(0))
+				Expect(app.Memory).To(Equal(int64(0)))
+				Expect(app.DiskQuota).To(Equal(int64(0)))
 			})
 		})
 	})

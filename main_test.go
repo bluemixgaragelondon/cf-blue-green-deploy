@@ -495,10 +495,6 @@ func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) GetScaleParameters(appName string) (ScaleParameters, error) {
-	return ScaleParameters{}, nil
-}
-
 func (p *BlueGreenDeployFake) Push(newApp *App) {
 	p.flow = append(p.flow, fmt.Sprintf("push %s", newApp.Name))
 	p.diskQuota = newApp.DiskQuota
