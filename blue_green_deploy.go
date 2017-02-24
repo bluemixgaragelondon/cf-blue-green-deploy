@@ -18,7 +18,6 @@ type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
 	Push(*App)
 	DeleteAllAppsExceptLiveApp(string)
-	GetScaleParameters(string) (ScaleParameters, error)
 	LiveApp(string) *App
 	RunSmokeTests(string, string) error
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
@@ -58,19 +57,6 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 	oldAppVersions := p.GetOldApps(appName, appsInSpace)
 	p.DeleteAppVersions(oldAppVersions)
 
-}
-
-func (p *BlueGreenDeploy) GetScaleParameters(appName string) (ScaleParameters, error) {
-	appModel, err := p.Connection.GetApp(appName)
-	if err != nil {
-		return ScaleParameters{}, fmt.Errorf("Could not get scale parameters")
-	}
-	scaleParameters := ScaleParameters{
-		InstanceCount: appModel.InstanceCount,
-		Memory:        appModel.Memory,
-		DiskQuota:     appModel.DiskQuota,
-	}
-	return scaleParameters, nil
 }
 
 // TODO generate this based on struct tags to avoid massive list of if statements
