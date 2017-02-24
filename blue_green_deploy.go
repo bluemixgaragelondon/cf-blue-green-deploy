@@ -9,6 +9,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/imdario/mergo"
 )
 
 type ErrorHandler func(string, error)
@@ -86,19 +87,18 @@ func scaleArgsToCLI(app *App) string {
 	return str
 }
 
-func (a *App) Merge(liveApp *App) {
+// Merge uses a third party library, mergo, to merge app definitions.
+// If a parameter is not equal to it's zero value in a, this is left.
+// If a parameter is equal to it's zero value in a but defined in liveApp,
+// the parameter is copied over to a.
+func (a *App) Merge(liveApp *App) error {
 	// Use serverside scale parameters if not defined in manifest
 	if liveApp != nil {
-		if a.InstanceCount == 0 {
-			a.InstanceCount = liveApp.InstanceCount
-		}
-		if a.Memory == 0 {
-			a.Memory = liveApp.Memory
-		}
-		if a.DiskQuota == 0 {
-			a.DiskQuota = liveApp.DiskQuota
+		if err := mergo.Merge(a, *liveApp); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 func (p *BlueGreenDeploy) Push(newApp *App) {

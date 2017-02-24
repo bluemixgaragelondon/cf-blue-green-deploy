@@ -153,7 +153,10 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	}
 
 	p.LiveApp = p.Deployer.LiveApp(appName)
-	p.NewApp.Merge(p.LiveApp)
+	if err := p.NewApp.Merge(p.LiveApp); err != nil {
+		fmt.Println(err)
+		return err
+	}
 
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
 	p.Deployer.Push(p.NewApp)
