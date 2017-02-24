@@ -73,18 +73,41 @@ func (p *BlueGreenDeploy) GetScaleParameters(appName string) (ScaleParameters, e
 	return scaleParameters, nil
 }
 
-func scaleArgsToCLI(app *App) string {
-	var str string
-	if app.InstanceCount != 0 {
-		str += fmt.Sprintf(" -i %d", app.InstanceCount)
+// TODO generate this based on struct tags to avoid massive list of if statements
+func (a *App) generatePushArgs() (string, error) {
+	result := "push"
+	if a.Name == "" {
+		return "", fmt.Errorf("Expected app to have name, cannot push without name")
 	}
-	if app.Memory != 0 {
-		str += fmt.Sprintf(" -m %dM", app.Memory)
+	result += " " + a.Name
+
+	if len(a.Routes) != 1 {
+		// TODO support pushing apps with more than 1 route
+		return "", fmt.Errorf("Expected new app to have exactly 1 route during push, got %v", len(a.Routes))
 	}
-	if app.DiskQuota != 0 {
-		str += fmt.Sprintf(" -k %dM", app.DiskQuota)
+	if a.Routes[0].Host == "" {
+		return "", fmt.Errorf("Expected new app to have a host")
 	}
-	return str
+	result += " -n " + a.Routes[0].Host
+
+	if a.Routes[0].Domain.Name == "" {
+		return "", fmt.Errorf("Expected new app to have a domain name")
+	}
+	result += " -d " + a.Routes[0].Domain.Name
+
+	if a.InstanceCount != 0 {
+		result += fmt.Sprintf(" -i %d", a.InstanceCount)
+	}
+	if a.Memory != 0 {
+		result += fmt.Sprintf(" -m %dM", a.Memory)
+	}
+	if a.DiskQuota != 0 {
+		result += fmt.Sprintf(" -k %dM", a.DiskQuota)
+	}
+	if a.ManifestPath != "" {
+		result += " -f " + a.ManifestPath
+	}
+	return result, nil
 }
 
 // Merge uses a third party library, mergo, to merge app definitions.
@@ -107,13 +130,10 @@ func (p *BlueGreenDeploy) Push(newApp *App) {
 		err := fmt.Errorf("Expected to be pushing an app with 1 route, got %v", len(newApp.Routes))
 		p.ErrorFunc("", err)
 	}
-	route := newApp.Routes[0]
 
-	// TODO generate args in a function which errors
-	args := fmt.Sprintf("push %v -n %v -d %v", newApp.Name, route.Host, route.Domain.Name)
-	args += scaleArgsToCLI(newApp)
-	if newApp.ManifestPath != "" {
-		args += " -f " + newApp.ManifestPath
+	args, err := newApp.generatePushArgs()
+	if err != nil {
+		p.ErrorFunc("", err)
 	}
 
 	if _, err := p.Connection.CliCommand(strings.Split(args, " ")...); err != nil {
