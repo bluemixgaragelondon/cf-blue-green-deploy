@@ -4,7 +4,7 @@ Before making a public release, we should test for a couple of days by pushing
 to the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list).
 This will be done automatically by the [Bluemix DevOps Pipeline](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) after step 2.
 
-1. Run tests and acceptance tests
+1. Check the output of the [latest build](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) is green.
 
 1. Edit the `PLUGIN_VERSION` variable in `.env`
 
@@ -20,9 +20,9 @@ This will be done automatically by the [Bluemix DevOps Pipeline](https://console
 You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`:
 
    * version
-   * updated
+   * updated timestamp
    * url - this should be `https://github.com/bluemixgaragelondon/new_plugin/releases/download/vX.X.X/blue-green-deploy.PLATFORM`
-   * sum - generate this using `shasum *` in the _artefacts_ directory
+   * sum - copy from [the garage staging repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list) as this version will have passed all of the testing.
 
 # Running the acceptance tests
 
