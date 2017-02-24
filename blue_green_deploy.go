@@ -15,7 +15,7 @@ type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string, plugin_models.GetApp_RouteSummary, string, ScaleParameters)
+	Push(*App)
 	DeleteAllAppsExceptLiveApp(string)
 	GetScaleParameters(string) (ScaleParameters, error)
 	LiveApp(string) *App
@@ -72,52 +72,52 @@ func (p *BlueGreenDeploy) GetScaleParameters(appName string) (ScaleParameters, e
 	return scaleParameters, nil
 }
 
-func mergeScaleParameters(liveScale, manifestScale ScaleParameters) ScaleParameters {
-	scaleParameters := liveScale
-	if manifestScale.Memory != 0 {
-		scaleParameters.Memory = manifestScale.Memory
+func scaleArgsToCLI(app *App) string {
+	var str string
+	if app.InstanceCount != 0 {
+		str += fmt.Sprintf(" -i %d", app.InstanceCount)
 	}
-	if manifestScale.InstanceCount != 0 {
-		scaleParameters.InstanceCount = manifestScale.InstanceCount
+	if app.Memory != 0 {
+		str += fmt.Sprintf(" -m %dM", app.Memory)
 	}
-	if manifestScale.DiskQuota != 0 {
-		scaleParameters.DiskQuota = manifestScale.DiskQuota
+	if app.DiskQuota != 0 {
+		str += fmt.Sprintf(" -k %dM", app.DiskQuota)
 	}
-	return scaleParameters
+	return str
 }
 
-func appendScaleArguments(args []string, scaleParameters ScaleParameters) []string {
-	if scaleParameters.InstanceCount != 0 {
-		instanceCount := fmt.Sprintf("%d", scaleParameters.InstanceCount)
-		args = append(args, "-i", instanceCount)
+func (a *App) Merge(liveApp *App) {
+	// Use serverside scale parameters if not defined in manifest
+	if liveApp != nil {
+		if a.InstanceCount == 0 {
+			a.InstanceCount = liveApp.InstanceCount
+		}
+		if a.Memory == 0 {
+			a.Memory = liveApp.Memory
+		}
+		if a.DiskQuota == 0 {
+			a.DiskQuota = liveApp.DiskQuota
+		}
 	}
-	if scaleParameters.Memory != 0 {
-		memory := fmt.Sprintf("%dM", scaleParameters.Memory)
-		args = append(args, "-m", memory)
-	}
-	if scaleParameters.DiskQuota != 0 {
-		diskQuota := fmt.Sprintf("%dM", scaleParameters.DiskQuota)
-		args = append(args, "-k", diskQuota)
-	}
-	return args
 }
 
-func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
-	manifestPath string, scaleParameters ScaleParameters) {
-	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
-
-	// Remove -new suffix of appname to get live app name
-	newAppSuffix := "-new"
-	liveAppName := appName[:len(appName)-len(newAppSuffix)]
-	liveScaleParameters, _ := p.GetScaleParameters(liveAppName)
-	scaleParameters = mergeScaleParameters(liveScaleParameters, scaleParameters)
-
-	args = appendScaleArguments(args, scaleParameters)
-	if manifestPath != "" {
-		args = append(args, "-f", manifestPath)
+func (p *BlueGreenDeploy) Push(newApp *App) {
+	if len(newApp.Routes) != 1 {
+		// TODO support pushing apps with more than 1 route
+		err := fmt.Errorf("Expected to be pushing an app with 1 route, got %v", len(newApp.Routes))
+		p.ErrorFunc("", err)
 	}
-	if _, err := p.Connection.CliCommand(args...); err != nil {
-		p.ErrorFunc("Could not push new version", err)
+	route := newApp.Routes[0]
+
+	// TODO generate args in a function which errors
+	args := fmt.Sprintf("push %v -n %v -d %v", newApp.Name, route.Host, route.Domain.Name)
+	args += scaleArgsToCLI(newApp)
+	if newApp.ManifestPath != "" {
+		args += " -f " + newApp.ManifestPath
+	}
+
+	if _, err := p.Connection.CliCommand(strings.Split(args, " ")...); err != nil {
+		p.ErrorFunc("Could not run "+args, err)
 	}
 }
 
@@ -148,7 +148,7 @@ func (p *BlueGreenDeploy) LiveApp(appName string) *App {
 	// TODO: We should capture the specific error for app not existing and handle all other errors
 
 	liveApp, _ := p.Connection.GetApp(appName)
-	return &App{liveApp}
+	return &App{GetAppModel: liveApp}
 }
 
 func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) error {
