@@ -201,12 +201,14 @@ var _ = Describe("BGD Plugin", func() {
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
-					scaleParameters := ScaleParameters{
-						Memory:        int64(16),
-						DiskQuota:     int64(500),
-						InstanceCount: 3,
-					}
-					Expect(*b.usedScale).To(Equal(scaleParameters))
+
+					Memory := int64(16)
+					DiskQuota := int64(500)
+					InstanceCount := 3
+
+					Expect(b.memory).To(Equal(Memory))
+					Expect(b.diskQuota).To(Equal(DiskQuota))
+					Expect(b.instanceCount).To(Equal(InstanceCount))
 				})
 			})
 			Context("when no routes are specified in the manifest", func() {
@@ -484,6 +486,9 @@ type BlueGreenDeployFake struct {
 	mappedRoutes   []plugin_models.GetApp_RouteSummary
 	scale          *ScaleParameters
 	usedScale      *ScaleParameters
+	memory         int64
+	instanceCount  int
+	diskQuota      int64
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
@@ -494,10 +499,11 @@ func (p *BlueGreenDeployFake) GetScaleParameters(appName string) (ScaleParameter
 	return ScaleParameters{}, nil
 }
 
-func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
-	manifestPath string, scaleParameters ScaleParameters) {
-	p.usedScale = &scaleParameters
-	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
+func (p *BlueGreenDeployFake) Push(newApp *App) {
+	p.flow = append(p.flow, fmt.Sprintf("push %s", newApp.Name))
+	p.diskQuota = newApp.DiskQuota
+	p.memory = newApp.Memory
+	p.instanceCount = newApp.InstanceCount
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
@@ -509,7 +515,7 @@ func (p *BlueGreenDeployFake) LiveApp(string) *App {
 	if p.liveApp == nil {
 		return nil
 	} else {
-		return &App{*p.liveApp}
+		return &App{GetAppModel: *p.liveApp}
 	}
 }
 func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) error {
