@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -23,6 +24,7 @@ type BlueGreenDeployer interface {
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
 	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
+	DefaultCfDomain() (string, error)
 }
 
 type BlueGreenDeploy struct {
@@ -39,6 +41,47 @@ type ScaleParameters struct {
 
 func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
 	p.Connection = connection
+}
+
+// DefaultCfDomain gets the default CF domain.
+// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+// shows that there is technically not a default shared domain,
+// by default pushes go to the first shared domain created in the system.
+// As long as the first created is the same as the first listed in our query
+// below, our function is valid.
+func (p *BlueGreenDeploy) DefaultCfDomain() (string, error) {
+	var res []string
+	var err error
+
+	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
+		return "", err
+	}
+
+	response := struct {
+		Description string `json:"description"`
+		ErrorCode   string `json:"error_code"`
+		Resources   []struct {
+			Entity struct {
+				Name string
+			}
+		}
+	}{}
+
+	var json_string string
+	json_string = strings.Join(res, "\n")
+
+	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
+		return "", err
+	}
+
+	if response.ErrorCode != "" {
+		return "", fmt.Errorf("%s: %s", response.Description, response.ErrorCode)
+	}
+
+	if len(response.Resources) == 0 {
+		return "", fmt.Errorf("No CF Domains found")
+	}
+	return response.Resources[0].Entity.Name, nil
 }
 
 func (p *BlueGreenDeploy) DeleteAppVersions(apps []plugin_models.GetAppsModel) {
@@ -166,7 +209,6 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) error {
 			return err
 		} else {
 			p.ErrorFunc("Smoke tests failed", err)
-			return err
 		}
 	}
 	return nil
@@ -192,7 +234,7 @@ func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_Rout
 
 func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 	if _, err := p.Connection.CliCommand("rename", app, newName); err != nil {
-		p.ErrorFunc("Could not rename app", err)
+		p.ErrorFunc(fmt.Sprintf("Could not rename app %v to %v", app, newName), err)
 	}
 }
 
