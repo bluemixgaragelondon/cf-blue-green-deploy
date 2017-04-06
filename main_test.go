@@ -329,7 +329,9 @@ var _ = Describe("BGD Plugin", func() {
 		})
 		Describe("DefaultCfDomain", func() {
 			connection := &pluginfakes.FakeCliConnection{}
-			p := CfPlugin{Connection: connection}
+			p := CfPlugin{Deployer: &BlueGreenDeploy{
+				Connection: connection,
+			}}
 
 			Context("when CF command succeeds", func() {
 				It("returns CF default shared domain", func() {
@@ -354,7 +356,7 @@ var _ = Describe("BGD Plugin", func() {
      ]
   }`}, nil
 					}
-					domain, _ := p.DefaultCfDomain()
+					domain, _ := p.Deployer.DefaultCfDomain()
 					Expect(domain).To(Equal("eu-gb.mybluemix.net"))
 				})
 			})
@@ -364,7 +366,7 @@ var _ = Describe("BGD Plugin", func() {
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return nil, errors.New("cf curl failed")
 					}
-					_, err := p.DefaultCfDomain()
+					_, err := p.Deployer.DefaultCfDomain()
 					Expect(err).To(MatchError("cf curl failed"))
 				})
 			})
@@ -374,8 +376,36 @@ var _ = Describe("BGD Plugin", func() {
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{`{"resources": { "entity": "foo" }}`}, nil
 					}
-					_, err := p.DefaultCfDomain()
+					_, err := p.Deployer.DefaultCfDomain()
 					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("when CF command returns valid JSON with error", func() {
+				It("returns error", func() {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{`{
+							"error_code": "CF-NotAuthenticated", 
+							"description": "Authentication error"
+						}`}, nil
+					}
+					_, err := p.Deployer.DefaultCfDomain()
+					Expect(err).To(MatchError("Authentication error: CF-NotAuthenticated"))
+				})
+			})
+
+			Context("when CF command returns valid JSON with no default domains", func() {
+				It("returns error", func() {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{`{
+     "total_results": 0,
+     "total_pages": 0,
+     "prev_url": null,
+     "next_url": null
+  }`}, nil
+					}
+					_, err := p.Deployer.DefaultCfDomain()
+					Expect(err).To(MatchError("No CF Domains found"))
 				})
 			})
 		})
@@ -534,4 +564,9 @@ func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...plugin_mo
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
+}
+
+func (p *BlueGreenDeployFake) DefaultCfDomain() (string, error) {
+	p.flow = append(p.flow, "DefaultCfDomain Called")
+	return "", nil
 }

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
@@ -15,8 +13,7 @@ import (
 var PluginVersion string
 
 type CfPlugin struct {
-	Connection plugin.CliConnection
-	Deployer   BlueGreenDeployer
+	Deployer BlueGreenDeployer
 	DeploymentInfo
 }
 
@@ -78,51 +75,20 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal(err)
 	}
 
-	defaultCfDomain, err := p.DefaultCfDomain()
+	p.Deployer.Setup(cliConnection)
+
+	defaultCfDomain, err := p.Deployer.DefaultCfDomain()
 	if err != nil {
 		log.Fatalf("Failed to get default shared domain: %v", err)
 	}
-
-	p.Deployer.Setup(cliConnection)
 
 	if argsStruct.AppName == "" {
 		log.Fatal("App name was empty, must be provided.")
 	}
 
 	if err := p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, *argsStruct); err != nil {
-		log.Fatal("Deploy failed: %v", err)
+		log.Fatalf("Deploy failed: %v", err)
 	}
-}
-
-// DefaultCfDomain gets the default CF domain.
-// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
-// shows that there is technically not a default shared domain,
-// by default pushes go to the first shared domain created in the system.
-// As long as the first created is the same as the first listed in our query
-// below, our function is valid.
-func (p *CfPlugin) DefaultCfDomain() (string, error) {
-	var res []string
-	var err error
-
-	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
-		return "", err
-	}
-
-	response := struct {
-		Resources []struct {
-			Entity struct {
-				Name string
-			}
-		}
-	}{}
-
-	var json_string string
-	json_string = strings.Join(res, "\n")
-
-	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
-		return "", err
-	}
-	return response.Resources[0].Entity.Name, nil
 }
 
 func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) error {
@@ -163,11 +129,13 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 
 	// If we have a smoke test, run it
 	if args.SmokeTestPath != "" {
+		fmt.Println("Running tests at :", args.SmokeTestPath)
+
 		if err := p.Deployer.RunSmokeTests(args.SmokeTestPath, FQDN(p.NewApp.Routes[0])); err != nil {
 			// If smoke test errors, return error
 			p.Deployer.UnmapRoutesFromApp(newAppName, p.NewApp.Routes[0])
 			p.Deployer.RenameApp(newAppName, appName+"-failed")
-			return err
+			return fmt.Errorf("Smoke tests failed: %v", err)
 		}
 	}
 
@@ -178,7 +146,10 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 
 	// If there is a live app, we want to disassociate the routes with the old version of the app
 	// and instead update the routes to use the new version.
-	if p.LiveApp != nil {
+	// As cf GetApp does not return a pointer to a struct, and instead returns the struct itself,
+	// we have to check a field of an empty struct to see if the struct has any meaning. This
+	// is an antipattern in go. We could fix this in the liveApp() function.
+	if p.LiveApp != nil && p.LiveApp.Name != "" {
 		p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
 		p.Deployer.RenameApp(p.LiveApp.Name, appName+"-old")
 		p.Deployer.RenameApp(newAppName, appName)

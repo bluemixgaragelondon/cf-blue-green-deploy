@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Args", func() {
 	Context("With an appname only", func() {
-		in := strings.Split("appname", " ")
+		in := strings.Split("bgd appname", " ")
 		args, err := NewArgs(in)
 
 		It("does not error", func() {
@@ -30,7 +30,7 @@ var _ = Describe("Args", func() {
 	})
 
 	Context("With a smoke test and an appname", func() {
-		in := strings.Split("appname --smoke-test script/smoke-test", " ")
+		in := strings.Split("bgd appname --smoke-test script/smoke-test", " ")
 		args, err := NewArgs(in)
 
 		It("does not error", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Args", func() {
 	})
 
 	Context("With an appname smoke test and a manifest", func() {
-		in := strings.Split("appname --smoke-test smokey -f manifest.yml", " ")
+		in := strings.Split("bgd appname --smoke-test smokey -f manifest.yml", " ")
 		args, err := NewArgs(in)
 
 		It("does not error", func() {
