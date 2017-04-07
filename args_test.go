@@ -9,7 +9,12 @@ import (
 
 var _ = Describe("Args", func() {
 	Context("With an appname only", func() {
-		args := NewArgs(bgdArgs("appname"))
+		in := strings.Split("bgd appname", " ")
+		args, err := NewArgs(in)
+
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
 
 		It("sets the app name", func() {
 			Expect(args.AppName).To(Equal("appname"))
@@ -25,7 +30,12 @@ var _ = Describe("Args", func() {
 	})
 
 	Context("With a smoke test and an appname", func() {
-		args := NewArgs(bgdArgs("appname --smoke-test script/smoke-test"))
+		in := strings.Split("bgd appname --smoke-test script/smoke-test", " ")
+		args, err := NewArgs(in)
+
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
 
 		It("sets the smoke test file", func() {
 			Expect(args.SmokeTestPath).To(Equal("script/smoke-test"))
@@ -41,7 +51,12 @@ var _ = Describe("Args", func() {
 	})
 
 	Context("With an appname smoke test and a manifest", func() {
-		args := NewArgs(bgdArgs("appname --smoke-test smokey -f manifest.yml"))
+		in := strings.Split("bgd appname --smoke-test smokey -f manifest.yml", " ")
+		args, err := NewArgs(in)
+
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
 
 		It("sets the smoke test file", func() {
 			Expect(args.SmokeTestPath).To(Equal("smokey"))
@@ -56,24 +71,66 @@ var _ = Describe("Args", func() {
 		})
 	})
 
-	Context("When a global cf flag is set with an app name", func() {
-		args := NewArgs([]string{"cf", "-v", "blue-green-deploy", "app"})
+	Context("With a smoke test and a manifest and app name at the end", func() {
+		in := strings.Split("bgd --smoke-test smokey -f manifest.yml appname", " ")
+		args, err := NewArgs(in)
+
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
+
+		It("sets the smoke test file", func() {
+			Expect(args.SmokeTestPath).To(Equal("smokey"))
+		})
 
 		It("sets the app name", func() {
-			Expect(args.AppName).To(Equal("app"))
+			Expect(args.AppName).To(Equal("appname"))
+		})
+
+		It("sets a manifest", func() {
+			Expect(args.ManifestPath).To(Equal("manifest.yml"))
 		})
 	})
 
-	Context("When the bgd abbreviation is used", func() {
-		args := NewArgs([]string{"cf", "bgd", "app"})
+	Context("With a manifest only", func() {
+		in := strings.Split("bgd -f myManifest.yml", " ")
+		args, err := NewArgs(in)
 
-		It("sets the app name", func() {
-			Expect(args.AppName).To(Equal("app"))
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
+
+		It("does not set an app name", func() {
+			Expect(args.AppName).To(BeZero())
+		})
+
+		It("Sets a manifest", func() {
+			Expect(args.ManifestPath).To(Equal("myManifest.yml"))
+		})
+
+		It("does not set the smoke test file", func() {
+			Expect(args.SmokeTestPath).To(BeZero())
+		})
+	})
+
+	Context("With a smoke test only", func() {
+		in := strings.Split("bgd --smoke-test smokey", " ")
+		args, err := NewArgs(in)
+
+		It("does not error", func() {
+			Expect(err).To(BeNil())
+		})
+
+		It("sets the smoke test file", func() {
+			Expect(args.SmokeTestPath).To(Equal("smokey"))
+		})
+
+		It("does not set an app name", func() {
+			Expect(args.AppName).To(BeZero())
+		})
+
+		It("does not set a manifest", func() {
+			Expect(args.ManifestPath).To(BeZero())
 		})
 	})
 })
-
-func bgdArgs(argString string) []string {
-	args := strings.Split(argString, " ")
-	return append([]string{"cf", "blue-green-deploy"}, args...)
-}

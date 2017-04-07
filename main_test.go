@@ -23,7 +23,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -53,7 +53,7 @@ var _ = Describe("BGD Plugin", func() {
 						Deployer: b,
 					}
 
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name"})
 
 					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
 				})
@@ -81,7 +81,7 @@ var _ = Describe("BGD Plugin", func() {
            - example.com
         `}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", repo, Args{AppName: "app-name"})
 
 					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
@@ -111,7 +111,7 @@ var _ = Describe("BGD Plugin", func() {
            - example.com
         `}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", repo, Args{AppName: "app-name"})
 
 					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
@@ -128,7 +128,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -157,7 +157,7 @@ var _ = Describe("BGD Plugin", func() {
            - example.net
         `}
 
-				p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy("example.com", repo, Args{AppName: "app-name"})
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -192,7 +192,7 @@ var _ = Describe("BGD Plugin", func() {
             hosts:
             - host1
             `}
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", repo, Args{AppName: "app-name"})
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
 						"get current live app",
@@ -201,12 +201,14 @@ var _ = Describe("BGD Plugin", func() {
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
-					scaleParameters := ScaleParameters{
-						Memory:        int64(16),
-						DiskQuota:     int64(500),
-						InstanceCount: 3,
-					}
-					Expect(*b.usedScale).To(Equal(scaleParameters))
+
+					Memory := int64(16)
+					DiskQuota := int64(500)
+					InstanceCount := 3
+
+					Expect(b.memory).To(Equal(Memory))
+					Expect(b.diskQuota).To(Equal(DiskQuota))
+					Expect(b.instanceCount).To(Equal(InstanceCount))
 				})
 			})
 			Context("when no routes are specified in the manifest", func() {
@@ -221,7 +223,7 @@ var _ = Describe("BGD Plugin", func() {
 							- host1
 					`}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy("example.com", repo, Args{AppName: "app-name"})
 
 					Expect(b.mappedRoutes).To(Equal([]plugin_models.GetApp_RouteSummary{
 						{Host: "app-name", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -238,14 +240,14 @@ var _ = Describe("BGD Plugin", func() {
 				)
 
 				BeforeEach(func() {
-					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: true}
+					b = &BlueGreenDeployFake{liveApp: nil, smokeTestError: nil}
 					p = CfPlugin{
 						Deployer: b,
 					}
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -259,9 +261,9 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					err := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
-					Expect(result).To(Equal(true))
+					Expect(err).To(BeNil())
 				})
 			})
 
@@ -272,14 +274,14 @@ var _ = Describe("BGD Plugin", func() {
 				)
 
 				BeforeEach(func() {
-					b = &BlueGreenDeployFake{liveApp: nil, passSmokeTest: false}
+					b = &BlueGreenDeployFake{liveApp: nil, smokeTestError: fmt.Errorf("Smoke test fail")}
 					p = CfPlugin{
 						Deployer: b,
 					}
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -292,9 +294,9 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					err := p.Deploy("example.com", &fakes.FakeManifestReader{}, Args{AppName: "app-name", SmokeTestPath: "script/smoke-test"})
 
-					Expect(result).To(Equal(false))
+					Expect(err).ToNot(BeNil())
 				})
 			})
 		})
@@ -327,7 +329,9 @@ var _ = Describe("BGD Plugin", func() {
 		})
 		Describe("DefaultCfDomain", func() {
 			connection := &pluginfakes.FakeCliConnection{}
-			p := CfPlugin{Connection: connection}
+			p := CfPlugin{Deployer: &BlueGreenDeploy{
+				Connection: connection,
+			}}
 
 			Context("when CF command succeeds", func() {
 				It("returns CF default shared domain", func() {
@@ -352,7 +356,7 @@ var _ = Describe("BGD Plugin", func() {
      ]
   }`}, nil
 					}
-					domain, _ := p.DefaultCfDomain()
+					domain, _ := p.Deployer.DefaultCfDomain()
 					Expect(domain).To(Equal("eu-gb.mybluemix.net"))
 				})
 			})
@@ -362,7 +366,7 @@ var _ = Describe("BGD Plugin", func() {
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return nil, errors.New("cf curl failed")
 					}
-					_, err := p.DefaultCfDomain()
+					_, err := p.Deployer.DefaultCfDomain()
 					Expect(err).To(MatchError("cf curl failed"))
 				})
 			})
@@ -372,8 +376,36 @@ var _ = Describe("BGD Plugin", func() {
 					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 						return []string{`{"resources": { "entity": "foo" }}`}, nil
 					}
-					_, err := p.DefaultCfDomain()
+					_, err := p.Deployer.DefaultCfDomain()
 					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("when CF command returns valid JSON with error", func() {
+				It("returns error", func() {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{`{
+							"error_code": "CF-NotAuthenticated", 
+							"description": "Authentication error"
+						}`}, nil
+					}
+					_, err := p.Deployer.DefaultCfDomain()
+					Expect(err).To(MatchError("Authentication error: CF-NotAuthenticated"))
+				})
+			})
+
+			Context("when CF command returns valid JSON with no default domains", func() {
+				It("returns error", func() {
+					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{`{
+     "total_results": 0,
+     "total_pages": 0,
+     "prev_url": null,
+     "next_url": null
+  }`}, nil
+					}
+					_, err := p.Deployer.DefaultCfDomain()
+					Expect(err).To(MatchError("No CF Domains found"))
 				})
 			})
 		})
@@ -478,43 +510,43 @@ var _ = Describe("BGD Plugin", func() {
 })
 
 type BlueGreenDeployFake struct {
-	flow          []string
-	liveApp       *plugin_models.GetAppModel
-	passSmokeTest bool
-	mappedRoutes  []plugin_models.GetApp_RouteSummary
-	scale         *ScaleParameters
-	usedScale     *ScaleParameters
+	flow           []string
+	liveApp        *plugin_models.GetAppModel
+	smokeTestError error
+	mappedRoutes   []plugin_models.GetApp_RouteSummary
+	scale          *ScaleParameters
+	usedScale      *ScaleParameters
+	memory         int64
+	instanceCount  int
+	diskQuota      int64
 }
 
 func (p *BlueGreenDeployFake) Setup(connection plugin.CliConnection) {
 	p.flow = append(p.flow, "setup")
 }
 
-func (p *BlueGreenDeployFake) GetScaleParameters(appName string) (ScaleParameters, error) {
-	return ScaleParameters{}, nil
-}
-
-func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
-	manifestPath string, scaleParameters ScaleParameters) {
-	p.usedScale = &scaleParameters
-	p.flow = append(p.flow, fmt.Sprintf("push %s", appName))
+func (p *BlueGreenDeployFake) Push(newApp *App) {
+	p.flow = append(p.flow, fmt.Sprintf("push %s", newApp.Name))
+	p.diskQuota = newApp.DiskQuota
+	p.memory = newApp.Memory
+	p.instanceCount = newApp.InstanceCount
 }
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
 	p.flow = append(p.flow, "delete old apps")
 }
 
-func (p *BlueGreenDeployFake) LiveApp(string) (string, []plugin_models.GetApp_RouteSummary) {
+func (p *BlueGreenDeployFake) LiveApp(string) *App {
 	p.flow = append(p.flow, "get current live app")
 	if p.liveApp == nil {
-		return "", nil
+		return nil
 	} else {
-		return p.liveApp.Name, p.liveApp.Routes
+		return &App{GetAppModel: *p.liveApp}
 	}
 }
-func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) bool {
+func (p *BlueGreenDeployFake) RunSmokeTests(script string, fqdn string) error {
 	p.flow = append(p.flow, fmt.Sprintf("%s %s", script, fqdn))
-	return p.passSmokeTest
+	return p.smokeTestError
 }
 
 func (p *BlueGreenDeployFake) RemapRoutesFromLiveAppToNewApp(liveApp plugin_models.GetAppModel, newApp plugin_models.GetAppModel) {
@@ -532,4 +564,9 @@ func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...plugin_mo
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
+}
+
+func (p *BlueGreenDeployFake) DefaultCfDomain() (string, error) {
+	p.flow = append(p.flow, "DefaultCfDomain Called")
+	return "", nil
 }

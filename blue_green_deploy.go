@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -9,20 +10,21 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/imdario/mergo"
 )
 
 type ErrorHandler func(string, error)
 
 type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
-	PushNewApp(string, plugin_models.GetApp_RouteSummary, string, ScaleParameters)
+	Push(*App)
 	DeleteAllAppsExceptLiveApp(string)
-	GetScaleParameters(string) (ScaleParameters, error)
-	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
-	RunSmokeTests(string, string) bool
+	LiveApp(string) *App
+	RunSmokeTests(string, string) error
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
 	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
+	DefaultCfDomain() (string, error)
 }
 
 type BlueGreenDeploy struct {
@@ -35,6 +37,51 @@ type ScaleParameters struct {
 	InstanceCount int
 	Memory        int64
 	DiskQuota     int64
+}
+
+func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
+	p.Connection = connection
+}
+
+// DefaultCfDomain gets the default CF domain.
+// While https://docs.cloudfoundry.org/devguide/deploy-apps/routes-domains.html#shared-domains
+// shows that there is technically not a default shared domain,
+// by default pushes go to the first shared domain created in the system.
+// As long as the first created is the same as the first listed in our query
+// below, our function is valid.
+func (p *BlueGreenDeploy) DefaultCfDomain() (string, error) {
+	var res []string
+	var err error
+
+	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
+		return "", err
+	}
+
+	response := struct {
+		Description string `json:"description"`
+		ErrorCode   string `json:"error_code"`
+		Resources   []struct {
+			Entity struct {
+				Name string
+			}
+		}
+	}{}
+
+	var json_string string
+	json_string = strings.Join(res, "\n")
+
+	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
+		return "", err
+	}
+
+	if response.ErrorCode != "" {
+		return "", fmt.Errorf("%s: %s", response.Description, response.ErrorCode)
+	}
+
+	if len(response.Resources) == 0 {
+		return "", fmt.Errorf("No CF Domains found")
+	}
+	return response.Resources[0].Entity.Name, nil
 }
 
 func (p *BlueGreenDeploy) DeleteAppVersions(apps []plugin_models.GetAppsModel) {
@@ -55,65 +102,71 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 
 }
 
-func (p *BlueGreenDeploy) GetScaleParameters(appName string) (ScaleParameters, error) {
-	appModel, err := p.Connection.GetApp(appName)
+// TODO generate this based on struct tags to avoid massive list of if statements
+func (a *App) generatePushArgs() (string, error) {
+	result := "push"
+	if a.Name == "" {
+		return "", fmt.Errorf("Expected app to have name, cannot push without name")
+	}
+	result += " " + a.Name
+
+	if len(a.Routes) != 1 {
+		// TODO support pushing apps with more than 1 route
+		return "", fmt.Errorf("Expected new app to have exactly 1 route during push, got %v", len(a.Routes))
+	}
+	if a.Routes[0].Host == "" {
+		return "", fmt.Errorf("Expected new app to have a host")
+	}
+	result += " -n " + a.Routes[0].Host
+
+	if a.Routes[0].Domain.Name == "" {
+		return "", fmt.Errorf("Expected new app to have a domain name")
+	}
+	result += " -d " + a.Routes[0].Domain.Name
+
+	if a.InstanceCount != 0 {
+		result += fmt.Sprintf(" -i %d", a.InstanceCount)
+	}
+	if a.Memory != 0 {
+		result += fmt.Sprintf(" -m %dM", a.Memory)
+	}
+	if a.DiskQuota != 0 {
+		result += fmt.Sprintf(" -k %dM", a.DiskQuota)
+	}
+	if a.ManifestPath != "" {
+		result += " -f " + a.ManifestPath
+	}
+	return result, nil
+}
+
+// Merge uses a third party library, mergo, to merge app definitions.
+// If a parameter is not equal to it's zero value in a, this is left.
+// If a parameter is equal to it's zero value in a but defined in liveApp,
+// the parameter is copied over to a.
+func (a *App) Merge(liveApp *App) error {
+	// Use serverside scale parameters if not defined in manifest
+	if liveApp != nil {
+		if err := mergo.Merge(a, *liveApp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *BlueGreenDeploy) Push(newApp *App) {
+	if len(newApp.Routes) != 1 {
+		// TODO support pushing apps with more than 1 route
+		err := fmt.Errorf("Expected to be pushing an app with 1 route, got %v", len(newApp.Routes))
+		p.ErrorFunc("", err)
+	}
+
+	args, err := newApp.generatePushArgs()
 	if err != nil {
-		return ScaleParameters{}, fmt.Errorf("Could not get scale parameters")
+		p.ErrorFunc("", err)
 	}
-	scaleParameters := ScaleParameters{
-		InstanceCount: appModel.InstanceCount,
-		Memory:        appModel.Memory,
-		DiskQuota:     appModel.DiskQuota,
-	}
-	return scaleParameters, nil
-}
 
-func mergeScaleParameters(liveScale, manifestScale ScaleParameters) ScaleParameters {
-	scaleParameters := liveScale
-	if manifestScale.Memory != 0 {
-		scaleParameters.Memory = manifestScale.Memory
-	}
-	if manifestScale.InstanceCount != 0 {
-		scaleParameters.InstanceCount = manifestScale.InstanceCount
-	}
-	if manifestScale.DiskQuota != 0 {
-		scaleParameters.DiskQuota = manifestScale.DiskQuota
-	}
-	return scaleParameters
-}
-
-func appendScaleArguments(args []string, scaleParameters ScaleParameters) []string {
-	if scaleParameters.InstanceCount != 0 {
-		instanceCount := fmt.Sprintf("%d", scaleParameters.InstanceCount)
-		args = append(args, "-i", instanceCount)
-	}
-	if scaleParameters.Memory != 0 {
-		memory := fmt.Sprintf("%dM", scaleParameters.Memory)
-		args = append(args, "-m", memory)
-	}
-	if scaleParameters.DiskQuota != 0 {
-		diskQuota := fmt.Sprintf("%dM", scaleParameters.DiskQuota)
-		args = append(args, "-k", diskQuota)
-	}
-	return args
-}
-
-func (p *BlueGreenDeploy) PushNewApp(appName string, route plugin_models.GetApp_RouteSummary,
-	manifestPath string, scaleParameters ScaleParameters) {
-	args := []string{"push", appName, "-n", route.Host, "-d", route.Domain.Name}
-
-	// Remove -new suffix of appname to get live app name
-	newAppSuffix := "-new"
-	liveAppName := appName[:len(appName)-len(newAppSuffix)]
-	liveScaleParameters, _ := p.GetScaleParameters(liveAppName)
-	scaleParameters = mergeScaleParameters(liveScaleParameters, scaleParameters)
-
-	args = appendScaleArguments(args, scaleParameters)
-	if manifestPath != "" {
-		args = append(args, "-f", manifestPath)
-	}
-	if _, err := p.Connection.CliCommand(args...); err != nil {
-		p.ErrorFunc("Could not push new version", err)
+	if _, err := p.Connection.CliCommand(strings.Split(args, " ")...); err != nil {
+		p.ErrorFunc("Could not run "+args, err)
 	}
 }
 
@@ -136,30 +189,29 @@ func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetApp
 	return
 }
 
-func (p *BlueGreenDeploy) LiveApp(appName string) (string, []plugin_models.GetApp_RouteSummary) {
+func (p *BlueGreenDeploy) LiveApp(appName string) *App {
 
 	// Don't worry about error handling since earlier calls would have flushed out any errors
 	// except for ones that the app doesn't exist (which isn't an error condition for us)
+
+	// TODO: We should capture the specific error for app not existing and handle all other errors
+
 	liveApp, _ := p.Connection.GetApp(appName)
-	return liveApp.Name, liveApp.Routes
+	return &App{GetAppModel: liveApp}
 }
 
-func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
-	p.Connection = connection
-}
-
-func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
+func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) error {
 	out, err := exec.Command(script, appFQDN).CombinedOutput()
 	fmt.Fprintln(p.Out, string(out))
 
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
-			return false
+			return err
 		} else {
 			p.ErrorFunc("Smoke tests failed", err)
 		}
 	}
-	return true
+	return nil
 }
 
 func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
@@ -182,7 +234,7 @@ func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_Rout
 
 func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 	if _, err := p.Connection.CliCommand("rename", app, newName); err != nil {
-		p.ErrorFunc("Could not rename app", err)
+		p.ErrorFunc(fmt.Sprintf("Could not rename app %v to %v", app, newName), err)
 	}
 }
 
