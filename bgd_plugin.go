@@ -75,15 +75,18 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal(err)
 	}
 
+	// TODO: At this point we need to fill in App information from the manifest file,
+	// as app name could have been given there.
+
+	if argsStruct.AppName == "" {
+		log.Fatal("App name was empty, must be provided.")
+	}
+
 	p.Deployer.Setup(cliConnection)
 
 	defaultCfDomain, err := p.Deployer.DefaultCfDomain()
 	if err != nil {
 		log.Fatalf("Failed to get default shared domain: %v", err)
-	}
-
-	if argsStruct.AppName == "" {
-		log.Fatal("App name was empty, must be provided.")
 	}
 
 	if err := p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, *argsStruct); err != nil {
