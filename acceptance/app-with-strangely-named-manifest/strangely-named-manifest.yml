@@ -1,4 +1,4 @@
-name: cf-blue-green-deploy-test-app
+name: cf-blue-green-deploy-test-app-named-manifest
 command: ./start $PORT
 memory: 8M
 buildpack: https://github.com/ph3nx/heroku-binary-buildpack.git

@@ -16,7 +16,9 @@ main() {
   then
     TEST_ACCEPTANCE_APP_HOSTNAME="${TEST_ACCEPTANCE_APP_HOSTNAME:?Must be defined in .env}"
     TEST_ACCEPTANCE_APP_NAME="${TEST_ACCEPTANCE_APP_NAME:=$TEST_ACCEPTANCE_APP_HOSTNAME}"
+    TEST_ACCEPTANCE_APP_NAME_NAMED_MANIFEST="${TEST_ACCEPTANCE_APP_NAME_NAMED_MANIFEST:=$TEST_ACCEPTANCE_APP_HOSTNAME}"
     push_example_apps "$TEST_ACCEPTANCE_APP_NAME" "$TEST_ACCEPTANCE_APP_HOSTNAME"
+    push_example_apps "$TEST_ACCEPTANCE_APP_NAME_NAMED_MANIFEST" "$TEST_ACCEPTANCE_APP_HOSTNAME"
   fi
 
   pushd acceptance/app >/dev/null
@@ -78,7 +80,7 @@ assert_plugin_fails_if_smoke_test_script_fails() {
 assert_plugin_runs_cleanly_if_manifest_is_specified() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
 
-  cf bgd "$TEST_ACCEPTANCE_APP_NAME" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
+  cf bgd "$TEST_ACCEPTANCE_APP_NAME_NAMED_MANIFEST" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
 
   if [ $? -ne 0 ]
   then
