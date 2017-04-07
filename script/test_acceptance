@@ -80,9 +80,6 @@ assert_plugin_runs_cleanly_if_manifest_is_specified() {
 
   cf bgd "$TEST_ACCEPTANCE_APP_NAME" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
 
-  # THIS IS CURRENTLY BROKEN BECAUSE APP NAME IS NOT PICKED UP FROM MANIFEST BEFORE SUBSEQUENT PROCESSING
-  # IS DONE. NEEDS TO BE FIXED BEFORE ANYTHING CAN BE MERGED.
-
   if [ $? -ne 0 ]
   then
     printf "\n\nExpected return code to be 0."

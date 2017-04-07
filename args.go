@@ -26,23 +26,32 @@ func NewArgs(argsFromCF []string) (*Args, error) {
 		return nil, fmt.Errorf("No arguments passed to blue-green-deploy")
 	}
 
+	f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
+	f.StringVar(&args.SmokeTestPath, "smoke-test", "", "")
+	f.StringVar(&args.ManifestPath, "f", "", "")
+
+	// Parse. We skip the first element because that is "bgd" or "blue-green-deploy"
+	if err := f.Parse(argsFromCF[1:]); err != nil {
+		return nil, err
+	}
+
+	// Assume if there is an argument left over after parsing including the element after
+	// plugin name, it is the app name.
 	// The cf docs say
 	//  'Name: You can use any series of alpha-numeric characters, without spaces, as the name of your app.'
-	// , therefore just take the first argument as the name, same as cf push does.
-	args.AppName = argsFromCF[1]
+	if f.Arg(0) != "" {
+		args.AppName = f.Arg(0)
+	}
 
-	// Grab the other args using flags library
-
-	if len(argsFromCF) > 1 {
-		// Using FlagSet instead of flag so that we can pass string slice to Parse
-		f := flag.NewFlagSet("blue-green-deploy", flag.ExitOnError)
-		f.StringVar(&args.SmokeTestPath, "smoke-test", "", "")
-		f.StringVar(&args.ManifestPath, "f", "", "")
-
-		// Parse all args but the first which we decided was the app name
+	// Parsing appears to stop if the first argument isn't a match. In our case this
+	// is unwanted because the first argument could or could not be the app name.
+	// So... if the array contains enough elements, parse again starting
+	// on index 2 of our input array.
+	if len(argsFromCF) > 2 && (args.ManifestPath == "" || args.SmokeTestPath == "") {
 		if err := f.Parse(argsFromCF[2:]); err != nil {
 			return nil, err
 		}
 	}
+
 	return &args, nil
 }
