@@ -2,9 +2,12 @@
 set -e -x
 
 # Install Go 
-wget https://raw.githubusercontent.com/canha/golang-tools-install-script/28fb3d63e3746acfa624d28395a0df3e0f9fca1e/goinstall.sh >/dev/null 2>&1
-bash goinstall.sh --64
-source /home/pipeline/.bashrc
+sudo apt-get update 
+sudo apt-get install golang
+export GOROOT=$HOME/.go
+export PATH=$PATH:$GOROOT/bin
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
 
 # Update the directory structure of the extract to be go-friendly
 mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
