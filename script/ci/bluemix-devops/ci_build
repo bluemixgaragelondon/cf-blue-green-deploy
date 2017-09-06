@@ -4,8 +4,6 @@ set -e -x
 # Install Go 
 sudo apt-get update 
 sudo apt-get -y install golang
-export GOROOT=$HOME/.go
-export PATH=$PATH:$GOROOT/bin
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
