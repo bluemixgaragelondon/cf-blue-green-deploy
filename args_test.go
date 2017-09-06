@@ -87,5 +87,5 @@ var _ = Describe("Args", func() {
 
 func bgdArgs(argString string) []string {
 	args := strings.Split(argString, " ")
-	return append([]string{"cf", "blue-green-deploy"}, args...)
+	return append([]string{"blue-green-deploy"}, args...)
 }
