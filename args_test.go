@@ -56,6 +56,18 @@ var _ = Describe("Args", func() {
 		})
 	})
 
+	Context("With an appname and a manifest", func() {
+		args := NewArgs(bgdArgs("appname -f custommanifest.yml"))
+
+		It("sets the app name", func() {
+			Expect(args.AppName).To(Equal("appname"))
+		})
+
+		It("sets a manifest", func() {
+			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
+		})
+	})
+
 	Context("When a global cf flag is set with an app name", func() {
 		args := NewArgs([]string{"cf", "-v", "blue-green-deploy", "app"})
 
