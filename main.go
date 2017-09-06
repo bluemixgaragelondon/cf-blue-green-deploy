@@ -39,7 +39,8 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("App name was empty, must be provided.")
 	}
 
-	if !p.Deploy(defaultCfDomain, &manifest.FileManifestReader{}, argsStruct) {
+	reader := manifest.FileManifestReader{argsStruct.ManifestPath}
+	if !p.Deploy(defaultCfDomain, &reader, argsStruct) {
 		log.Fatal("Smoke tests failed")
 	}
 }
