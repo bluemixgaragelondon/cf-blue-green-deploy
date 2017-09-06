@@ -39,7 +39,6 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 			mapToAppErrs = append(mapToAppErrs, err)
 			continue
 		}
-
 		apps = append(apps, app)
 	}
 
@@ -212,9 +211,16 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	}
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
-	appParams.Routes = parseRoutes(yamlMap, &errs)
-	// TODO issue #20 - we should do a merge or something other than throwing away the routes from the manifest
-	appParams.Routes = RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
+	routeRoutes := parseRoutes(yamlMap, &errs)
+	compositeRoutes := RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
+
+	if routeRoutes == nil {
+		appParams.Routes = compositeRoutes
+	} else if compositeRoutes == nil || len(compositeRoutes) == 0 {
+		appParams.Routes = routeRoutes
+	} else {
+		errs = append(errs, errors.New("Cannot have both a routes and a host or domain")) // TODO betrer message
+	}
 	if name := stringVal(yamlMap, "name", &errs); name != nil {
 		appParams.Name = *name
 	}
@@ -234,7 +240,6 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 		}
 		return plugin_models.GetAppModel{}, errors.New(message)
 	}
-
 	return appParams, nil
 }
 
@@ -392,8 +397,6 @@ func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) 
 		}
 	}
 
-	// TODO issue #20 - at the moment this value isn't ever merged with the existing routes
-
 	return manifestRoutes
 }
 
@@ -435,29 +438,27 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 func (manifest *Manifest) GetAppParams(appName, defaultDomain string) *plugin_models.GetAppModel {
 	var err error
 	apps, err := manifest.Applications(defaultDomain)
-
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
 
 	for index, app := range apps {
-		if isHostEmpty(app) {
+		if isHostOrDomainEmpty(app) {
 			continue
 		}
-
 		if app.Name != "" && app.Name != appName {
 			continue
 		}
-
 		return &apps[index]
 	}
+
 	return nil
 }
 
-func isHostEmpty(app plugin_models.GetAppModel) bool {
+func isHostOrDomainEmpty(app plugin_models.GetAppModel) bool {
 	for _, route := range app.Routes {
-		if route.Host != "" {
+		if route.Host != "" || route.Domain.Name != "" {
 			return false
 		}
 	}

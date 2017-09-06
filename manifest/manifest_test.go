@@ -300,19 +300,22 @@ hosts:
 				})
 			})
 
-			PContext("when app has just routes, no hosts or domains", func() {
+			Context("when app has just routes, no hosts or domains", func() {
 				It("returns those routes", func() {
 					manifest := manifestFromYamlString(`---
 name: foo
 routes:
- - route1.domain1
- - route2.domain2`)
+ - route: route1.domain1
+ - route: route2.domain2`)
 
 					params := manifest.GetAppParams("foo", "example.com")
+					Expect(params).ToNot(BeNil())
+					Expect(params.Routes).ToNot(BeNil())
 
-					Expect(params).To(ConsistOf(
-						plugin_models.GetApp_RouteSummary{Host: "route1", Domain: plugin_models.GetApp_DomainFields{Name: "domain1"}},
-						plugin_models.GetApp_RouteSummary{Host: "route2", Domain: plugin_models.GetApp_DomainFields{Name: "domain2"}},
+					routes := params.Routes
+					Expect(routes).To(ConsistOf(
+						plugin_models.GetApp_RouteSummary{Domain: plugin_models.GetApp_DomainFields{Name: "route1.domain1"}},
+						plugin_models.GetApp_RouteSummary{Domain: plugin_models.GetApp_DomainFields{Name: "route2.domain2"}},
 					))
 				})
 			})
