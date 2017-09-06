@@ -41,7 +41,7 @@ var _ = Describe("Args", func() {
 	})
 
 	Context("With an appname smoke test and a manifest", func() {
-		args := NewArgs(bgdArgs("appname --smoke-test smokey -f manifest.yml"))
+		args := NewArgs(bgdArgs("appname --smoke-test smokey -f custommanifest.yml"))
 
 		It("sets the smoke test file", func() {
 			Expect(args.SmokeTestPath).To(Equal("smokey"))
@@ -52,7 +52,7 @@ var _ = Describe("Args", func() {
 		})
 
 		It("sets a manifest", func() {
-			Expect(args.ManifestPath).To(Equal("manifest.yml"))
+			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
 		})
 	})
 
