@@ -2,7 +2,7 @@
 
 [ -z "$DEBUG" ] || set -x
 
-CF_CLI_VERSION="v6.22.1"
+CF_CLI_VERSION="v6.28.0"
 
  . script/common
 GO_PACKAGE_PATH=$(get_go_package_dir)
