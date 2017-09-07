@@ -4,8 +4,6 @@ set -e -x
 # Install Go 
 sudo apt-get update 
 sudo apt-get -y install golang
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
 
 # Update the directory structure of the extract to be go-friendly
 mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
