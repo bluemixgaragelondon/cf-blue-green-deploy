@@ -84,6 +84,24 @@ var _ = Describe("BlueGreenDeploy", func() {
 				"unmap-route old example.com -n live",
 			}))
 		})
+
+		It("unmaps routes from old app with paths", func() {
+			oldApp = plugin_models.GetAppModel{
+				Name: "old",
+				Routes: []plugin_models.GetApp_RouteSummary{
+					{Host: "live", Domain: plugin_models.GetApp_DomainFields{Name: "mybluemix.net"}, Path: "my/context/path1"},
+					{Host: "live", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}, Path: "my/context/path2"},
+				},
+			}
+			p.UnmapRoutesFromApp(oldApp.Name, oldApp.Routes...)
+
+			cfCommands := getAllCfCommands(connection)
+
+			Expect(cfCommands).To(Equal([]string{
+				"unmap-route old mybluemix.net -n live --path my/context/path1",
+				"unmap-route old example.com -n live --path my/context/path2",
+			}))
+		})
 	})
 
 	Describe("renaming an app", func() {
