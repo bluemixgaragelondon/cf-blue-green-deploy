@@ -21,6 +21,7 @@ type BlueGreenDeployer interface {
 	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
 	RunSmokeTests(string, string) bool
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
+	DeleteRoutes(...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
 	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
 }
@@ -168,6 +169,12 @@ func (p *BlueGreenDeploy) UnmapRoutesFromApp(oldAppName string, routes ...plugin
 	}
 }
 
+func (p *BlueGreenDeploy) DeleteRoutes(routes ...plugin_models.GetApp_RouteSummary) {
+	for _, route := range routes {
+		p.deleteRoute(route)
+	}
+}
+
 func (p *BlueGreenDeploy) mapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
 	if _, err := p.Connection.CliCommand("map-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not map route", err)
@@ -177,6 +184,12 @@ func (p *BlueGreenDeploy) mapRoute(appName string, r plugin_models.GetApp_RouteS
 func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
 	if _, err := p.Connection.CliCommand("unmap-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
 		p.ErrorFunc("Could not unmap route", err)
+	}
+}
+
+func (p *BlueGreenDeploy) deleteRoute(r plugin_models.GetApp_RouteSummary) {
+	if _, err := p.Connection.CliCommand("delete-route", r.Domain.Name, "-n", r.Host, "-f"); err != nil {
+		p.ErrorFunc("Could not delete route", err)
 	}
 }
 
