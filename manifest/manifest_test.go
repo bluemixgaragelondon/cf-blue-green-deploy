@@ -300,6 +300,24 @@ hosts:
 				})
 			})
 
+			Context("when app has just one host and one domain", func() {
+				It("returns Application", func() {
+					manifest := manifestFromYamlString(`---
+name: foo
+host: host
+domain: domain.com`)
+
+					params := manifest.GetAppParams("foo", CfDomains{DefaultDomain: "example.com"})
+					Expect(params).ToNot(BeNil())
+					Expect(params.Routes).ToNot(BeNil())
+
+					routes := params.Routes
+					Expect(routes).To(ConsistOf(
+						plugin_models.GetApp_RouteSummary{Host: "host", Domain: plugin_models.GetApp_DomainFields{Name: "domain.com"}},
+					))
+				})
+			})
+
 			Context("when app has just routes, no hosts or domains", func() {
 				It("returns those routes", func() {
 					manifest := manifestFromYamlString(`---
