@@ -102,6 +102,9 @@ func (p *CfPlugin) Deploy(cfDomains manifest.CfDomains, manifestReader manifest.
 			p.Deployer.MapRoutesToApp(newAppName, newAppRoutes...)
 			p.Deployer.RenameApp(newAppName, appName)
 		}
+		if !args.KeepOldApps {
+			p.Deployer.DeleteAllAppsExceptLiveApp(appName)
+		}
 		return true
 	} else {
 		// We don't want to promote. Instead mark it as failed.
@@ -188,10 +191,11 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 				UsageDetails: plugin.Usage{
 					// TODO for manifests with multiple apps, a different smoke test is needed. The approach below would not work.
 					// Perhaps we could name the smoke test in the manifest?
-					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE]",
+					Usage: "blue-green-deploy APP_NAME [--smoke-test TEST_SCRIPT] [-f MANIFEST_FILE] [--keep-old-apps]",
 					Options: map[string]string{
 						"smoke-test": "The test script to run.",
 						"f":          "Path to manifest",
+						"keep-old-apps": "Don't delete old app instance(s)",
 					},
 				},
 			},
