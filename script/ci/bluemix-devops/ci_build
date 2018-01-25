@@ -1,9 +1,42 @@
-#!/bin/bash
 set -e -x
 
 # Install Go 
-sudo apt-get update 
-sudo apt-get -y install golang
+#!/bin/bash
+set -e
+
+GO_VERSION="1.8.3"
+
+DFILE="go$GO_VERSION.linux-amd64.tar.gz"
+
+if [ -d "$HOME/.go" ] || [ -d "$HOME/go" ]; then
+    echo "Installation directories already exist. Exiting."
+    exit 1
+fi
+echo "Downloading $DFILE ..."
+wget https://storage.googleapis.com/golang/$DFILE -O /tmp/go.tar.gz
+if [ $? -ne 0 ]; then
+    echo "Download failed! Exiting."
+    exit 1
+fi
+echo "Extracting ..."
+tar -C "$HOME" -xzf /tmp/go.tar.gz
+mv "$HOME/go" "$HOME/.go"
+touch "$HOME/.bashrc"
+{
+    echo '# GoLang'
+    echo 'export GOROOT=$HOME/.go'
+    echo 'export PATH=$PATH:$GOROOT/bin'
+    echo 'export GOPATH=$HOME/go'
+    echo 'export PATH=$PATH:$GOPATH/bin'
+} >> "$HOME/.bashrc"
+
+mkdir -p "$HOME/go/{src,pkg,bin}"
+echo -e "\nGo $VERSION was installed.\nMake sure to relogin into your shell or run:"
+echo -e "\n\tsource $HOME/.bashrc\n\nto update your environment variables."
+echo "Tip: Opening a new terminal window usually just works. :)"
+rm -f /tmp/go.tar.gz
+
+source /home/pipeline/.bashrc
 
 # Update the directory structure of the extract to be go-friendly
 mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
@@ -11,12 +44,16 @@ shopt -s dotglob nullglob extglob
 mv !(go) go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy 
 cd go 
 
+go env
+
 # Run the build
 export GOPATH=$PWD
 export PLUGIN_VERSION=$(cat version/number)
 
+go env
+
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   . script/with_env
+  go get -t || true
   ./script/build
 popd
-
