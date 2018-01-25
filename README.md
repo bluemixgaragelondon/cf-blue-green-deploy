@@ -18,30 +18,35 @@ The plugin takes care of the following steps packaged into one command:
 ## How to use
 
 * Get the plugin from the CF Community Repository
+
 ```
 cf add-plugin-repo CF-Community https://plugins.cloudfoundry.org
 cf install-plugin blue-green-deploy -r CF-Community
 ```
 
-In scripts, add the `-f` flag to `install-plugin` for non-interactive mode. 
+In scripts, add the `-f` flag to `install-plugin` for non-interactive mode.
 
 * Deploy your app
+
 ```
 cd your_app_root
 cf blue-green-deploy app_name
 ```
 
 * Deploy with optional smoke tests
+
 ```
 cf blue-green-deploy app_name --smoke-test <path to test script>
 ```
 
 * Deploy with specific manifest file
+
 ```
 cf blue-green-deploy app_name -f <path to manifest>
 ```
 
 * You can also use the shorter alias
+
 ```
 cf bgd app_name
 ```
@@ -55,6 +60,19 @@ routes from the current live app to the new app. The plugin supports routes
 under custom domains.
 
 ## How to build
+
+Before cloning the source, you may wish to set up GOPATH and a go-friendly folder hierarchy to avoid path issues. Run the following in your preferred working directory:
+
+```
+mkdir ./go
+export GOPATH=`pwd`/go
+mkdir -p go/src/github.com/bluemixgaragelondon/
+cd go/src/github.com/bluemixgaragelondon/
+git clone https://github.com/bluemixgaragelondon/cf-blue-green-deploy
+cd cf-blue-green-deploy
+```
+
+Then run a build:
 
 ```
 script/build
@@ -76,9 +94,14 @@ script/test_acceptance
 ```
 
 You almost certainly want to install the plugin before running the acceptance tests (to make sure the latest version of the plugin is being tested). On OS X, the command would be
+
 ```
 script/build ; script/install ; script/test_acceptance
 ```
 
 See [instructions for releasing a project](https://github.com/bluemixgaragelondon/cf-blue-green-deploy/blob/master/release.md)
 for instructions on how to setup the acceptance tests.
+
+```
+
+```

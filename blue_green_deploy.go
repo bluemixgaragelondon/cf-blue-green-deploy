@@ -175,7 +175,12 @@ func (p *BlueGreenDeploy) mapRoute(appName string, r plugin_models.GetApp_RouteS
 }
 
 func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
-	if _, err := p.Connection.CliCommand("unmap-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
+	command := []string{"unmap-route", appName, r.Domain.Name, "-n", r.Host}
+	if len(r.Path) != 0 {
+		command = append(command, "--path")
+		command = append(command, r.Path)
+	}
+	if _, err := p.Connection.CliCommand(command...); err != nil {
 		p.ErrorFunc("Could not unmap route", err)
 	}
 }

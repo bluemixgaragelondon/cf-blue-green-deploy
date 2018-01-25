@@ -8,3 +8,4 @@ test-results/
 .idea/
 junit.xml
 manifest/manifest-junit.xml
+.envrc
