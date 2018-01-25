@@ -1,8 +1,6 @@
 set -e -x
 
 # Install Go 
-#!/bin/bash
-set -e
 
 GO_VERSION="1.8.3"
 
@@ -48,7 +46,6 @@ go env
 
 # Run the build
 export GOPATH=$PWD
-export PLUGIN_VERSION=$(cat version/number)
 
 go env
 
