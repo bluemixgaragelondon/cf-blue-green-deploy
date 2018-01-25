@@ -5,3 +5,4 @@ blue-green-deploy.*
 artefacts/
 Godeps/_workspace
 test-results/
+.envrc
