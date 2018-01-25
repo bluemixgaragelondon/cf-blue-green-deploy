@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	"fmt"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -101,6 +102,106 @@ var _ = Describe("BlueGreenDeploy", func() {
 				"unmap-route old mybluemix.net -n live --path my/context/path1",
 				"unmap-route old example.com -n live --path my/context/path2",
 			}))
+		})
+	})
+
+	Describe("checks ssh enablement", func() {
+		Context("when ssh support is disabled", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return []string{fmt.Sprintf("ssh support is disabled for '%s'", args[0])}, nil
+				}
+			})
+
+			It("returns false", func() {
+				result := p.CheckSshEnablement("test-app")
+
+				Expect(result).To(BeFalse())
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"ssh-enabled test-app",
+				}))
+			})
+		})
+
+		Context("when ssh support is enabled", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return []string{fmt.Sprintf("ssh support is enabled for '%s'", args[0])}, nil
+				}
+			})
+
+			It("returns true", func() {
+				result := p.CheckSshEnablement("test-app")
+
+				Expect(result).To(BeTrue())
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"ssh-enabled test-app",
+				}))
+			})
+		})
+
+		Context("when cf cli errors", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to check ssh enablement status")
+				}
+			})
+
+			It("it reports the error", func() {
+				p.CheckSshEnablement("test-app")
+				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to check ssh enablement status"))
+			})
+		})
+	})
+
+	Describe("set ssh access", func() {
+		Context("when it just works", func() {
+			It("enables ssh", func() {
+				p.SetSshAccess("test-app", true)
+
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"enable-ssh test-app",
+				}))
+			})
+			It("disables ssh", func() {
+				p.SetSshAccess("test-app", false)
+
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"disable-ssh test-app",
+				}))
+			})
+		})
+		Context("when cf enable-ssh errors", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to enable ssh")
+				}
+			})
+
+			It("it reports the error", func() {
+				p.SetSshAccess("test-app", true)
+				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to enable ssh"))
+			})
+		})
+		Context("when cf disable-ssh errors", func() {
+			BeforeEach(func() {
+				connection.CliCommandStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("failed to disable ssh")
+				}
+			})
+
+			It("it reports the error", func() {
+				p.SetSshAccess("test-app", false)
+				Expect(bgdExitsWithErrors[0]).To(MatchError("failed to disable ssh"))
+			})
 		})
 	})
 

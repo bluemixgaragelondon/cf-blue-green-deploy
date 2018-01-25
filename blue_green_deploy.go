@@ -23,6 +23,8 @@ type BlueGreenDeployer interface {
 	UnmapRoutesFromApp(string, ...plugin_models.GetApp_RouteSummary)
 	RenameApp(string, string)
 	MapRoutesToApp(string, ...plugin_models.GetApp_RouteSummary)
+	CheckSshEnablement(string) bool
+	SetSshAccess(string, bool)
 }
 
 type BlueGreenDeploy struct {
@@ -194,5 +196,26 @@ func (p *BlueGreenDeploy) RenameApp(app string, newName string) {
 func (p *BlueGreenDeploy) MapRoutesToApp(appName string, routes ...plugin_models.GetApp_RouteSummary) {
 	for _, route := range routes {
 		p.mapRoute(appName, route)
+	}
+}
+
+func (p *BlueGreenDeploy) CheckSshEnablement(app string) bool {
+	if result, err := p.Connection.CliCommand("ssh-enabled", app); err != nil {
+		p.ErrorFunc("Check ssh enabled status failed", err)
+		return true
+	} else {
+		return (strings.Contains(result[0], "support is enabled"))
+	}
+}
+
+func (p *BlueGreenDeploy) SetSshAccess(app string, enableSsh bool) {
+	if enableSsh {
+		if _, err := p.Connection.CliCommand("enable-ssh", app); err != nil {
+			p.ErrorFunc("Could not enable ssh", err)
+		}
+	} else {
+		if _, err := p.Connection.CliCommand("disable-ssh", app); err != nil {
+			p.ErrorFunc("Could not disable ssh", err)
+		}
 	}
 }

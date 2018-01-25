@@ -61,6 +61,9 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
 	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath, manifestScaleParameters)
 
+	if liveAppName != "" {
+		p.Deployer.SetSshAccess(newAppName, p.Deployer.CheckSshEnablement(appName))
+	}
 	promoteNewApp := true
 	smokeTestScript := args.SmokeTestPath
 	if smokeTestScript != "" {

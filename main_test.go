@@ -11,6 +11,7 @@ import (
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
 )
 
 var _ = Describe("BGD Plugin", func() {
@@ -18,7 +19,7 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("blue green flow", func() {
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
-				b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}}
+				b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}, appSshEnabled:false}
 				p := CfPlugin{
 					Deployer: b,
 				}
@@ -29,6 +30,8 @@ var _ = Describe("BGD Plugin", func() {
 					"delete old apps",
 					"get current live app",
 					"push app-name-new",
+					"check ssh enablement for 'app-name'",
+					"set ssh enablement for 'app-name-new' to 'false'",
 					"unmap 1 routes from app-name-new",
 					"mapped 1 routes",
 					"rename app-name-live to app-name-old",
@@ -480,6 +483,7 @@ var _ = Describe("BGD Plugin", func() {
 type BlueGreenDeployFake struct {
 	flow          []string
 	liveApp       *plugin_models.GetAppModel
+	appSshEnabled bool
 	passSmokeTest bool
 	mappedRoutes  []plugin_models.GetApp_RouteSummary
 	scale         *ScaleParameters
@@ -532,4 +536,13 @@ func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...plugin_mo
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
+}
+
+func (p *BlueGreenDeployFake) CheckSshEnablement(app string) bool {
+	p.flow = append(p.flow, fmt.Sprintf("check ssh enablement for '%s'", app))
+	return strings.Contains(app, "ssh-enabled-app")
+}
+
+func (p *BlueGreenDeployFake) SetSshAccess(app string, enableSsh bool) {
+	p.flow = append(p.flow, fmt.Sprintf("set ssh enablement for '%s' to '%v'", app, enableSsh))
 }
