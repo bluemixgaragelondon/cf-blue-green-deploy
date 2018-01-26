@@ -18,11 +18,12 @@ pushd prerelease
 
     # Create a git release using the tag
 
+    description=`cat .releaseDescription`
     payload=$(
       jq --null-input \
         --arg tag "$TAG" \
         --arg name "$NAME" \
-        --arg body "$BODY" \
+        --arg body "$description" \
         '{ tag_name: $tag, name: $name, body: $body, draft: true }'
     )
 
@@ -46,11 +47,23 @@ pushd prerelease
   fi
 popd
 
-
-
-
 # Output suitable json for pasting into the cli plugin repo 
 
-# Bump the stored version 
 
-# Clear the stored release description 
+git clone https://github.com/fsaintjacques/semver-tool
+pushd semver-tool
+  git checkout tags/1.2.1
+popd
+
+pushd prerelease/cf-blue-green-deploy
+  # Bump the stored version 
+  next_version=`../semver-tool/src/semver bump minor $PLUGIN_VERSION`
+  ../semver-tool/src/semver bump prerel rc1 $next_version > .version
+  git add .version
+  # Clear the stored release description 
+  echo 'New release description here' > .releaseDescription
+  git add .releaseDescription
+  git commit -m "Auto release prep."
+  git push
+popd
+
