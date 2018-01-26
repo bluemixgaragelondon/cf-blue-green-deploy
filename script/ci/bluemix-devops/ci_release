@@ -11,7 +11,7 @@ pushd prerelease
   
   git tag v${PLUGIN_VERSION}
 
-  if [ ! $DRY_RUN ]
+  if [ ! $DRY_RUN ]; then
     git push --tags
 
     # Upload the binaries the git release
@@ -38,7 +38,7 @@ pushd prerelease
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
-    for file in $ASSETS; do
+    for file in ../../artefacts do
       curl --netrc \
           --header "Content-Type:application/gzip" \
           --data-binary "@$file" \
