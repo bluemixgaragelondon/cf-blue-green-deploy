@@ -6,9 +6,9 @@ set -e -x
 GIT_URL=`cat artefacts/.gitorigin`
 mkdir prerelease
 pushd prerelease
-  more $GIT_URL
   git clone $GIT_URL
-
+  cd cf-blue-green-deploy
+  
   git tag v${PLUGIN_VERSION}
 
   if [ ! $DRY_RUN ]
