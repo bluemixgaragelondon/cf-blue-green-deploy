@@ -6,7 +6,7 @@ This will be done automatically by the [Bluemix DevOps Pipeline](https://console
 
 1. Check the output of the [latest build](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) is green.
 
-1. Edit the `PLUGIN_VERSION` variable in `.env`
+1. Edit the `PLUGIN_VERSION` variable in `.version`
 
 1. Tag a new revision using [semver](http://semver.org): `git tag vX.X.X`
 
