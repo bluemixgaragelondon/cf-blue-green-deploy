@@ -54,5 +54,5 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   go get -t || true
   ./script/build
   # make a note of our git url
-  git remote get-url --push origin > artefacts/.gitorigin
+  git remote -v | head -1 | sed 's/origin//g' | sed 's/(fetch)//g' | sed -E "s/[[:space:]]+//g" > artefacts/.gitorigin
 popd
