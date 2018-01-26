@@ -53,4 +53,6 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   . script/with_env
   go get -t || true
   ./script/build
+  # make a note of our git url
+  git remote get-url --push origin > artefacts/.gitorigin
 popd

@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e -x
+
+# Create a git tag and push the tags
+
+GIT_URL=`cat artefacts/.gitorigin`
+mkdir prerelease
+pushd prerelease
+  more $GIT_URL
+  git clone $GIT_URL
+
+  git tag v${PLUGIN_VERSION}
+
+  if [ ! $DRY_RUN ]
+    git push --tags
+
+    # Upload the binaries the git release
+
+    # Create a git release using the tag
+
+    payload=$(
+      jq --null-input \
+        --arg tag "$TAG" \
+        --arg name "$NAME" \
+        --arg body "$BODY" \
+        '{ tag_name: $tag, name: $name, body: $body, draft: true }'
+    )
+
+    response=$(
+      curl --fail \
+          --netrc \
+          --silent \
+          --location \
+          --data "$payload" \
+          "https://api.github.com/repos/${REPO}/releases"
+    )
+
+    upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
+
+    for file in $ASSETS; do
+      curl --netrc \
+          --header "Content-Type:application/gzip" \
+          --data-binary "@$file" \
+          "$upload_url?name=$(basename "$file")"
+    done
+  fi
+popd
+
+
+
+
+# Output suitable json for pasting into the cli plugin repo 
+
+# Bump the stored version 
+
+# Clear the stored release description 
