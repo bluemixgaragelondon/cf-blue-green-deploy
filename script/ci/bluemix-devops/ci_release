@@ -46,7 +46,7 @@ pushd prerelease
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
-    echo "binaries:"
+    echo "binaries:" > example-index.yml
 
     ARTEFACT_DIRECTORY=../../artefacts  
     find $ARTEFACT_DIRECTORY -type f ! -iname '.*' | while read binary_path
@@ -62,12 +62,14 @@ pushd prerelease
               "$upload_url?name=$(basename "$file")"
 
       # Output suitable json for pasting into the cli plugin repo 
-      echo "checksum: ${sha}"
-      echo "platform: ${binary_target}"
-      echo "url: $upload_url-TODO-${binary_name}
+      echo "checksum: ${sha}" >> example-index.yml
+      echo "platform: ${binary_target}" >> example-index.yml
+      echo "url: $upload_url-TODO-${binary_name}" >> example-index.yml
 
-      done
-    fi
+    done
+
+    echo "----- The following would be suitable to paste into repo-index.yml -----"
+    cat example-index.yml
 popd
 git clone https://github.com/fsaintjacques/semver-tool
 pushd semver-tool
