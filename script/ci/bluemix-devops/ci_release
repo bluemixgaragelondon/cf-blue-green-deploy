@@ -3,16 +3,24 @@ set -e -x
 
 # Create a git tag and push the tags
 
+
+  if [ $DRY_RUN ]; then
+    cmd_modifier="echo 'Would have run -- '"
+  fi
+
+
 GIT_URL=`cat artefacts/.gitorigin`
 mkdir prerelease
 pushd prerelease
   git clone $GIT_URL
   cd cf-blue-green-deploy
   
-  git tag v${PLUGIN_VERSION}
-
-  if [ ! $DRY_RUN ]; then
-    git push --tags
+  TAG=v${PLUGIN_VERSION}
+  NAME="Version ${PLUGIN_VERSION}"
+  # TODO it would, of course, be nicer not to hardcode the repo name, and we should be able to work it out
+  REPO="bluemixgaragelondon/cf-blue-green-deploy"
+  git tag ${TAG}
+  ${cmd_modifier} git push --tags
 
     # Upload the binaries the git release
 
@@ -28,7 +36,7 @@ pushd prerelease
     )
 
     response=$(
-      curl --fail \
+      ${cmd_modifier} curl --fail \
           --netrc \
           --silent \
           --location \
@@ -38,18 +46,29 @@ pushd prerelease
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
-    for file in ../../artefacts do
-      curl --netrc \
-          --header "Content-Type:application/gzip" \
-          --data-binary "@$file" \
-          "$upload_url?name=$(basename "$file")"
-    done
-  fi
+    echo "binaries:"
+
+    ARTEFACT_DIRECTORY=../../artefacts  
+    find $ARTEFACT_DIRECTORY -type f ! -iname '.*' | while read binary_path
+    do
+      binary_name=${binary_path##*/}
+      binary_target=${binary_name#*.}
+
+      sha1=$(shasum "${binary_path}" | awk '{print $1}')
+      
+      ${cmd_modifier} curl --netrc \
+              --header "Content-Type:application/gzip" \
+              --data-binary "@$file" \
+              "$upload_url?name=$(basename "$file")"
+
+      # Output suitable json for pasting into the cli plugin repo 
+      echo "checksum: ${sha}"
+      echo "platform: ${binary_target}"
+      echo "url: $upload_url-TODO-${binary_name}
+
+      done
+    fi
 popd
-
-# Output suitable json for pasting into the cli plugin repo 
-
-
 git clone https://github.com/fsaintjacques/semver-tool
 pushd semver-tool
   git checkout tags/1.2.1
@@ -64,6 +83,6 @@ pushd prerelease/cf-blue-green-deploy
   echo 'New release description here' > .releaseDescription
   git add .releaseDescription
   git commit -m "Auto release prep."
-  git push
+  ${cmd_modifier} git push
 popd
 
