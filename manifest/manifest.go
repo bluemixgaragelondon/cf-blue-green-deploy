@@ -19,7 +19,14 @@ type Manifest struct {
 	Data map[string]interface{}
 }
 
-func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppModel, error) {
+type CfDomains struct {
+	DefaultDomain  string
+	SharedDomains  []string
+	PrivateDomains []string
+}
+
+func (m Manifest) Applications(cfDomains CfDomains) ([]plugin_models.GetAppModel, error) {
+
 	rawData, err := expandProperties(m.Data)
 	data := rawData.(map[string]interface{})
 
@@ -34,7 +41,7 @@ func (m Manifest) Applications(defaultDomain string) ([]plugin_models.GetAppMode
 	var apps []plugin_models.GetAppModel
 	var mapToAppErrs []error
 	for _, appMap := range appMaps {
-		app, err := mapToAppParams(filepath.Dir(m.Path), appMap, defaultDomain)
+		app, err := mapToAppParams(filepath.Dir(m.Path), appMap, cfDomains)
 		if err != nil {
 			mapToAppErrs = append(mapToAppErrs, err)
 			continue
@@ -182,7 +189,7 @@ func expandProperties(input interface{}) (interface{}, error) {
 	return output, nil
 }
 
-func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDomain string) (plugin_models.GetAppModel, error) {
+func mapToAppParams(basePath string, yamlMap map[string]interface{}, cfDomains CfDomains) (plugin_models.GetAppModel, error) {
 	err := checkForNulls(yamlMap)
 	if err != nil {
 		return plugin_models.GetAppModel{}, err
@@ -211,8 +218,8 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, defaultDoma
 	}
 	myTempHostsObject := removeDuplicatedValue(hostsArr)
 
-	routeRoutes := parseRoutes(yamlMap, &errs)
-	compositeRoutes := RoutesFromManifest(defaultDomain, myTempHostsObject, mytempDomainsObject)
+	routeRoutes := parseRoutes(cfDomains, yamlMap, &errs)
+	compositeRoutes := RoutesFromManifest(cfDomains.DefaultDomain, myTempHostsObject, mytempDomainsObject)
 
 	if routeRoutes == nil {
 		appParams.Routes = compositeRoutes
@@ -400,7 +407,7 @@ func RoutesFromManifest(defaultDomain string, Hosts []string, Domains []string) 
 	return manifestRoutes
 }
 
-func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.GetApp_RouteSummary {
+func parseRoutes(cfDomains CfDomains, input map[string]interface{}, errs *[]error) []plugin_models.GetApp_RouteSummary {
 	if _, ok := input["routes"]; !ok {
 		return nil
 	}
@@ -420,12 +427,23 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 		}
 
 		if routeVal, exist := route["route"]; exist {
+			routeWithoutPath, path := findPath(routeVal.(string))
+
+			routeWithoutPathAndPort, port, err := findPort(routeWithoutPath)
+			if err != nil {
+				*errs = append(*errs, err)
+			}
+			hostname, domain, err := findDomain(cfDomains, routeWithoutPathAndPort)
+			if err != nil {
+				*errs = append(*errs, err)
+			}
 			manifestRoutes = append(manifestRoutes, plugin_models.GetApp_RouteSummary{
+
 				// HTTP routes include a domain, an optional hostname, and an optional context path
-				// The GetApp_RouteSummary doesn't have a field for the context path
-				// As a pragmatic workaround, we'll just treat routes and domains as interchangeable in this model, and not bother trying to parse out a host, which is optional anyway
-				// We have raised an issue on this against cf here : https://github.com/cloudfoundry/cli/issues/1066
-				Domain: plugin_models.GetApp_DomainFields{Name: routeVal.(string)},
+				Host:   hostname,
+				Domain: domain,
+				Path:   path,
+				Port:   port,
 			})
 		} else {
 			*errs = append(*errs, fmt.Errorf("each route in 'routes' must have a 'route' property"))
@@ -435,9 +453,70 @@ func parseRoutes(input map[string]interface{}, errs *[]error) []plugin_models.Ge
 	return manifestRoutes
 }
 
-func (manifest *Manifest) GetAppParams(appName, defaultDomain string) *plugin_models.GetAppModel {
+func findPath(routeName string) (string, string) {
+	routeSlice := strings.Split(routeName, "/")
+	return routeSlice[0], strings.Join(routeSlice[1:], "/")
+}
+
+func findPort(routeName string) (string, int, error) {
 	var err error
-	apps, err := manifest.Applications(defaultDomain)
+	routeSlice := strings.Split(routeName, ":")
+	port := 0
+	if len(routeSlice) == 2 {
+		port, err = strconv.Atoi(routeSlice[1])
+		if err != nil {
+			return "", 0, errors.New(fmt.Sprintf("Invalid port for route %s", routeName))
+		}
+	}
+	return routeSlice[0], port, nil
+}
+
+func findDomain(cfDomains CfDomains, routeName string) (string, plugin_models.GetApp_DomainFields, error) {
+	host, domain := decomposeRoute(cfDomains.SharedDomains, routeName)
+	if domain == nil {
+		host, domain = decomposeRoute(cfDomains.PrivateDomains, routeName)
+	}
+	if domain == nil {
+
+		return "", plugin_models.GetApp_DomainFields{}, fmt.Errorf(
+			"The route %s did not match any existing domains",
+			routeName,
+		)
+	}
+	return host, *domain, nil
+}
+
+func decomposeRoute(allowedDomains []string, routeName string) (string, *plugin_models.GetApp_DomainFields) {
+
+	var testDomain = func(routeName string) (*plugin_models.GetApp_DomainFields, bool) {
+
+		domain := &plugin_models.GetApp_DomainFields{}
+		for _, possibleDomain := range allowedDomains {
+			if possibleDomain == routeName {
+				domain.Name = routeName
+				return domain, true
+			}
+		}
+		return domain, false
+	}
+
+	domain, found := testDomain(routeName)
+	if found {
+		return "", domain
+	}
+
+	routeParts := strings.Split(routeName, ".")
+	domain, found = testDomain(strings.Join(routeParts[1:], "."))
+	if found {
+		return routeParts[0], domain
+	}
+
+	return "", nil
+}
+
+func (manifest *Manifest) GetAppParams(appName string, cfDomains CfDomains) *plugin_models.GetAppModel {
+	var err error
+	apps, err := manifest.Applications(cfDomains)
 	if err != nil {
 		fmt.Println(err)
 		return nil

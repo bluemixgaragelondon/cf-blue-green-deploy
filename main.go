@@ -99,14 +99,14 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 
-	manifest, err := manifestReader.Read()
+	parsedManifest, err := manifestReader.Read()
 	if err != nil {
 		// This error should be handled properly
 		fmt.Println(err)
 	}
 
-	if manifest != nil {
-		if appParams := manifest.GetAppParams(appName, defaultCfDomain); appParams != nil && appParams.Routes != nil {
+	if parsedManifest != nil {
+		if appParams := parsedManifest.GetAppParams(appName, manifest.CfDomains{DefaultDomain: defaultCfDomain}); appParams != nil && appParams.Routes != nil {
 			newAppRoutes = appParams.Routes
 		}
 	}
@@ -121,13 +121,13 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 
 func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
 	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
-	manifest, err := manifestReader.Read()
+	parsedManifest, err := manifestReader.Read()
 	if err != nil {
 		// TODO: Handle this error nicely
 		fmt.Println(err)
 	}
-	if manifest != nil {
-		manifestScaleParameters := manifest.GetAppParams(appName, defaultCfDomain)
+	if parsedManifest != nil {
+		manifestScaleParameters := parsedManifest.GetAppParams(appName, manifest.CfDomains{DefaultDomain: defaultCfDomain})
 		if manifestScaleParameters != nil {
 			scaleParameters = ScaleParameters{
 				Memory:        manifestScaleParameters.Memory,

@@ -18,7 +18,7 @@ var _ = Describe("Manifest", func() {
 					"instances":  1,
 				},
 			}
-			apps, err := m.Applications("")
+			apps, err := m.Applications(CfDomains{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(apps)).To(Equal(1))
 
@@ -57,7 +57,7 @@ var _ = Describe("Manifest", func() {
 
 		Context("the parseRoutes function", func() {
 			errs := []error{}
-			routeStuff := parseRoutes(input, &errs)
+			routeStuff := parseRoutes(CfDomains{SharedDomains: []string{"example.com"}, PrivateDomains: []string{"tcp-example.com"}}, input, &errs)
 
 			It("does not error", func() {
 				Expect(len(errs)).To(Equal(0))
@@ -239,7 +239,7 @@ var _ = Describe("CloneWithExclude", func() {
 	      host: foo`)
 
 		It("Returns nil", func() {
-			Expect(manifest.GetAppParams("appname", "domain")).To(BeNil())
+			Expect(manifest.GetAppParams("appname", CfDomains{DefaultDomain: "domain"})).To(BeNil())
 		})
 
 		Context("when the manifest contain a host but no app name", func() {
@@ -248,7 +248,7 @@ host: foo`)
 
 			It("Returns params that contain the host", func() {
 
-				routes := manifest.GetAppParams("foo", "something.com").Routes
+				routes := manifest.GetAppParams("foo", CfDomains{DefaultDomain: "something.com"}).Routes
 				Expect(routes).To(ConsistOf(
 					plugin_models.GetApp_RouteSummary{Host: "foo", Domain: plugin_models.GetApp_DomainFields{Name: "something.com"}},
 				))
@@ -266,7 +266,7 @@ domains:
  - example.com
  - example.net`)
 
-				params := manifest.GetAppParams("foo", "example.com")
+				params := manifest.GetAppParams("foo", CfDomains{DefaultDomain: "example.com"})
 
 				Expect(params).ToNot(BeNil())
 				Expect(params.Routes).ToNot(BeNil())
@@ -288,7 +288,7 @@ hosts:
  - host1
  - host2`)
 
-					params := manifest.GetAppParams("foo", "example.com")
+					params := manifest.GetAppParams("foo", CfDomains{DefaultDomain: "example.com"})
 					Expect(params).ToNot(BeNil())
 					Expect(params.Routes).ToNot(BeNil())
 
@@ -308,7 +308,7 @@ routes:
  - route: route1.domain1
  - route: route2.domain2`)
 
-					params := manifest.GetAppParams("foo", "example.com")
+					params := manifest.GetAppParams("foo", CfDomains{DefaultDomain: "example.com", SharedDomains: []string{"route1.domain1", "route2.domain2"}})
 					Expect(params).ToNot(BeNil())
 					Expect(params.Routes).ToNot(BeNil())
 
@@ -320,11 +320,49 @@ routes:
 				})
 			})
 
+			Context("when app has routes, and an app name, but no domain", func() {
+				It("correctly identifies the host and domain components", func() {
+
+					manifest := manifestFromYamlString(`---
+name: my-app
+routes:
+ - route: my-app.example.io`)
+
+					params := manifest.GetAppParams("my-app", CfDomains{DefaultDomain: "defaultdomain.com", PrivateDomains: []string{"example.io"}})
+					Expect(params).ToNot(BeNil())
+					Expect(params.Routes).ToNot(BeNil())
+
+					routes := params.Routes
+					Expect(routes).To(ConsistOf(
+						plugin_models.GetApp_RouteSummary{Host: "my-app", Domain: plugin_models.GetApp_DomainFields{Name: "example.io"}},
+					))
+				})
+
+				Context("the app name is repeated in the domain", func() {
+					It("correctly identifies the host and domain components", func() {
+
+						manifest := manifestFromYamlString(`---
+name: my-app
+routes:
+ - route: my-app.example.my-app.io`)
+
+						params := manifest.GetAppParams("my-app", CfDomains{DefaultDomain: "defaultdomain.com", PrivateDomains: []string{"example.my-app.io"}})
+						Expect(params).ToNot(BeNil())
+						Expect(params.Routes).ToNot(BeNil())
+
+						routes := params.Routes
+						Expect(routes).To(ConsistOf(
+							plugin_models.GetApp_RouteSummary{Host: "my-app", Domain: plugin_models.GetApp_DomainFields{Name: "example.my-app.io"}},
+						))
+					})
+				})
+			})
+
 			Context("when no matching application", func() {
 				It("returns nil", func() {
 					manifest := manifestFromYamlString(``)
 
-					Expect(manifest.GetAppParams("foo", "example.com")).To(BeNil())
+					Expect(manifest.GetAppParams("foo", CfDomains{DefaultDomain: "example.com"})).To(BeNil())
 				})
 			})
 		})
@@ -348,7 +386,7 @@ applications:
 			var hostNames []string
 			var domainNames []string
 
-			appParams := manifest.GetAppParams("foo", "")
+			appParams := manifest.GetAppParams("foo", CfDomains{})
 			Expect(appParams).ToNot(BeNil())
 
 			routes := appParams.Routes
@@ -361,7 +399,7 @@ applications:
 			hostNames = deDuplicate(hostNames)
 			domainNames = deDuplicate(domainNames)
 
-			Expect(manifest.GetAppParams("foo", "").Name).To(Equal("foo"))
+			Expect(manifest.GetAppParams("foo", CfDomains{}).Name).To(Equal("foo"))
 			Expect(hostNames).To(ConsistOf("host1", "host2"))
 			Expect(domainNames).To(ConsistOf("example1.com", "example2.com"))
 		})
