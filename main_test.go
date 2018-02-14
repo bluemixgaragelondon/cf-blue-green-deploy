@@ -4,14 +4,16 @@ import (
 	"errors"
 	"fmt"
 
+	"strings"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/bluemixgaragelondon/cf-blue-green-deploy"
+	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest"
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
 )
 
 var _ = Describe("BGD Plugin", func() {
@@ -19,12 +21,12 @@ var _ = Describe("BGD Plugin", func() {
 	Describe("blue green flow", func() {
 		Context("when there is a previous live app", func() {
 			It("calls methods in correct order", func() {
-				b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}, appSshEnabled:false}
+				b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}, appSshEnabled: false}
 				p := CfPlugin{
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -56,7 +58,7 @@ var _ = Describe("BGD Plugin", func() {
 						Deployer: b,
 					}
 
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
 				})
@@ -84,7 +86,7 @@ var _ = Describe("BGD Plugin", func() {
            - example.com
         `}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 
 					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
@@ -114,7 +116,7 @@ var _ = Describe("BGD Plugin", func() {
            - example.com
         `}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 
 					expectedAppRoutes := append(liveAppRoutes, plugin_models.GetApp_RouteSummary{Host: "man1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}})
 
@@ -131,7 +133,7 @@ var _ = Describe("BGD Plugin", func() {
 					Deployer: b,
 				}
 
-				p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
+				p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
 				Expect(b.flow).To(Equal([]string{
 					"delete old apps",
@@ -145,12 +147,13 @@ var _ = Describe("BGD Plugin", func() {
 		})
 
 		Context("when app has manifest", func() {
-			It("maps manifest routes", func() {
-				b := &BlueGreenDeployFake{liveApp: nil}
-				p := CfPlugin{
-					Deployer: b,
-				}
-				repo := &fakes.FakeManifestReader{Yaml: `---
+			Context("when manifest uses hosts and domains", func() {
+				It("maps manifest routes", func() {
+					b := &BlueGreenDeployFake{liveApp: nil}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &fakes.FakeManifestReader{Yaml: `---
           name: app-name
           hosts:
            - host1
@@ -160,25 +163,60 @@ var _ = Describe("BGD Plugin", func() {
            - example.net
         `}
 
-				p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 
-				Expect(b.flow).To(Equal([]string{
-					"delete old apps",
-					"get current live app",
-					"push app-name-new",
-					"unmap 1 routes from app-name-new",
-					"mapped 4 routes",
-					"rename app-name-new to app-name",
-				}))
+					Expect(b.flow).To(Equal([]string{
+						"delete old apps",
+						"get current live app",
+						"push app-name-new",
+						"unmap 1 routes from app-name-new",
+						"mapped 4 routes",
+						"rename app-name-new to app-name",
+					}))
 
-				expectedRoutes := []plugin_models.GetApp_RouteSummary{
-					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
-					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
-					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
-					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
-				}
+					expectedRoutes := []plugin_models.GetApp_RouteSummary{
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
+					}
 
-				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
+					Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
+				})
+			})
+			Context("when manifest uses routes", func() {
+				It("maps manifest routes", func() {
+					b := &BlueGreenDeployFake{liveApp: nil}
+					p := CfPlugin{
+						Deployer: b,
+					}
+					repo := &fakes.FakeManifestReader{Yaml: `---
+name: app-name
+routes:
+  - route: host1.something.com
+  - route: host2.mine.com
+  - route: host3.common.com
+`}
+
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com", SharedDomains: []string{"common.com"}, PrivateDomains: []string{"mine.com", "something.com"}}, repo, NewArgs([]string{"bgd", "app-name"}))
+
+					Expect(b.flow).To(Equal([]string{
+						"delete old apps",
+						"get current live app",
+						"push app-name-new",
+						"unmap 1 routes from app-name-new",
+						"mapped 3 routes",
+						"rename app-name-new to app-name",
+					}))
+
+					expectedRoutes := []plugin_models.GetApp_RouteSummary{
+						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "something.com"}},
+						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "mine.com"}},
+						{Host: "host3", Domain: plugin_models.GetApp_DomainFields{Name: "common.com"}},
+					}
+
+					Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
+				})
 			})
 
 			Context("when scale parameters are defined", func() {
@@ -195,7 +233,7 @@ var _ = Describe("BGD Plugin", func() {
             hosts:
             - host1
             `}
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
 						"get current live app",
@@ -224,7 +262,7 @@ var _ = Describe("BGD Plugin", func() {
 							- host1
 					`}
 
-					p.Deploy("example.com", repo, NewArgs([]string{"bgd", "app-name"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 
 					Expect(b.mappedRoutes).To(Equal([]plugin_models.GetApp_RouteSummary{
 						{Host: "app-name", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
@@ -248,7 +286,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -262,7 +300,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns true", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(true))
 				})
@@ -282,7 +320,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("calls methods in correct order", func() {
-					p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -295,7 +333,7 @@ var _ = Describe("BGD Plugin", func() {
 				})
 
 				It("returns false", func() {
-					result := p.Deploy("example.com", &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
+					result := p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--smoke-test", "script/smoke-test"}))
 
 					Expect(result).To(Equal(false))
 				})
@@ -314,7 +352,7 @@ var _ = Describe("BGD Plugin", func() {
             - man1
             `,
 					}
-					actualScale := p.GetScaleFromManifest("app-name", "example.com", fakeManifestReader)
+					actualScale := p.GetScaleFromManifest("app-name", manifest.CfDomains{DefaultDomain: "example.com"}, fakeManifestReader)
 					expectedScale := ScaleParameters{Memory: int64(16), DiskQuota: int64(500)}
 					Expect(actualScale).To(Equal(expectedScale))
 				})
@@ -322,62 +360,136 @@ var _ = Describe("BGD Plugin", func() {
 			Context("the manifest is invalid", func() {
 				It("returns an empty manifest", func() {
 					failingFakeManifestReader := &fakes.FakeManifestReader{Err: errors.New("")}
-					actualScale := p.GetScaleFromManifest("app-name", "example.com", failingFakeManifestReader)
+					actualScale := p.GetScaleFromManifest("app-name", manifest.CfDomains{DefaultDomain: "example.com"}, failingFakeManifestReader)
 					expectedScale := ScaleParameters{}
 					Expect(actualScale).To(Equal(expectedScale))
 				})
 			})
 		})
-		Describe("DefaultCfDomain", func() {
-			connection := &pluginfakes.FakeCliConnection{}
-			p := CfPlugin{Connection: connection}
+	})
 
-			Context("when CF command succeeds", func() {
-				It("returns CF default shared domain", func() {
-					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-						return []string{`{
-     "total_results": 2,
-     "total_pages": 1,
-     "prev_url": null,
-     "next_url": null,
-     "resources": [
-        {
-           "metadata": {
-              "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
-              "url": "/v2/shared_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
-              "created_at": "2014-10-20T09:21:39+00:00",
-              "updated_at": null
-           },
-           "entity": {
-              "name": "eu-gb.mybluemix.net"
-           }
-        }
-     ]
-  }`}, nil
-					}
-					domain, _ := p.DefaultCfDomain()
-					Expect(domain).To(Equal("eu-gb.mybluemix.net"))
-				})
+	Describe("SharedDomains", func() {
+		connection := &pluginfakes.FakeCliConnection{}
+		p := CfPlugin{Connection: connection}
+
+		Context("when CF command succeeds", func() {
+			It("returns all CF shared domains", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return []string{`{
+ "total_results": 2,
+ "total_pages": 1,
+ "prev_url": null,
+ "next_url": null,
+ "resources": [
+	{
+	   "metadata": {
+		  "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
+		  "url": "/v2/shared_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
+		  "created_at": "2014-10-20T09:21:39+00:00",
+		  "updated_at": null
+	   },
+	   "entity": {
+		  "name": "my.cool.com"
+	   }},
+	   {
+		"metadata": {
+		   "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
+		   "url": "/v2/shared_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
+		   "created_at": "2014-10-20T09:21:39+00:00",
+		   "updated_at": null
+		},
+		"entity": {
+		   "name": "another.com"
+		}
+	}
+ ]
+}`}, nil
+				}
+				domain, _ := p.SharedDomains()
+				Expect(domain).To(Equal([]string{"my.cool.com", "another.com"}))
 			})
+		})
 
-			Context("when CF command fails", func() {
-				It("returns error", func() {
-					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-						return nil, errors.New("cf curl failed")
-					}
-					_, err := p.DefaultCfDomain()
-					Expect(err).To(MatchError("cf curl failed"))
-				})
+		Context("when CF command fails", func() {
+			It("returns error", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("cf curl failed")
+				}
+				_, err := p.SharedDomains()
+				Expect(err).To(MatchError("cf curl failed"))
 			})
+		})
 
-			Context("when CF command returns invalid JSON", func() {
-				It("returns error", func() {
-					connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-						return []string{`{"resources": { "entity": "foo" }}`}, nil
-					}
-					_, err := p.DefaultCfDomain()
-					Expect(err).To(HaveOccurred())
-				})
+		Context("when CF command returns invalid JSON", func() {
+			It("returns error", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return []string{`{"resources": { "entity": "foo" }}`}, nil
+				}
+				_, err := p.SharedDomains()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("PrivateDomains", func() {
+		connection := &pluginfakes.FakeCliConnection{}
+		p := CfPlugin{Connection: connection}
+
+		Context("when CF command succeeds", func() {
+			It("returns all private domains", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return []string{`{
+ "total_results": 2,
+ "total_pages": 1,
+ "prev_url": null,
+ "next_url": null,
+ "resources": [
+	{
+	   "metadata": {
+		  "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
+		  "url": "/v2/private_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
+		  "created_at": "2014-10-20T09:21:39+00:00",
+		  "updated_at": null
+	   },
+	   "entity": {
+		  "name": "eu-gb.mypaas.net"
+	   }},
+	   {
+		"metadata": {
+		   "guid": "75049093-13e9-4520-80a6-2d6fea6542bc",
+		   "url": "/v2/private_domains/75049093-13e9-4520-80a6-2d6fea6542bc",
+		   "created_at": "2014-10-20T09:21:39+00:00",
+		   "updated_at": null
+		},
+		"entity": {
+		   "name": "eu-de.mypaas.net"
+		}
+	}
+ ]
+}`}, nil
+				}
+				domain, _ := p.PrivateDomains()
+				Expect(domain).To(Equal([]string{"eu-gb.mypaas.net", "eu-de.mypaas.net"}))
+			})
+		})
+
+		Context("when CF command fails", func() {
+			It("returns error", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return nil, errors.New("cf curl failed")
+				}
+				_, err := p.PrivateDomains()
+				Expect(err).To(MatchError("cf curl failed"))
+			})
+		})
+
+		Context("when CF command returns invalid JSON", func() {
+			It("returns error", func() {
+				connection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					return []string{`{"resources": { "entity": "foo" }}`}, nil
+				}
+				_, err := p.PrivateDomains()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

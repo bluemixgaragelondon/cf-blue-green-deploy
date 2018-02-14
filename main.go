@@ -28,9 +28,22 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	p.Connection = cliConnection
 
-	defaultCfDomain, err := p.DefaultCfDomain()
+	cfDomains := manifest.CfDomains{}
+	var err error
+
+	cfDomains.SharedDomains, err = p.SharedDomains()
+	if err != nil {
+		log.Fatalf("Failed to get shared domains: %v", err)
+	}
+
+	cfDomains.DefaultDomain = cfDomains.SharedDomains[0]
 	if err != nil {
 		log.Fatalf("Failed to get default shared domain: %v", err)
+	}
+
+	cfDomains.PrivateDomains, err = p.PrivateDomains()
+	if err != nil {
+		log.Fatalf("Failed to get private domains: %v", err)
 	}
 
 	p.Deployer.Setup(cliConnection)
@@ -40,23 +53,23 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 
 	reader := manifest.FileManifestReader{argsStruct.ManifestPath}
-	if !p.Deploy(defaultCfDomain, &reader, argsStruct) {
+	if !p.Deploy(cfDomains, &reader, argsStruct) {
 		log.Fatal("Smoke tests failed")
 	}
 }
 
-func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.ManifestReader, args Args) bool {
+func (p *CfPlugin) Deploy(cfDomains manifest.CfDomains, manifestReader manifest.ManifestReader, args Args) bool {
 	appName := args.AppName
 
 	p.Deployer.DeleteAllAppsExceptLiveApp(appName)
 	liveAppName, liveAppRoutes := p.Deployer.LiveApp(appName)
 
-	manifestScaleParameters := p.GetScaleFromManifest(appName, defaultCfDomain, manifestReader)
+	manifestScaleParameters := p.GetScaleFromManifest(appName, cfDomains, manifestReader)
 
 	newAppName := appName + "-new"
 
 	// Add route so that we can run the smoke tests
-	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}}
+	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: cfDomains.DefaultDomain}}
 
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
 	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath, manifestScaleParameters)
@@ -71,7 +84,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	}
 
 	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
-	newAppRoutes := p.GetNewAppRoutes(args.AppName, defaultCfDomain, manifestReader, liveAppRoutes)
+	newAppRoutes := p.GetNewAppRoutes(args.AppName, cfDomains, manifestReader, liveAppRoutes)
 
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
 
@@ -96,7 +109,7 @@ func (p *CfPlugin) Deploy(defaultCfDomain string, manifestReader manifest.Manife
 	}
 }
 
-func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
+func (p *CfPlugin) GetNewAppRoutes(appName string, cfDomains manifest.CfDomains, manifestReader manifest.ManifestReader, liveAppRoutes []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	newAppRoutes := []plugin_models.GetApp_RouteSummary{}
 
 	parsedManifest, err := manifestReader.Read()
@@ -106,7 +119,7 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 	}
 
 	if parsedManifest != nil {
-		if appParams := parsedManifest.GetAppParams(appName, manifest.CfDomains{DefaultDomain: defaultCfDomain}); appParams != nil && appParams.Routes != nil {
+		if appParams := parsedManifest.GetAppParams(appName, cfDomains); appParams != nil && appParams.Routes != nil {
 			newAppRoutes = appParams.Routes
 		}
 	}
@@ -114,12 +127,12 @@ func (p *CfPlugin) GetNewAppRoutes(appName string, defaultCfDomain string, manif
 	uniqueRoutes := p.UnionRouteLists(newAppRoutes, liveAppRoutes)
 
 	if len(uniqueRoutes) == 0 {
-		uniqueRoutes = append(uniqueRoutes, plugin_models.GetApp_RouteSummary{Host: appName, Domain: plugin_models.GetApp_DomainFields{Name: defaultCfDomain}})
+		uniqueRoutes = append(uniqueRoutes, plugin_models.GetApp_RouteSummary{Host: appName, Domain: plugin_models.GetApp_DomainFields{Name: cfDomains.DefaultDomain}})
 	}
 	return uniqueRoutes
 }
 
-func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
+func (p *CfPlugin) GetScaleFromManifest(appName string, cfDomains manifest.CfDomains,
 	manifestReader manifest.ManifestReader) (scaleParameters ScaleParameters) {
 	parsedManifest, err := manifestReader.Read()
 	if err != nil {
@@ -127,7 +140,7 @@ func (p *CfPlugin) GetScaleFromManifest(appName string, defaultCfDomain string,
 		fmt.Println(err)
 	}
 	if parsedManifest != nil {
-		manifestScaleParameters := parsedManifest.GetAppParams(appName, manifest.CfDomains{DefaultDomain: defaultCfDomain})
+		manifestScaleParameters := parsedManifest.GetAppParams(appName, cfDomains)
 		if manifestScaleParameters != nil {
 			scaleParameters = ScaleParameters{
 				Memory:        manifestScaleParameters.Memory,
@@ -185,9 +198,19 @@ func (p *CfPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
+func (p *CfPlugin) PrivateDomains() (domains []string, apiErr error) {
+	path := "/v2/private_domains"
+	return p.listCfDomains(path)
+}
+
+func (p *CfPlugin) SharedDomains() (domains []string, apiErr error) {
+	path := "/v2/shared_domains"
+	return p.listCfDomains(path)
+}
+
+func (p *CfPlugin) listCfDomains(cfPath string) (domains []string, err error) {
 	var res []string
-	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", "/v2/shared_domains"); err != nil {
+	if res, err = p.Connection.CliCommandWithoutTerminalOutput("curl", cfPath); err != nil {
 		return
 	}
 
@@ -199,14 +222,16 @@ func (p *CfPlugin) DefaultCfDomain() (domain string, err error) {
 		}
 	}{}
 
-	var json_string string
-	json_string = strings.Join(res, "\n")
+	var jsonString string
+	jsonString = strings.Join(res, "\n")
 
-	if err = json.Unmarshal([]byte(json_string), &response); err != nil {
+	if err = json.Unmarshal([]byte(jsonString), &response); err != nil {
 		return
 	}
 
-	domain = response.Resources[0].Entity.Name
+	for i, _ := range response.Resources {
+		domains = append(domains, response.Resources[i].Entity.Name)
+	}
 	return
 }
 
