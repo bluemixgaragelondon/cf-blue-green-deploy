@@ -36,9 +36,10 @@ func (p *CfPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatalf("Failed to get shared domains: %v", err)
 	}
 
-	cfDomains.DefaultDomain = cfDomains.SharedDomains[0]
-	if err != nil {
-		log.Fatalf("Failed to get default shared domain: %v", err)
+	if len(cfDomains.SharedDomains) < 1 {
+		log.Fatalf("Failed to get default shared domain (no shared domains defined)")
+	} else {
+		cfDomains.DefaultDomain = cfDomains.SharedDomains[0]
 	}
 
 	cfDomains.PrivateDomains, err = p.PrivateDomains()
