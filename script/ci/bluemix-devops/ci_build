@@ -1,5 +1,8 @@
 set -e -x
 
+dir=`dirname $0`
+. $dir/ci_env
+
 # Install Go 
 
 GO_VERSION="1.8.3"
