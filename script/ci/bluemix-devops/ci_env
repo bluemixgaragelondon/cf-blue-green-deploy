@@ -1,0 +1,2 @@
+export LOGICAL_APP_NAME="Blue Green Deploy plugin"
+export BUILD_PREFIX="master"

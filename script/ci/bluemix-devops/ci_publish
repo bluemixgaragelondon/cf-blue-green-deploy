@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e -x
 
+dir=`dirname $0`
+. $dir/ci_env
+
 git clone https://bluemixgaragelondon:$PLUGIN_REPO_TOKEN@git.ng.bluemix.net/bluemixgaragelondon/garage-cf-plugins
 git clone https://github.com/fsaintjacques/semver-tool
 pushd semver-tool

@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e -x
 
+dir=`dirname $0`
+. $dir/ci_env
+
 # Create a git tag and push the tags
 
 
