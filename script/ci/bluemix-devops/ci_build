@@ -56,6 +56,12 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   . script/with_env
   go get -t || true
   ./script/build
+
+  # Then, publish results to DevOps Insights
+  export PATH=/opt/IBM/node-v4.2/bin:$PATH
+  npm install -g grunt-idra3
+  idra --publishtestresult --filelocation=./test-results/ --type=unittest
+
   # make a note of our git url
   git remote -v | head -1 | sed 's/origin//g' | sed 's/(fetch)//g' | sed -E "s/[[:space:]]+//g" > artefacts/.gitorigin
 popd
