@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e -x
 
-git clone https://${PLUGIN_REPO_USERID}:${PLUGIN_REPO_PASSWORD}@hub.jazz.net/git/bluemixgarage/garage-cf-plugins
+dir=`dirname $0`
+. $dir/ci_env
+
+git clone https://bluemixgaragelondon:$PLUGIN_REPO_TOKEN@git.ng.bluemix.net/bluemixgaragelondon/garage-cf-plugins
 git clone https://github.com/fsaintjacques/semver-tool
 pushd semver-tool
 git checkout tags/1.2.1

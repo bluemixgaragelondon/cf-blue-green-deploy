@@ -12,12 +12,15 @@ main() {
   . script/with_env
   . script/common
 
+  assert_plugin_is_installed
+
   if [ -z "$TURBO" ]
   then
     TEST_ACCEPTANCE_APP_HOSTNAME="${TEST_ACCEPTANCE_APP_HOSTNAME:?Must be defined in .env}"
     TEST_ACCEPTANCE_APP_NAME="${TEST_ACCEPTANCE_APP_NAME:=$TEST_ACCEPTANCE_APP_HOSTNAME}"
     push_example_apps "$TEST_ACCEPTANCE_APP_NAME" "$TEST_ACCEPTANCE_APP_HOSTNAME"
   fi
+
 
   pushd acceptance/app >/dev/null
     assert_plugin_output_includes_successful_smoke_test_output
@@ -35,6 +38,16 @@ main() {
 
 ignore_any_failures() {
   set +e
+}
+
+assert_plugin_is_installed() {
+  output=`cf plugins | grep -q bgd`
+  if [ $? -eq 0 ] ; then
+    echo Plugin is installed.
+  else
+    echo Plugin is not installed. Ending test.
+    exit 1
+  fi
 }
 
 assert_plugin_output_includes_successful_smoke_test_output() {

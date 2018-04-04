@@ -1,12 +1,12 @@
 # Making a release
 
-Before making a public release, we should test for a couple of days by pushing
-to the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list).
-This will be done automatically by the [Bluemix DevOps Pipeline](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) after step 2.
+Before making a public release, we should test for a couple of days by using the version of the plugin in 
+the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list).
+All passing builds will be pushed to the staging repo automatically by the [Bluemix DevOps Pipeline](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1).
 
 1. Check the output of the [latest build](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) is green.
 
-1. Edit the `PLUGIN_VERSION` variable in `.env`
+1. Edit the `PLUGIN_VERSION` variable in `.version`
 
 1. Tag a new revision using [semver](http://semver.org): `git tag vX.X.X`
 
@@ -17,7 +17,7 @@ This will be done automatically by the [Bluemix DevOps Pipeline](https://console
 1. Add brief description and attach all the binaries from the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list)
 
 1. Follow the [instructions for submitting a plugin](https://github.com/cloudfoundry-incubator/cli-plugin-repo#submitting-plugins)
-You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`:
+   You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`:
 
    * version
    * updated timestamp
@@ -36,7 +36,7 @@ You can run the acceptance tests on any cloud foundry installation by following 
 
    * set the value of `CF_SPACE` to the name of a space in your org where the test should run. If it does not exist it will be created.
 
-   *  set the value of `TEST_ACCEPTANCE_APP_NAME` and `TEST_ACCEPTANCE_APP_HOSTNAME` to any unique values that are valid for the test app domain (eg. eu-gb.mybluemix.net).
+   * set the value of `TEST_ACCEPTANCE_APP_NAME` and `TEST_ACCEPTANCE_APP_HOSTNAME` to any unique values that are valid for the test app domain (eg. eu-gb.mybluemix.net).
 
 1. Source `.env` to your shell.
 
@@ -48,10 +48,8 @@ You can run the acceptance tests on any cloud foundry installation by following 
 
    * The remaining fields can be left unchanged.
 
-1. Make sure that the version of `blue-green-deploy` that should be tested is currently installed.
-
 1. Set the `CF_PASSWORD` variable in your shell. On an interactive shell, run `read -s CF_PASSWORD` and type in your password followed by return. Avoid using `export` with this field, as any sub-shell could then read your password.
 
-1. To run the acceptance tests: `CF_PASSWORD=$CF_PASSWORD script/test_acceptance`.
+1. To install a locally built plugin and then run the acceptance tests: `script/build ; script/install ; CF_PASSWORD=$CF_PASSWORD script/test_acceptance`.
 
 1. If the tests passed, there should be a message similar to `ACCEPTANCE TESTS PASSED!` printed when the test has finished. The exit value is 0 for a successful test.
