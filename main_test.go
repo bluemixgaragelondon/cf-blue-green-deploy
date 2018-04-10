@@ -182,10 +182,10 @@ var _ = Describe("BGD Plugin", func() {
 				Expect(b.deletedRoutes).To(ConsistOf(deletedTempRoute))
 
 				expectedRoutes := []plugin_models.GetApp_RouteSummary{
-					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
-					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
-					{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
-					{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
 				}
 
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
