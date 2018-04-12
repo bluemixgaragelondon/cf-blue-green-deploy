@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"strings"
-
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
@@ -14,6 +12,7 @@ import (
 	"github.com/bluemixgaragelondon/cf-blue-green-deploy/manifest/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
 )
 
 var _ = Describe("BGD Plugin", func() {
@@ -35,6 +34,7 @@ var _ = Describe("BGD Plugin", func() {
 					"check ssh enablement for 'app-name'",
 					"set ssh enablement for 'app-name-new' to 'false'",
 					"unmap 1 routes from app-name-new",
+					"delete 1 routes",
 					"mapped 1 routes",
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
@@ -60,6 +60,8 @@ var _ = Describe("BGD Plugin", func() {
 
 					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name"}))
 
+					deletedTempRoute := plugin_models.GetApp_RouteSummary{Host: "app-name-new", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}}
+					Expect(b.deletedRoutes).To(ConsistOf(deletedTempRoute))
 					Expect(b.mappedRoutes).To(ConsistOf(liveAppRoutes))
 				})
 			})
@@ -140,6 +142,7 @@ var _ = Describe("BGD Plugin", func() {
 					"get current live app",
 					"push app-name-new",
 					"unmap 1 routes from app-name-new",
+					"delete 1 routes",
 					"mapped 1 routes",
 					"rename app-name-new to app-name",
 				}))
@@ -159,29 +162,33 @@ var _ = Describe("BGD Plugin", func() {
            - host1
            - host2
           domains:
-           - example.com
-           - example.net
+           - specific.com
+           - specific.net
         `}
 
 					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, repo, NewArgs([]string{"bgd", "app-name"}))
 
-					Expect(b.flow).To(Equal([]string{
-						"delete old apps",
-						"get current live app",
-						"push app-name-new",
-						"unmap 1 routes from app-name-new",
-						"mapped 4 routes",
-						"rename app-name-new to app-name",
-					}))
+				Expect(b.flow).To(Equal([]string{
+					"delete old apps",
+					"get current live app",
+					"push app-name-new",
+					"unmap 1 routes from app-name-new",
+					"delete 1 routes",
+					"mapped 4 routes",
+					"rename app-name-new to app-name",
+				}))
 
-					expectedRoutes := []plugin_models.GetApp_RouteSummary{
-						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
-						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.com"}},
-						{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
-						{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "example.net"}},
-					}
+				deletedTempRoute := plugin_models.GetApp_RouteSummary{Host: "app-name-new", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}}
+				Expect(b.deletedRoutes).To(ConsistOf(deletedTempRoute))
 
-					Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
+				expectedRoutes := []plugin_models.GetApp_RouteSummary{
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}},
+					plugin_models.GetApp_RouteSummary{Host: "host1", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
+					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
+				}
+
+				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 				})
 			})
 			Context("when manifest uses routes", func() {
@@ -205,6 +212,7 @@ routes:
 						"get current live app",
 						"push app-name-new",
 						"unmap 1 routes from app-name-new",
+						"delete 1 routes",
 						"mapped 3 routes",
 						"rename app-name-new to app-name",
 					}))
@@ -239,6 +247,7 @@ routes:
 						"get current live app",
 						"push app-name-new",
 						"unmap 1 routes from app-name-new",
+						"delete 1 routes",
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
@@ -294,6 +303,7 @@ routes:
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
 						"unmap 1 routes from app-name-new",
+						"delete 1 routes",
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
 					}))
@@ -328,6 +338,7 @@ routes:
 						"push app-name-new",
 						"script/smoke-test app-name-new.example.com",
 						"unmap 1 routes from app-name-new",
+						"delete 1 routes",
 						"rename app-name-new to app-name-failed",
 					}))
 				})
@@ -598,6 +609,7 @@ type BlueGreenDeployFake struct {
 	appSshEnabled bool
 	passSmokeTest bool
 	mappedRoutes  []plugin_models.GetApp_RouteSummary
+	deletedRoutes []plugin_models.GetApp_RouteSummary
 	scale         *ScaleParameters
 	usedScale     *ScaleParameters
 }
@@ -648,6 +660,11 @@ func (p *BlueGreenDeployFake) MapRoutesToApp(appName string, routes ...plugin_mo
 
 func (p *BlueGreenDeployFake) UnmapRoutesFromApp(oldAppName string, routes ...plugin_models.GetApp_RouteSummary) {
 	p.flow = append(p.flow, fmt.Sprintf("unmap %d routes from %s", len(routes), oldAppName))
+}
+
+func (p *BlueGreenDeployFake) DeleteRoutes(routes ...plugin_models.GetApp_RouteSummary) {
+	p.deletedRoutes = routes
+	p.flow = append(p.flow, fmt.Sprintf("delete %d routes", len(routes)))
 }
 
 func (p *BlueGreenDeployFake) CheckSshEnablement(app string) bool {
