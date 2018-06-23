@@ -152,9 +152,15 @@ func (p *BlueGreenDeploy) Setup(connection plugin.CliConnection) {
 }
 
 func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
-	out, err := exec.Command(script, appFQDN).CombinedOutput()
-	fmt.Fprintln(p.Out, string(out))
+	cmd := exec.Command(script, appFQDN)
 
+	stdoutIn, _ := cmd.StdoutPipe()
+	stderrIn, _ := cmd.StderrPipe()
+
+	stdout := io.MultiWriter(p.Out)
+	stderr := io.MultiWriter(p.Out)
+
+	err := cmd.Start()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			return false
@@ -162,6 +168,35 @@ func (p *BlueGreenDeploy) RunSmokeTests(script, appFQDN string) bool {
 			p.ErrorFunc("Smoke tests failed", err)
 		}
 	}
+
+	var errStdout, errStderr error
+
+	go func() {
+		_, errStdout = io.Copy(stdout, stdoutIn)
+	}()
+
+	go func() {
+		_, errStderr = io.Copy(stderr, stderrIn)
+	}()
+
+	err = cmd.Wait()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return false
+		} else {
+			p.ErrorFunc("Smoke tests failed", err)
+		}
+	}
+
+	if errStdout != nil || errStderr != nil {
+		if errStdout != nil {
+			err = errStdout
+		} else {
+			err = errStderr
+		}
+		p.ErrorFunc("Failed to capture smoke test output", err)
+	}
+
 	return true
 }
 
