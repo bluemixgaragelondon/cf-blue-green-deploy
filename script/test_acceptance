@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 trap cleanup EXIT
 
@@ -43,14 +42,8 @@ ignore_any_failures() {
 }
 
 assert_plugin_is_installed() {
-  $cf_command plugins | grep -q bgd
-  if [ $? -eq 0 ] ; then
-    echo Plugin is installed.
-  else
-    echo Plugin is not installed. Ending test.
-    exit 1
-  fi
-}
+  $cf_command plugins | grep -q bgd && echo "Plugin is installed." || (echo "Plugin is not installed. Ending test."; exit 1)
+ }
 
 assert_plugin_output_includes_successful_smoke_test_output() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
