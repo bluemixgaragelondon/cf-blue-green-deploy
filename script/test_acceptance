@@ -72,7 +72,7 @@ assert_plugin_fails_if_smoke_test_script_fails() {
 
   if [ $cf_bgd_exit_code != 1 ]
 	then
-    printf "\n\nExpected $cf_command bgd to exit with exit code 1, it exited with %s" $$cf_command_bgd_exit_code
+    printf "\n\nExpected $cf_command bgd to exit with exit code 1, it exited with %s" $cf_bgd_exit_code
     exit 1
 	fi
 
