@@ -68,9 +68,9 @@ assert_plugin_fails_if_smoke_test_script_fails() {
 
 	set -o pipefail
   $cf_command bgd "${TEST_ACCEPTANCE_APP_NAME}-FORCE-SMOKE-TEST-FAILURE" --smoke-test $smoke_test_script 2>&1 | tee "$TEST_ACCEPTANCE_LOG"
-	local $cf_command_bgd_exit_code=$?
+	local cf_bgd_exit_code=$?
 
-  if [ $$cf_command_bgd_exit_code != 1 ]
+  if [ $cf_bgd_exit_code != 1 ]
 	then
     printf "\n\nExpected $cf_command bgd to exit with exit code 1, it exited with %s" $$cf_command_bgd_exit_code
     exit 1
