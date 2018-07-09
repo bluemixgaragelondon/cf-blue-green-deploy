@@ -2,7 +2,7 @@
 
 # On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'
 cf_platform_command=${1:-cf}
-cf_command=${1:-} cf
+cf_command="${1:-} cf"
 
 login_to_bluemix() {
   CF_URL="${CF_URL:?must be defined}"
