@@ -9,6 +9,8 @@ export CF_HOME=~
 
 # Update the directory structure of the extract to be go-friendly
 mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy-ibmcloud
+
 shopt -s dotglob nullglob extglob
 mv !(go) go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy 
 cd go 
@@ -23,4 +25,8 @@ popd
 
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/test_acceptance
+popd
+
+pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy-ibmcloud
+  ./script/test_acceptance ibmcloud
 popd
