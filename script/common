@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'
+local cf_platform_command=${1:-cf}
+local cf_command=${1:-} cf
+
 login_to_bluemix() {
   CF_URL="${CF_URL:?must be defined}"
   CF_USERNAME="${CF_USERNAME:?must be defined}"
@@ -10,10 +14,10 @@ login_to_bluemix() {
   CF_SPACE="${CF_SPACE:?must be defined}"
 
   set -o pipefail
-  if ! cf apps | grep -e "org ${CF_ORG}.*space ${CF_SPACE}.*as ${CF_USERNAME}" >/dev/null
+  if ! $cf_platform_command apps | grep -e "org ${CF_ORG}.*space ${CF_SPACE}.*as ${CF_USERNAME}" >/dev/null
   then
-    cf login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || cf create-space "$CF_SPACE"
-    cf target -s "$CF_SPACE"
+    $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+    $cf_platform_command target -s "$CF_SPACE"
   fi
   set +o pipefail
 }
@@ -21,19 +25,19 @@ login_to_bluemix() {
 uninstall_plugin() {
   local plugin_name="$1"
 
-  plugin_not_installed? "$plugin_name" || cf uninstall-plugin "$plugin_name"
+  plugin_not_installed? "$plugin_name" || $cf_platform_command uninstall-plugin "$plugin_name"
 }
 
 plugin_not_installed?() {
   local plugin_name="$1"
 
-  ! grep "$plugin_name" <<< "$(cf plugins)" >&-
+  ! grep "$plugin_name" <<< "$($cf_platform_command plugins)" >&-
 }
 
 install_plugin() {
   local plugin_name="$1"
 
-  cf install-plugin -f "artefacts/${plugin_name}.$(platform_name)" 
+  $cf_platform_command install-plugin -f "artefacts/${plugin_name}.$(platform_name)" 
 }
 
 push_example_apps() {
@@ -41,9 +45,9 @@ push_example_apps() {
     login_to_bluemix
     local app_name="$1"
     local app_host_name="$2"
-    cf push "${app_name}-old"
-    cf push "$app_name"
-    cf map-route "$app_name" eu-gb.mybluemix.net -n "$app_host_name"
+    $cf_command push "${app_name}-old"
+    $cf_command push "$app_name"
+    $cf_command map-route "$app_name" eu-gb.mybluemix.net -n "$app_host_name"
   popd
 }
 

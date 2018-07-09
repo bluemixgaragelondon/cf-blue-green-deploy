@@ -2,7 +2,9 @@
 
 trap cleanup EXIT
 
-cf_command=${1:-cf}
+# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'
+local cf_command=${1:-} cf
+
 
 cleanup() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
@@ -12,7 +14,7 @@ cleanup() {
 
 main() {
   . script/with_env
-  . script/common
+  . script/common $1
   assert_plugin_is_installed
 
   if [ -z "$TURBO" ]
