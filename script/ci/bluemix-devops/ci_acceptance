@@ -20,6 +20,7 @@ popd
 
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
   cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
+  bx cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
 popd
 
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
