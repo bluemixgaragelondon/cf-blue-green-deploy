@@ -3,9 +3,11 @@ set -x
 
 trap cleanup EXIT
 
-# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'
+# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'. All the ones we need in this script are 'ibmcloud cf'
 cf_command="${1:-} cf"
 
+# The main function will have its own arguments (and $1 will refer to them), so save this argument
+command_argument=$1
 
 cleanup() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
@@ -15,7 +17,7 @@ cleanup() {
 
 main() {
   . script/with_env
-  . script/common $1
+  . script/common $command_argument
   assert_plugin_is_installed
 
   if [ -z "$TURBO" ]
@@ -37,7 +39,7 @@ main() {
     ignore_any_failures
   popd >/dev/null
 
-  printf "\nACCEPTANCE TESTS PASSED!"
+  printf "\nACCEPTANCE TESTS PASSED!\n"
 }
 
 ignore_any_failures() {
