@@ -3,7 +3,7 @@ set -x
 
 trap cleanup EXIT
 
-# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'. All the ones we need in this script are 'ibmcloud cf'
+# On IBM Cloud, some commands are of the form 'bx [stuff]', and others are 'bx cf [stuff]'. All the ones we need in this script are 'bx cf'
 cf_command="${1:-} cf"
 
 # The main function will have its own arguments (and $1 will refer to them), so save this argument

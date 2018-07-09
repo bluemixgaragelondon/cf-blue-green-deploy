@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# On IBM Cloud, some commands are of the form 'ibmcloud [stuff]', and others are 'ibmcloud cf [stuff]'
+# On IBM Cloud, some commands are of the form 'bx [stuff]', and others are 'bx cf [stuff]'
 cf_platform_command=${1:-cf}
 cf_command="${1:-} cf"
 
