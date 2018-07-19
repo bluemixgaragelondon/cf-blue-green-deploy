@@ -14,14 +14,14 @@ login_to_bluemix() {
   set -o pipefail
   if ! $cf_command apps | grep -e "org ${CF_ORG}.*space ${CF_SPACE}.*as ${CF_USERNAME}" >/dev/null
   then
-    if [ -n "${CF_PASSWORD+1}" ]
+    if [ -n "${API_KEY+1}" ]
     then
-      CF_USERNAME="${CF_USERNAME:?must be defined}"
-      $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
-    else
       API_KEY="${API_KEY:?must be defined since CF_PASSWORD is not set}"
       $cf_platform_command login -a "$CF_URL" --apikey "$API_KEY" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
-    fi
+    else
+      CF_USERNAME="${CF_USERNAME:?must be defined}"
+      $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+     fi
     $cf_platform_command target -s "$CF_SPACE"
   fi
   set +o pipefail
