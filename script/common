@@ -6,17 +6,22 @@ cf_command="${1:-} cf"
 
 login_to_bluemix() {
   CF_URL="${CF_URL:?must be defined}"
-  CF_USERNAME="${CF_USERNAME:?must be defined}"
-  # Two-step check for existence of either CF_TOKEN *or* CF_PASSWORD; if CF_TOKEN is set we won't ever use the value of CF_PASSWORD
   CF_PASSWORD="${CF_PASSWORD:=$CF_TOKEN}"
-  CF_PASSWORD="${CF_PASSWORD:?must be defined}"
+
   CF_ORG="${CF_ORG:?must be defined}"
   CF_SPACE="${CF_SPACE:?must be defined}"
 
   set -o pipefail
   if ! $cf_command apps | grep -e "org ${CF_ORG}.*space ${CF_SPACE}.*as ${CF_USERNAME}" >/dev/null
   then
-    $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+    if [ -z "${CF_PASSWORD}" ]
+    then
+      CF_USERNAME="${CF_USERNAME:?must be defined}"
+      $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+    else
+      API_KEY="${API_KEY:?must be defined since CF_PASSWORD is not set}"
+      $cf_platform_command login -a "$CF_URL" --apikey "$API_KEY" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+    fi
     $cf_platform_command target -s "$CF_SPACE"
   fi
   set +o pipefail
