@@ -23,7 +23,9 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
   bx cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
 popd
 
+
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   ./script/test_acceptance
+  bx login --apikey $PIPELINE_BLUEMIX_API_KEY -a $CF_TARGET_URL -o $CF_ORG -s $CF_SPACE
   ./script/test_acceptance bx
 popd
