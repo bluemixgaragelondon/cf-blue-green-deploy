@@ -16,9 +16,13 @@ login_to_bluemix() {
   then
     if [ -n "${API_KEY+1}" ]
     then
-      API_KEY="${API_KEY:?must be defined since CF_PASSWORD is not set}"
-      $cf_platform_command login -a "$CF_URL" --apikey "$API_KEY" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
-    else
+          if [ "${cf_platform_command+1}"=='cf' ]; then
+            $cf_platform_command login -a "$CF_URL" -u apikey -p "$API_KEY" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+          else 
+            $cf_platform_command login -a "$CF_URL" --apikey "$API_KEY" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
+          fi
+   else
+      CF_PASSWORD="${CF_PASSWORD:?must be defined since API_KEY is not set}"
       CF_USERNAME="${CF_USERNAME:?must be defined}"
       $cf_platform_command login -a "$CF_URL" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || $cf_command create-space "$CF_SPACE"
      fi
