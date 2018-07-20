@@ -59,6 +59,7 @@ var _ = Describe("BGD Plugin", func() {
 						"check ssh enablement for 'app-name'",
 						"set ssh enablement for 'app-name-new' to 'false'",
 						"unmap 1 routes from app-name-new",
+						"delete 1 routes",
 						"mapped 1 routes",
 						"rename app-name-live to app-name-old",
 						"rename app-name-new to app-name",
