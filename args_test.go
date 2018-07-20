@@ -22,6 +22,10 @@ var _ = Describe("Args", func() {
 		It("does not set a manifest", func() {
 			Expect(args.ManifestPath).To(BeZero())
 		})
+
+		It("does not keep old app instances", func() {
+			Expect(args.KeepOldApps).To(BeFalse())
+		})
 	})
 
 	Context("With a smoke test and an appname", func() {
@@ -37,6 +41,10 @@ var _ = Describe("Args", func() {
 
 		It("does not set a manifest", func() {
 			Expect(args.ManifestPath).To(BeZero())
+		})
+
+		It("does not keep old app instances", func() {
+			Expect(args.KeepOldApps).To(BeFalse())
 		})
 	})
 
@@ -54,6 +62,10 @@ var _ = Describe("Args", func() {
 		It("sets a manifest", func() {
 			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
 		})
+
+		It("does not keep old app instances", func() {
+			Expect(args.KeepOldApps).To(BeFalse())
+		})
 	})
 
 	Context("With an appname and a manifest", func() {
@@ -65,6 +77,10 @@ var _ = Describe("Args", func() {
 
 		It("sets a manifest", func() {
 			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
+		})
+
+		It("does not keep old app instances", func() {
+			Expect(args.KeepOldApps).To(BeFalse())
 		})
 	})
 
@@ -81,6 +97,22 @@ var _ = Describe("Args", func() {
 
 		It("sets the app name", func() {
 			Expect(args.AppName).To(Equal("app"))
+		})
+	})
+
+	Context("With an appname and a manifest and the keep-old-apps flag", func() {
+		args := NewArgs(bgdArgs("appname -f custommanifest.yml --keep-old-apps"))
+
+		It("sets the app name", func() {
+			Expect(args.AppName).To(Equal("appname"))
+		})
+
+		It("sets a manifest", func() {
+			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
+		})
+
+		It("keeps old app instances", func() {
+			Expect(args.KeepOldApps).To(BeTrue())
 		})
 	})
 })
