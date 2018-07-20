@@ -204,11 +204,7 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, cfDomains C
 
 	domainAry := sliceOrNil(yamlMap, "domains", &errs)
 	if domain := stringVal(yamlMap, "domain", &errs); domain != nil {
-		if domainAry == nil {
-			domainAry = []string{*domain}
-		} else {
-			domainAry = append(domainAry, *domain)
-		}
+		domainAry = append(domainAry, *domain)
 	}
 	mytempDomainsObject := removeDuplicatedValue(domainAry)
 

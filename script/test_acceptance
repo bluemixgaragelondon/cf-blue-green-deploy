@@ -1,6 +1,13 @@
 #!/bin/bash
+set -x 
 
 trap cleanup EXIT
+
+# On IBM Cloud, some commands are of the form 'bx [stuff]', and others are 'bx cf [stuff]'. All the ones we need in this script are 'bx cf'
+cf_command="${1:-} cf"
+
+# The main function will have its own arguments (and $1 will refer to them), so save this argument
+command_argument=$1
 
 cleanup() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
@@ -10,8 +17,7 @@ cleanup() {
 
 main() {
   . script/with_env
-  . script/common
-
+  . script/common $command_argument
   assert_plugin_is_installed
 
   if [ -z "$TURBO" ]
@@ -33,7 +39,7 @@ main() {
     ignore_any_failures
   popd >/dev/null
 
-  printf "\nACCEPTANCE TESTS PASSED!"
+  printf "\nACCEPTANCE TESTS PASSED!\n"
 }
 
 ignore_any_failures() {
@@ -41,14 +47,8 @@ ignore_any_failures() {
 }
 
 assert_plugin_is_installed() {
-  output=`cf plugins | grep -q bgd`
-  if [ $? -eq 0 ] ; then
-    echo Plugin is installed.
-  else
-    echo Plugin is not installed. Ending test.
-    exit 1
-  fi
-}
+  $cf_command plugins | grep -q bgd && echo "Plugin is installed." || (echo "Plugin is not installed. Ending test."; exit 1)
+ }
 
 assert_plugin_output_includes_successful_smoke_test_output() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
@@ -56,11 +56,11 @@ assert_plugin_output_includes_successful_smoke_test_output() {
   local smoke_test_script="script/smoke_test"
   local smoke_test_output="Hello world from my Go program!"
 
-  cf bgd "$TEST_ACCEPTANCE_APP_NAME" --smoke-test "$smoke_test_script" | tee "$TEST_ACCEPTANCE_LOG"
+  $cf_command bgd "$TEST_ACCEPTANCE_APP_NAME" --smoke-test "$smoke_test_script" | tee "$TEST_ACCEPTANCE_LOG"
 
   if ! grep "$smoke_test_output" "$TEST_ACCEPTANCE_LOG"
   then
-    printf "\n\nExpected cf bgd to include '%s' from %s output\n" "$smoke_test_output" "$smoke_test_script"
+    printf "\n\nExpected $cf_command bgd to include '%s' from %s output\n" "$smoke_test_output" "$smoke_test_script"
     exit 1
   fi
 }
@@ -72,18 +72,18 @@ assert_plugin_fails_if_smoke_test_script_fails() {
   local expected_output_last_line="Smoke tests failed"
 
 	set -o pipefail
-  cf bgd "${TEST_ACCEPTANCE_APP_NAME}-FORCE-SMOKE-TEST-FAILURE" --smoke-test $smoke_test_script 2>&1 | tee "$TEST_ACCEPTANCE_LOG"
+  $cf_command bgd "${TEST_ACCEPTANCE_APP_NAME}-FORCE-SMOKE-TEST-FAILURE" --smoke-test $smoke_test_script 2>&1 | tee "$TEST_ACCEPTANCE_LOG"
 	local cf_bgd_exit_code=$?
 
   if [ $cf_bgd_exit_code != 1 ]
 	then
-    printf "\n\nExpected cf bgd to exit with exit code 1, it exited with %s" $cf_bgd_exit_code
+    printf "\n\nExpected $cf_command bgd to exit with exit code 1, it exited with %s" $cf_bgd_exit_code
     exit 1
 	fi
 
   if [ "$(tail -n 1 "$TEST_ACCEPTANCE_LOG")" != "$expected_output_last_line" ]
   then
-    printf "\n\nExpected cf bgd to stop with %s\n" "$expected_output_last_line"
+    printf "\n\nExpected $cf_command bgd to stop with %s\n" "$expected_output_last_line"
     exit 1
   fi
 }
@@ -91,7 +91,7 @@ assert_plugin_fails_if_smoke_test_script_fails() {
 assert_plugin_runs_cleanly_if_manifest_is_specified() {
   TEST_ACCEPTANCE_LOG="${TEST_ACCEPTANCE_LOG:?Must be defined in .env}"
 
-  cf bgd "$TEST_ACCEPTANCE_APP_NAME" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
+  $cf_command bgd "$TEST_ACCEPTANCE_APP_NAME" -f strangely-named-manifest.yml | tee "$TEST_ACCEPTANCE_LOG"
 
   if [ $? -ne 0 ]
   then

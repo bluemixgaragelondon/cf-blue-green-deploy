@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e -x
 
+dir=`dirname $0`
+. $dir/ci_env
+
 # Set CF_HOME or the scripts will set it to the wrong thing 
 export CF_HOME=~
+export API_KEY=$PIPELINE_BLUEMIX_API_KEY
 
 # Update the directory structure of the extract to be go-friendly
 mkdir -p go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+
 shopt -s dotglob nullglob extglob
 mv !(go) go/src/github.com/bluemixgaragelondon/cf-blue-green-deploy 
 cd go 
@@ -16,8 +21,13 @@ popd
 
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy/artefacts
   cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
+  bx cf install-plugin "${PLUGIN_NAME}.linux64" <<< "y"
 popd
 
+
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
+  echo '--------- acceptance testing with cf --------------'
   ./script/test_acceptance
+  echo '--------- acceptance testing with bx --------------'
+  ./script/test_acceptance bx
 popd

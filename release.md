@@ -2,7 +2,7 @@
 
 Before making a public release, we should test for a couple of days by using the version of the plugin in 
 the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list).
-All passing builds will be pushed to the staging repo automatically by the [Bluemix DevOps Pipeline](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1).
+All passing builds will be pushed to the staging repo automatically by the [IBM Cloud DevOps Pipeline](https://console.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1?env_id=ibm:yp:us-south).
 
 1. Check the output of the [latest build](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) is green.
 

@@ -67,10 +67,13 @@ func (p *CfPlugin) Deploy(cfDomains manifest.CfDomains, manifestReader manifest.
 
 	manifestScaleParameters := p.GetScaleFromManifest(appName, cfDomains, manifestReader)
 
+	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
+	newAppRoutes := p.GetNewAppRoutes(args.AppName, cfDomains, manifestReader, liveAppRoutes)
 	newAppName := appName + "-new"
 
 	// Add route so that we can run the smoke tests
-	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: plugin_models.GetApp_DomainFields{Name: cfDomains.DefaultDomain}}
+	tempRouteDomain := newAppRoutes[0].Domain
+	tempRoute := plugin_models.GetApp_RouteSummary{Host: newAppName, Domain: tempRouteDomain}
 
 	// If deploy is unsuccessful, p.ErrorFunc will be called which exits.
 	p.Deployer.PushNewApp(newAppName, tempRoute, args.ManifestPath, manifestScaleParameters)
@@ -84,10 +87,8 @@ func (p *CfPlugin) Deploy(cfDomains manifest.CfDomains, manifestReader manifest.
 		promoteNewApp = p.Deployer.RunSmokeTests(smokeTestScript, FQDN(tempRoute))
 	}
 
-	// TODO We're overloading 'new' here for both the staging app and the 'finished' app, which is confusing
-	newAppRoutes := p.GetNewAppRoutes(args.AppName, cfDomains, manifestReader, liveAppRoutes)
-
 	p.Deployer.UnmapRoutesFromApp(newAppName, tempRoute)
+	p.Deployer.DeleteRoutes(tempRoute)
 
 	if promoteNewApp {
 		// If there is a live app, we want to disassociate the routes with the old version of the app
