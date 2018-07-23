@@ -157,19 +157,26 @@ func (p *CfPlugin) GetScaleFromManifest(appName string, cfDomains manifest.CfDom
 	return
 }
 
+
+func (p *CfPlugin) contains(list []plugin_models.GetApp_RouteSummary, value plugin_models.GetApp_RouteSummary) bool {
+	for _, v := range list {
+		if (v == value) {
+			return true;
+		}
+	}
+	return false;
+}
+
 func (p *CfPlugin) UnionRouteLists(listA []plugin_models.GetApp_RouteSummary, listB []plugin_models.GetApp_RouteSummary) []plugin_models.GetApp_RouteSummary {
 	duplicateList := append(listA, listB...)
 
-	routesSet := make(map[plugin_models.GetApp_RouteSummary]struct{})
-
-	for _, route := range duplicateList {
-		routesSet[route] = struct{}{}
-	}
-
 	uniqueRoutes := []plugin_models.GetApp_RouteSummary{}
-	for route := range routesSet {
-		uniqueRoutes = append(uniqueRoutes, route)
+	for _, route := range duplicateList {
+		if (! p.contains(uniqueRoutes, route)) {
+			uniqueRoutes = append(uniqueRoutes, route)
+		}
 	}
+
 	return uniqueRoutes
 }
 
