@@ -23,8 +23,8 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(BeZero())
 		})
 
-		It("does not keep old app instances", func() {
-			Expect(args.KeepOldApps).To(BeFalse())
+		It("does not delete old app instances", func() {
+			Expect(args.DeleteOldApps).To(BeFalse())
 		})
 	})
 
@@ -43,8 +43,8 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(BeZero())
 		})
 
-		It("does not keep old app instances", func() {
-			Expect(args.KeepOldApps).To(BeFalse())
+		It("does not delete old app instances", func() {
+			Expect(args.DeleteOldApps).To(BeFalse())
 		})
 	})
 
@@ -63,8 +63,8 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
 		})
 
-		It("does not keep old app instances", func() {
-			Expect(args.KeepOldApps).To(BeFalse())
+		It("does not delete old app instances", func() {
+			Expect(args.DeleteOldApps).To(BeFalse())
 		})
 	})
 
@@ -79,8 +79,8 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
 		})
 
-		It("does not keep old app instances", func() {
-			Expect(args.KeepOldApps).To(BeFalse())
+		It("does not delete old app instances", func() {
+			Expect(args.DeleteOldApps).To(BeFalse())
 		})
 	})
 
@@ -100,8 +100,8 @@ var _ = Describe("Args", func() {
 		})
 	})
 
-	Context("With an appname and a manifest and the keep-old-apps flag", func() {
-		args := NewArgs(bgdArgs("appname -f custommanifest.yml --keep-old-apps"))
+	Context("With an appname and a manifest and the delete-old-apps flag", func() {
+		args := NewArgs(bgdArgs("appname -f custommanifest.yml --delete-old-apps"))
 
 		It("sets the app name", func() {
 			Expect(args.AppName).To(Equal("appname"))
@@ -111,8 +111,8 @@ var _ = Describe("Args", func() {
 			Expect(args.ManifestPath).To(Equal("custommanifest.yml"))
 		})
 
-		It("keeps old app instances", func() {
-			Expect(args.KeepOldApps).To(BeTrue())
+		It("deletes old app instances", func() {
+			Expect(args.DeleteOldApps).To(BeTrue())
 		})
 	})
 })

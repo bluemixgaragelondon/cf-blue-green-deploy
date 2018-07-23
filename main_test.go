@@ -39,18 +39,17 @@ var _ = Describe("BGD Plugin", func() {
 					"rename app-name-live to app-name-old",
 					"rename app-name-new to app-name",
 					"unmap 0 routes from app-name-old",
-					"delete old apps",
 				}))
 			})
 
-			Context("and we want to keep the old app instances", func() {
-				It("does not call 'delete old apps'", func() {
+			Context("and we want to delete the old app instances", func() {
+				It("calls 'delete old apps'", func() {
 					b := &BlueGreenDeployFake{liveApp: &plugin_models.GetAppModel{Name: "app-name-live"}, appSshEnabled: false}
 					p := CfPlugin{
 						Deployer: b,
 					}
 
-					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--keep-old-apps"}))
+					p.Deploy(manifest.CfDomains{DefaultDomain: "example.com"}, &fakes.FakeManifestReader{}, NewArgs([]string{"bgd", "app-name", "--delete-old-apps"}))
 
 					Expect(b.flow).To(Equal([]string{
 						"delete old apps",
@@ -64,6 +63,7 @@ var _ = Describe("BGD Plugin", func() {
 						"rename app-name-live to app-name-old",
 						"rename app-name-new to app-name",
 						"unmap 0 routes from app-name-old",
+						"delete old apps",
 					}))
 				})
 			})
@@ -171,7 +171,6 @@ var _ = Describe("BGD Plugin", func() {
 					"delete 1 routes",
 					"mapped 1 routes",
 					"rename app-name-new to app-name",
-					"delete old apps",
 				}))
 			})
 		})
@@ -202,7 +201,6 @@ var _ = Describe("BGD Plugin", func() {
 						"delete 1 routes",
           					"mapped 4 routes",
 						"rename app-name-new to app-name",
-						"delete old apps",
 					}))
 
 				deletedTempRoute := plugin_models.GetApp_RouteSummary{Host: "app-name-new", Domain: plugin_models.GetApp_DomainFields{Name: "specific.com"}}
@@ -242,7 +240,6 @@ routes:
 						"delete 1 routes",
 						"mapped 3 routes",
 						"rename app-name-new to app-name",
-						"delete old apps",
 					}))
 
 					expectedRoutes := []plugin_models.GetApp_RouteSummary{
@@ -278,7 +275,6 @@ routes:
 						"delete 1 routes",
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
-						"delete old apps",
 					}))
 					scaleParameters := ScaleParameters{
 						Memory:        int64(16),
@@ -335,7 +331,6 @@ routes:
 						"delete 1 routes",
 						"mapped 1 routes",
 						"rename app-name-new to app-name",
-						"delete old apps",
 					}))
 				})
 
