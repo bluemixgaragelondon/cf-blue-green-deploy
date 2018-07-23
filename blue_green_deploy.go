@@ -17,6 +17,7 @@ type BlueGreenDeployer interface {
 	Setup(plugin.CliConnection)
 	PushNewApp(string, plugin_models.GetApp_RouteSummary, string, ScaleParameters)
 	DeleteAllAppsExceptLiveApp(string)
+	DeleteAllAppsExceptLiveAndFailedApp(string)
 	GetScaleParameters(string) (ScaleParameters, error)
 	LiveApp(string) (string, []plugin_models.GetApp_RouteSummary)
 	RunSmokeTests(string, string) bool
@@ -54,6 +55,16 @@ func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveApp(appName string) {
 		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
 	}
 	oldAppVersions := p.GetOldApps(appName, appsInSpace)
+	p.DeleteAppVersions(oldAppVersions)
+
+}
+
+func (p *BlueGreenDeploy) DeleteAllAppsExceptLiveAndFailedApp(appName string) {
+	appsInSpace, err := p.Connection.GetApps()
+	if err != nil {
+		p.ErrorFunc("Could not load apps in space, are you logged in?", err)
+	}
+	oldAppVersions := p.GetOldButNotFailedApps(appName, appsInSpace)
 	p.DeleteAppVersions(oldAppVersions)
 
 }
@@ -133,6 +144,25 @@ func (p *BlueGreenDeploy) GetOldApps(appName string, apps []plugin_models.GetApp
 		// to check for the existence of a hyphen, in which case we could use something like strings.Count for hyphen instead of the regex.
 		// Then we would not need the if statement below.
 		if strings.HasSuffix(app.Name, "-old") || strings.HasSuffix(app.Name, "-failed") || strings.HasSuffix(app.Name, "-new") {
+			oldApps = append(oldApps, app)
+		}
+	}
+	return
+}
+
+func (p *BlueGreenDeploy) GetOldButNotFailedApps(appName string, apps []plugin_models.GetAppsModel) (oldApps []plugin_models.GetAppsModel) {
+	r := regexp.MustCompile(fmt.Sprintf("^%s(-old|-new)?$", appName))
+	for _, app := range apps {
+		if !r.MatchString(app.Name) {
+			continue
+		}
+
+		// TODO (Rufus) - perhaps a change in the regex is needed.
+		// - e.g. `^%s-(old|failed|new)$` (making the capture group not optional). This would mean that the live app, if that is the version
+		// with no prefix, is not matched but others are. Equally, if the live app is the one without a suffix, perhaps it would be sufficient
+		// to check for the existence of a hyphen, in which case we could use something like strings.Count for hyphen instead of the regex.
+		// Then we would not need the if statement below.
+		if strings.HasSuffix(app.Name, "-old") || strings.HasSuffix(app.Name, "-new") {
 			oldApps = append(oldApps, app)
 		}
 	}

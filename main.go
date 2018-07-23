@@ -104,7 +104,7 @@ func (p *CfPlugin) Deploy(cfDomains manifest.CfDomains, manifestReader manifest.
 			p.Deployer.RenameApp(newAppName, appName)
 		}
 		if args.DeleteOldApps {
-			p.Deployer.DeleteAllAppsExceptLiveApp(appName)
+			p.Deployer.DeleteAllAppsExceptLiveAndFailedApp(appName)
 		}
 		return true
 	} else {

@@ -328,6 +328,102 @@ var _ = Describe("BlueGreenDeploy", func() {
 		})
 	})
 
+	Describe("delete old apps (but not failed ones)", func() {
+		var (
+			apps []plugin_models.GetAppsModel
+		)
+
+		Context("with live and old apps", func() {
+			BeforeEach(func() {
+				apps = []plugin_models.GetAppsModel{
+					{Name: "app-name-old"},
+					{Name: "app-name"},
+				}
+				connection.GetAppsReturns(apps, nil)
+			})
+
+			It("only deletes the old apps", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-old -f -r",
+				}))
+			})
+
+			Context("when the deletion of an app fails", func() {
+				BeforeEach(func() {
+					connection.CliCommandStub = func(args ...string) ([]string, error) {
+						return nil, errors.New("failed to delete app")
+					}
+				})
+
+				It("returns an error", func() {
+					p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+					Expect(bgdExitsWithErrors[0]).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("with live and failed apps", func() {
+			BeforeEach(func() {
+				apps = []plugin_models.GetAppsModel{
+					{Name: "app-name-failed"},
+					{Name: "app-name"},
+				}
+				connection.GetAppsReturns(apps, nil)
+			})
+
+			It("succeeds", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				Expect(bgdExitsWithErrors).To(HaveLen(0))
+			})
+
+			It("deletes nothing", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				Expect(connection.CliCommandCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("with live and new apps", func() {
+			BeforeEach(func() {
+				apps = []plugin_models.GetAppsModel{
+					{Name: "app-name-new"},
+					{Name: "app-name"},
+				}
+				connection.GetAppsReturns(apps, nil)
+			})
+
+			It("only deletes the new apps", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				cfCommands := getAllCfCommands(connection)
+
+				Expect(cfCommands).To(Equal([]string{
+					"delete app-name-new -f -r",
+				}))
+			})
+		})
+
+		Context("when there is no old version deployed", func() {
+			BeforeEach(func() {
+				apps = []plugin_models.GetAppsModel{
+					{Name: "app-name"},
+				}
+				connection.GetAppsReturns(apps, nil)
+			})
+
+			It("succeeds", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				Expect(bgdExitsWithErrors).To(HaveLen(0))
+			})
+
+			It("deletes nothing", func() {
+				p.DeleteAllAppsExceptLiveAndFailedApp("app-name")
+				Expect(connection.CliCommandCallCount()).To(Equal(0))
+			})
+		})
+	})
+
 	Describe("deleting apps", func() {
 		Context("when there is an old version deployed", func() {
 			apps := []plugin_models.GetAppsModel{

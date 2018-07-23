@@ -63,7 +63,7 @@ var _ = Describe("BGD Plugin", func() {
 						"rename app-name-live to app-name-old",
 						"rename app-name-new to app-name",
 						"unmap 0 routes from app-name-old",
-						"delete old apps",
+						"delete old apps except failed ones",
 					}))
 				})
 			})
@@ -655,6 +655,10 @@ func (p *BlueGreenDeployFake) PushNewApp(appName string, route plugin_models.Get
 
 func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveApp(string) {
 	p.flow = append(p.flow, "delete old apps")
+}
+
+func (p *BlueGreenDeployFake) DeleteAllAppsExceptLiveAndFailedApp(string) {
+	p.flow = append(p.flow, "delete old apps except failed ones")
 }
 
 func (p *BlueGreenDeployFake) LiveApp(string) (string, []plugin_models.GetApp_RouteSummary) {
