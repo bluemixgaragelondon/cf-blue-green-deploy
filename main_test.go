@@ -200,7 +200,7 @@ var _ = Describe("BGD Plugin", func() {
 						"push app-name-new",
 						"unmap 1 routes from app-name-new",
 						"delete 1 routes",
-          					"mapped 4 routes",
+          				"mapped 4 routes",
 						"rename app-name-new to app-name",
 						"delete old apps",
 					}))
