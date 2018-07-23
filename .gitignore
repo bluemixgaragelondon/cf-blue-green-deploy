@@ -9,3 +9,4 @@ test-results/
 junit.xml
 manifest/manifest-junit.xml
 .envrc
+cf-blue-green-deploy.coverprofile
