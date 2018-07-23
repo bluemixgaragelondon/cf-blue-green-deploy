@@ -215,6 +215,8 @@ var _ = Describe("BGD Plugin", func() {
 					plugin_models.GetApp_RouteSummary{Host: "host2", Domain: plugin_models.GetApp_DomainFields{Name: "specific.net"}},
 				}
 
+				Expect(len(b.mappedRoutes)).To(Equal(4))
+
 				Expect(b.mappedRoutes).To(ConsistOf(expectedRoutes))
 				})
 			})
