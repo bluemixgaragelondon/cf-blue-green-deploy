@@ -222,7 +222,7 @@ func mapToAppParams(basePath string, yamlMap map[string]interface{}, cfDomains C
 	} else if compositeRoutes == nil || len(compositeRoutes) == 0 {
 		appParams.Routes = routeRoutes
 	} else {
-		errs = append(errs, errors.New("Cannot have both a routes and a host or domain")) // TODO betrer message
+		errs = append(errs, errors.New("Cannot have both a routes and a host or domain")) // TODO better message
 	}
 	if name := stringVal(yamlMap, "name", &errs); name != nil {
 		appParams.Name = *name
