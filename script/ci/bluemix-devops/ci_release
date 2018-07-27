@@ -86,6 +86,7 @@ pushd prerelease/cf-blue-green-deploy
   git add .version
   # Clear the stored release description 
   echo 'New release description here' > .releaseDescription
+  # TODO it would be nice to fail the next release if this hasn't been updated
   git add .releaseDescription
   git commit -m "Auto release prep."
   ${cmd_modifier} git push
