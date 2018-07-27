@@ -11,15 +11,23 @@ dir=`dirname $0`
     cmd_modifier="echo 'Would have run -- '"
   fi
 
+git clone https://github.com/fsaintjacques/semver-tool
+pushd semver-tool
+  git checkout tags/1.2.1
+popd
 
 GIT_URL=`cat artefacts/.gitorigin`
+GIT_HASH=`cat artefacts/.gitcommithash`
 mkdir prerelease
 pushd prerelease
   git clone $GIT_URL
   cd cf-blue-green-deploy
-  
-  TAG=v${PLUGIN_VERSION}
-  NAME="Version ${PLUGIN_VERSION}"
+  git checkout $GIT_HASH
+
+  version_to_release=`../../semver-tool/src/semver release`
+
+  TAG=v${version_to_release}
+  NAME="Version ${version_to_release}"
   # TODO it would, of course, be nicer not to hardcode the repo name, and we should be able to work it out
   REPO="bluemixgaragelondon/cf-blue-green-deploy"
   git tag ${TAG}
@@ -74,15 +82,12 @@ pushd prerelease
     echo "----- The following would be suitable to paste into repo-index.yml -----"
     cat example-index.yml
 popd
-git clone https://github.com/fsaintjacques/semver-tool
-pushd semver-tool
-  git checkout tags/1.2.1
-popd
 
 pushd prerelease/cf-blue-green-deploy
   # Bump the stored version 
-  next_version=`../semver-tool/src/semver bump minor $PLUGIN_VERSION`
-  ../semver-tool/src/semver bump prerel rc1 $next_version > .version
+  ../../semver-tool/src/semver bump minor
+  # Commit back the next version to source control (with an rc tag)
+  ../../semver-tool/src/semver bump prerel rc1
   git add .version
   # Clear the stored release description 
   echo 'New release description here' > .releaseDescription

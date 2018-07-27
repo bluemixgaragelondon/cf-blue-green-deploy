@@ -64,4 +64,5 @@ pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
 
   # make a note of our git url
   git remote -v | head -1 | sed 's/origin//g' | sed 's/(fetch)//g' | sed -E "s/[[:space:]]+//g" > artefacts/.gitorigin
+  git rev-parse HEAD > artefacts/.gitcommithash
 popd
