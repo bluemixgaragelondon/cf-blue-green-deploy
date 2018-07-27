@@ -45,6 +45,12 @@ cf blue-green-deploy app_name --smoke-test <path to test script>
 cf blue-green-deploy app_name -f <path to manifest>
 ```
 
+* Deploy with a hard clean-up of the 'blue' (original) app
+
+```
+cf blue-green-deploy app_name --delete-old-apps
+```
+
 * You can also use the shorter alias
 
 ```
