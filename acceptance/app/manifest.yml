@@ -6,5 +6,5 @@ hosts:
   - bgd1
   - bgd2
 domains:
- - bluegreen.ibm
  - 5.10.124.141.xip.io
+ - bluegreen.ibm
