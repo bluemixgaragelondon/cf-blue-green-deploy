@@ -26,7 +26,7 @@ popd
 SECURED_GIT_URL=`cat artefacts/.gitorigin | sed -e "s,https://.@,https://,g"`
 GIT_HASH=`cat artefacts/.gitcommithash`
 
-GIT_URL=`echo $GIT_URL | sed -e "s,https://,https://bluemixgarage:$OAUTH_TOKEN@,g"`
+GIT_URL=`echo $SECURED_GIT_URL | sed -e "s,https://,https://bluemixgarage:$OAUTH_TOKEN@,g"`
 mkdir prerelease
 pushd prerelease
   git clone $SECURED_GIT_URL
