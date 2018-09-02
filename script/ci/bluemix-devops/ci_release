@@ -55,6 +55,7 @@ pushd prerelease
 
     response=$(
       ${cmd_modifier} curl  \
+          --fail \
           -X POST \
           -H "Content-Type: application/json" \
           -H "Authorization: token $OAUTH_TOKEN" \
@@ -64,7 +65,6 @@ pushd prerelease
           "https://api.github.com/repos/${REPO}/releases"
     )
 
-# TODO terminate script if this didn't work 
    # In dry run mode, the response is empty so everything from here on fails - fake up a response from previous releases
     if [ $DRY_RUN ]; then
      echo "Using a previous release for dry-run purposes"
@@ -84,6 +84,7 @@ pushd prerelease
       sha=$(shasum "${binary_path}" | awk '{print $1}')
       
       ${cmd_modifier} curl --netrc \
+            --fail \
             --header "Content-Type:application/gzip" \
             -H "Authorization: token $OAUTH_TOKEN" \
             --data-binary "@$binary_path" \
