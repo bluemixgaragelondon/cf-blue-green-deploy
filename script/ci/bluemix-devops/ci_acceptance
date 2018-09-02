@@ -28,6 +28,4 @@ popd
 pushd src/github.com/bluemixgaragelondon/cf-blue-green-deploy
   echo '--------- acceptance testing with cf --------------'
   ./script/test_acceptance
-  echo '--------- acceptance testing with bx --------------'
-  ./script/test_acceptance bx
 popd
