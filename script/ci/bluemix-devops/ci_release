@@ -33,11 +33,11 @@ pushd prerelease
   git tag ${TAG}
   ${cmd_modifier} git push --tags
 
-    # Upload the binaries the git release
+    # Upload the binaries to the git release
 
     # Create a git release using the tag
 
-    description=`cat .releaseDescription`
+    description="`cat .releaseDescription`"
     payload=$(
       jq --null-input \
         --arg tag "$TAG" \
@@ -81,6 +81,8 @@ pushd prerelease
 
     echo "----- The following would be suitable to paste into repo-index.yml -----"
     cat example-index.yml
+    echo "---------"
+
 popd
 
 pushd prerelease/cf-blue-green-deploy
