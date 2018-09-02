@@ -4,20 +4,22 @@ Before making a public release, we should test for a couple of days by using the
 the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list).
 All passing builds will be pushed to the staging repo automatically by the [IBM Cloud DevOps Pipeline](https://console.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1?env_id=ibm:yp:us-south).
 
+1. Update the markdown description in `.releaseDescription` to reflect the release contents.
+
+1. If this is more (or less) than an minor release, update the semantic version in `.version`.
+
 1. Check the output of the [latest build](https://console.ng.bluemix.net/devops/pipelines/4e5bb6ac-762d-42aa-abe1-71beabeafbb1) is green.
 
-1. Edit the `PLUGIN_VERSION` variable in `.version`
+1. Manually run the 'Git release' build stage. Under the covers, that will do the following: 
 
-1. Tag a new revision using [semver](http://semver.org): `git tag vX.X.X`
+11. Tag a new revision using [semver](http://semver.org): `git tag vX.X.X`
 
-1. `git push --tags` (to github)
+11. Create [a new github release](https://github.com/bluemixgaragelondon/cf-blue-green-deploy/releases/new) and upload the binaries
 
-1. Create [a new github release](https://github.com/bluemixgaragelondon/cf-blue-green-deploy/releases/new)
-
-1. Add brief description and attach all the binaries from the [garage plugin repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list)
+11. Bump the `PLUGIN_VERSION` variable in `.version` to the next minor increment, ready for the next release
 
 1. Follow the [instructions for submitting a plugin](https://github.com/cloudfoundry-incubator/cli-plugin-repo#submitting-plugins)
-   You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`:
+   You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`. Use the output from the build job:
 
    * version
    * updated timestamp

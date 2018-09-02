@@ -67,7 +67,7 @@ pushd prerelease
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
-    echo "binaries:" > example-index.yml
+    echo "  binaries:" > example-index.yml
 
     ARTEFACT_DIRECTORY=../../artefacts  
     find $ARTEFACT_DIRECTORY -type f ! -iname '.*' | while read binary_path
@@ -84,11 +84,19 @@ pushd prerelease
             "$upload_url?name=$binary_name"
 
       # Output suitable json for pasting into the cli plugin repo 
-      echo "- checksum: ${sha}" >> example-index.yml
-      echo "  platform: ${binary_target}" >> example-index.yml
-      echo "  url: $GIT_URL/releases/download/$TAG/${binary_name}" >> example-index.yml
+      echo "  - checksum: ${sha}" >> example-index.yml
+      echo "    platform: ${binary_target}" >> example-index.yml
+      echo "    url: $GIT_URL/releases/download/$TAG/${binary_name}" >> example-index.yml
 
     done
+
+    echo "  company: IBM" >> example-index.yml
+    echo "  created: 2015-03-24T00:00:00Z" >> example-index.yml
+    echo "  description: Zero downtime deploys with smoke test support" >> example-index.yml
+    echo "  homepage: https://github.com/bluemixgaragelondon/cf-blue-green-deploy" >> example-index.yml
+    echo "  name: blue-green-deploy" >> example-index.yml
+    echo "  updated: `date +%Y-%m-%dT%H:%M:%SZ"` >> example-index.yml
+    echo "  version: ${version_to_release}" >> example-index.yml
 
     echo "----- The following would be suitable to paste into repo-index.yml -----"
     cat example-index.yml
