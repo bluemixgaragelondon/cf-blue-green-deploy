@@ -46,7 +46,7 @@ pushd prerelease
 
     # Create a git release using the tag
 
-    description=\"`cat .releaseDescription`\"
+    description=`cat .releaseDescription`
     payload=$(
       jq --null-input \
         --arg tag "$TAG" \
