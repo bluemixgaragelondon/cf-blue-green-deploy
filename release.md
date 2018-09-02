@@ -19,12 +19,12 @@ All passing builds will be pushed to the staging repo automatically by the [IBM 
 11. Bump the `PLUGIN_VERSION` variable in `.version` to the next minor increment, ready for the next release
 
 1. Follow the [instructions for submitting a plugin](https://github.com/cloudfoundry-incubator/cli-plugin-repo#submitting-plugins)
-   You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`. Use the output from the build job:
+   You need to update the following in `repo-index.yml` under `cf-blue-green-deploy`. Use the output from the build job, which will include:
 
    * version
    * updated timestamp
    * url - this should be `https://github.com/bluemixgaragelondon/new_plugin/releases/download/vX.X.X/blue-green-deploy.PLATFORM`
-   * sum - copy from [the garage staging repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list) as this version will have passed all of the testing.
+   * sum - copied from [the garage staging repo](https://garage-cf-plugins.eu-gb.mybluemix.net/list) as this version will have passed all of the testing.
 
 # Running the acceptance tests
 
