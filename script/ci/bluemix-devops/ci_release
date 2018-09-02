@@ -4,6 +4,9 @@ set -e
 dir=`dirname $0`
 . $dir/ci_env
 
+git config --global user.email "$PIPELINE_TRIGGERING_USER"
+git config --global user.name "Build pipeline"
+
 DRAFTINESS=false
 
 # Create a git tag and push the tags
