@@ -1,1 +1,5 @@
-New release description here
+Changes in this release:
+* Add --delete-old-apps option
+* Improve handling of routes and hosts
+* Don't use default domain for temporary route if a specific domain
+is configured
