@@ -4,11 +4,13 @@ set -e -x
 dir=`dirname $0`
 . $dir/ci_env
 
-# Create a git tag and push the tags
+DRAFTINESS=false
 
+# Create a git tag and push the tags
 
   if [ $DRY_RUN ]; then
     cmd_modifier="echo 'Would have run -- '"
+    DRAFTINESS=true
   fi
 
 git clone https://github.com/fsaintjacques/semver-tool
@@ -18,9 +20,11 @@ popd
 
 GIT_URL=`cat artefacts/.gitorigin`
 GIT_HASH=`cat artefacts/.gitcommithash`
+
+SECURED_GIT_URL=`echo $GIT_URL | sed -e "s,https://,https://bluemixgarage:$OAUTH_TOKEN@,g"`
 mkdir prerelease
 pushd prerelease
-  git clone $GIT_URL
+  git clone $SECURED_GIT_URL
   cd cf-blue-green-deploy
   git checkout $GIT_HASH
 
@@ -30,30 +34,36 @@ pushd prerelease
   NAME="Version ${version_to_release}"
   # TODO it would, of course, be nicer not to hardcode the repo name, and we should be able to work it out
   REPO="bluemixgaragelondon/cf-blue-green-deploy"
-  git tag ${TAG}
-  ${cmd_modifier} git push --tags
+  #TODO optional, release does it? git tag ${TAG}
+  #${cmd_modifier} git push --tags
 
     # Upload the binaries to the git release
 
     # Create a git release using the tag
 
-    description="`cat .releaseDescription`"
+    description=\"`cat .releaseDescription`\"
     payload=$(
       jq --null-input \
         --arg tag "$TAG" \
         --arg name "$NAME" \
         --arg body "$description" \
-        '{ tag_name: $tag, name: $name, body: $body, draft: true }'
+        --argjson draft $DRAFTINESS \
+        '{ tag_name: $tag, name: $name, body: $body, draft: $draft }'
     )
 
     response=$(
-      ${cmd_modifier} curl --fail \
+      ${cmd_modifier} curl  \
+          -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: token $OAUTH_TOKEN" \
           --netrc \
-          --silent \
           --location \
           --data "$payload" \
           "https://api.github.com/repos/${REPO}/releases"
     )
+
+# TODO terminate script if this didn't work 
+# TODO in dry run mode, the response is empty so everything from here on fails
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
@@ -65,17 +75,18 @@ pushd prerelease
       binary_name=${binary_path##*/}
       binary_target=${binary_name#*.}
 
-      sha1=$(shasum "${binary_path}" | awk '{print $1}')
+      sha=$(shasum "${binary_path}" | awk '{print $1}')
       
-      ${cmd_modifier} curl --netrc \
-              --header "Content-Type:application/gzip" \
-              --data-binary "@$file" \
-              "$upload_url?name=$(basename "$file")"
+      upload_response=${cmd_modifier} curl --netrc \
+            --header "Content-Type:application/gzip" \
+            -H "Authorization: token $OAUTH_TOKEN" \
+            --data-binary "@$binary_path" \
+            "$upload_url?name=$binary_name"
 
       # Output suitable json for pasting into the cli plugin repo 
-      echo "checksum: ${sha}" >> example-index.yml
-      echo "platform: ${binary_target}" >> example-index.yml
-      echo "url: $upload_url-TODO-${binary_name}" >> example-index.yml
+      echo "- checksum: ${sha}" >> example-index.yml
+      echo "  platform: ${binary_target}" >> example-index.yml
+      echo "  url: $GIT_URL/releases/download/$TAG/${binary_name}" >> example-index.yml
 
     done
 
@@ -86,6 +97,7 @@ pushd prerelease
 popd
 
 pushd prerelease/cf-blue-green-deploy
+  git checkout master
   # Bump the stored version 
   ../../semver-tool/src/semver bump minor
   # Commit back the next version to source control (with an rc tag)
