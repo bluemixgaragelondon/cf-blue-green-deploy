@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e -x
+set -e 
 
 dir=`dirname $0`
 . $dir/ci_env
@@ -9,7 +9,9 @@ DRAFTINESS=false
 # Create a git tag and push the tags
 
   if [ $DRY_RUN ]; then
-    cmd_modifier="echo 'Would have run -- '"
+    echo -- RUNNING WITH DRY_RUN=TRUE. --
+    echo -- A RELEASE WILL NOT ACTUALLY BE DONE. --
+    cmd_modifier='echo Would have run ... '
     DRAFTINESS=true
   fi
 
@@ -63,7 +65,11 @@ pushd prerelease
     )
 
 # TODO terminate script if this didn't work 
-# TODO in dry run mode, the response is empty so everything from here on fails
+   # In dry run mode, the response is empty so everything from here on fails - fake up a response from previous releases
+    if [ $DRY_RUN ]; then
+     echo "Using a previous release for dry-run purposes"
+     response=$(curl "https://api.github.com/repos/${REPO}/releases" | jq '.[0]')
+    fi
 
     upload_url="$(echo "$response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
 
@@ -77,7 +83,7 @@ pushd prerelease
 
       sha=$(shasum "${binary_path}" | awk '{print $1}')
       
-      upload_response=${cmd_modifier} curl --netrc \
+      ${cmd_modifier} curl --netrc \
             --header "Content-Type:application/gzip" \
             -H "Authorization: token $OAUTH_TOKEN" \
             --data-binary "@$binary_path" \
@@ -90,12 +96,13 @@ pushd prerelease
 
     done
 
+    timestamp=`date +%Y-%m-%dT%H:%M:%SZ`
     echo "  company: IBM" >> example-index.yml
     echo "  created: 2015-03-24T00:00:00Z" >> example-index.yml
     echo "  description: Zero downtime deploys with smoke test support" >> example-index.yml
     echo "  homepage: https://github.com/bluemixgaragelondon/cf-blue-green-deploy" >> example-index.yml
     echo "  name: blue-green-deploy" >> example-index.yml
-    echo "  updated: `date +%Y-%m-%dT%H:%M:%SZ"` >> example-index.yml
+    echo "  updated: ${timestamp}" >> example-index.yml
     echo "  version: ${version_to_release}" >> example-index.yml
 
     echo "----- The following would be suitable to paste into repo-index.yml -----"
@@ -110,9 +117,11 @@ pushd prerelease/cf-blue-green-deploy
   ../../semver-tool/src/semver bump minor
   # Commit back the next version to source control (with an rc tag)
   ../../semver-tool/src/semver bump prerel rc1
+  echo "New working version is `cat .version`"
   git add .version
   # Clear the stored release description 
   echo 'New release description here' > .releaseDescription
+  echo "Cleared release description."
   # TODO it would be nice to fail the next release if this hasn't been updated
   git add .releaseDescription
   git commit -m "Auto release prep."
