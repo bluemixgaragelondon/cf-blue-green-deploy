@@ -209,7 +209,9 @@ func (p *BlueGreenDeploy) DeleteRoutes(routes ...plugin_models.GetApp_RouteSumma
 
 func (p *BlueGreenDeploy) mapRoute(appName string, r plugin_models.GetApp_RouteSummary) {
 	if _, err := p.Connection.CliCommand("map-route", appName, r.Domain.Name, "-n", r.Host); err != nil {
-		p.ErrorFunc("Could not map route", err)
+		if _, err := p.Connection.CliCommand("map-route", appName, r.Host+"."+r.Domain.Name); err != nil {
+			p.ErrorFunc("Could not map route or domain", err)
+		}
 	}
 }
 
@@ -220,7 +222,18 @@ func (p *BlueGreenDeploy) unmapRoute(appName string, r plugin_models.GetApp_Rout
 		command = append(command, r.Path)
 	}
 	if _, err := p.Connection.CliCommand(command...); err != nil {
-		p.ErrorFunc("Could not unmap route", err)
+		p.unmapDomain(appName, r)
+	}
+}
+
+func (p *BlueGreenDeploy) unmapDomain(appName string, r plugin_models.GetApp_RouteSummary) {
+	command := []string{"unmap-route", appName, r.Host+"."+r.Domain.Name}
+	if len(r.Path) != 0 {
+		command = append(command, "--path")
+		command = append(command, r.Path)
+	}
+	if _, err := p.Connection.CliCommand(command...); err != nil {
+		p.ErrorFunc("Could not unmap route or domain", err)
 	}
 }
 
