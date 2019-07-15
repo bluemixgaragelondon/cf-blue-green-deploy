@@ -5,7 +5,7 @@ dir=`dirname $0`
 
 # Install Go 
 
-GO_VERSION="1.8.3"
+GO_VERSION="1.9.4"
 
 DFILE="go$GO_VERSION.linux-amd64.tar.gz"
 
